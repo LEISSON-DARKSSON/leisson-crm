@@ -1,0 +1,6 @@
+# Sunnib LF-lõpud tekstifailidele, mida hand-rolled parserid (tools/shots.mjs, tests/*.mjs)
+# loevad rida-realt ilma CRLF-teadlikkuseta. Windows + core.autocrlf muidu re-injectib CRLF
+# working tree'sse ja iga viimane veerg saab varjatud \r sufiksi (11.09 CRLF-bug, portfell.csv).
+*.csv text eol=lf
+*.mjs text eol=lf
+*.json text eol=lf
