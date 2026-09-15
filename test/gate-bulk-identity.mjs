@@ -46,7 +46,7 @@ const snapshot=db=>Object.fromEntries(['messages','agent_jobs','message_groups',
  db.close();
 }
 {
- const db=fixture();add(db,'one',1);const second=add(db,'two',2);
+ const db=fixture();add(db,'one',1);const second=add(db,'gert',2);
  db.prepare('UPDATE messages SET classified=1,review=1').run();
  const id='source:'+second.source_id;
  const result=await invoke(db,'triaaz',[id]);
@@ -55,8 +55,8 @@ const snapshot=db=>Object.fromEntries(['messages','agent_jobs','message_groups',
  assert.equal(db.prepare('SELECT classified FROM messages WHERE uid=2').get().classified,0);
  const job=claimNext(db);assert.deepEqual(job.payload.message_ids,[id]);
  const input=prepareInput(db,job);assert.equal(input.messages[0].message_id,id);
- assert.equal(input.messages[0].account,'two');assert.equal(input.messages[0].source_id,second.source_id);
- assert.equal(resolveMessageSelection(db,id).account,'two');
+ assert.equal(input.messages[0].account,'gert');assert.equal(input.messages[0].source_id,second.source_id);
+ assert.equal(resolveMessageSelection(db,id).account,'gert');
  // Account reassignment after selection cannot silently redirect the request.
  db.prepare("UPDATE messages SET account='one' WHERE uid=2").run();
  assert.equal(bulkGate(db,'kustuta',[id]).passN,0);

@@ -1,3 +1,4 @@
+import {assertMailSource,CRM_MAIL_SOURCE_ACCOUNT} from '../lib/mail-source-scope.mjs';
 import {messageSelectionId,resolveMessageSelection} from '../lib/mail-identity.mjs';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -9,7 +10,7 @@ import { validate } from './schema-validation.mjs';
 import {draftDecision,companyContext} from './draft-policy.mjs';
 const HERE=dirname(fileURLToPath(import.meta.url));
 export const schemaFor=type=>JSON.parse(readFileSync(join(HERE,'schemas',type+'.json'),'utf8'));
-export function messageById(db,id) { return resolveMessageSelection(db,id); }
+export function messageById(db,id) { return assertMailSource(resolveMessageSelection(db,id)); }
 const idOf=m=>m._selection_id||messageSelectionId(m);
 function contextMessage(m) {
   return {message_id:idOf(m),account:m.account,source_id:m.source_id??null,source_hash:messageVersion(m),
@@ -22,7 +23,7 @@ export function prepareInput(db,job,{now=new Date()}={}) {
   if(job.type==='triage') {
     if(Array.isArray(job.payload.message_ids)) {
       rows=job.payload.message_ids.map(id=>messageById(db,id)).filter(m=>m&&!m.classified&&!m.archived&&!m.deleted);
-    } else rows=db.prepare("SELECT * FROM messages WHERE direction='in' AND archived=0 AND deleted IS NULL AND classified=0 ORDER BY ts DESC LIMIT ?").all(Math.min(10,Math.max(1,Number(job.payload.limit)||10)));
+    } else rows=db.prepare("SELECT * FROM messages WHERE account=? AND direction='in' AND archived=0 AND deleted IS NULL AND classified=0 ORDER BY ts DESC LIMIT ?").all(CRM_MAIL_SOURCE_ACCOUNT,Math.min(10,Math.max(1,Number(job.payload.limit)||10)));
   } else {
     const m=messageById(db,job.payload.message_id);
     if(!m)throw new Error('message_missing');
@@ -32,7 +33,7 @@ export function prepareInput(db,job,{now=new Date()}={}) {
     if(job.payload.source_hash && job.payload.source_hash!==messageVersion(m))throw new Error('source_changed');
     rows=[m];
   }
-  rows=rows.map(m=>resolveMessageSelection(db,m._selection_id||messageSelectionId(m)));
+  rows=rows.map(m=>assertMailSource(resolveMessageSelection(db,m._selection_id||messageSelectionId(m))));
   const messages=rows.map(contextMessage);
   const input={runtime_version:RUNTIME_VERSION,type:job.type,today:now.toISOString().slice(0,10),messages};
   if(job.type!=='triage') {
