@@ -1,4 +1,5 @@
 // One leased job per process turn. No SMTP/IMAP imports or Claude/API fallback.
+import {messageSelectionId,resolveMessageSelection} from '../lib/mail-identity.mjs';
 import { DatabaseSync } from 'node:sqlite';
 import { existsSync } from 'node:fs';
 import { join,dirname,resolve } from 'node:path';
@@ -56,7 +57,8 @@ async function main() {
    const type=String(arg('enqueue')),message=arg('message');
    if(['draft','edit'].includes(type)&&!message)throw new Error('message_id_required');
    if(type==='edit')throw new Error('Edit is scheduled only after a successful versioned draft.');
-   const payload=message?(type==='triage'?{message_ids:[String(message)],request_id:new Date().toISOString()}:{message_id:String(message)}):{message_ids:db.prepare("SELECT mailbox || ':' || uid AS id FROM messages WHERE direction='in' AND classified=0 AND archived=0 AND deleted IS NULL AND julianday('now')-julianday(ts) BETWEEN -0.0035 AND 21 ORDER BY ts DESC LIMIT ?").all(Math.min(10,Number(arg('limit',10))||10)).map(m=>m.id),request_id:new Date().toISOString()};
+   const selectedId=message?messageSelectionId(resolveMessageSelection(db,String(message))):null;
+   const payload=selectedId?(type==='triage'?{message_ids:[selectedId],request_id:new Date().toISOString()}:{message_id:selectedId}):{message_ids:db.prepare("SELECT * FROM messages WHERE direction='in' AND classified=0 AND archived=0 AND deleted IS NULL AND julianday('now')-julianday(ts) BETWEEN -0.0035 AND 21 ORDER BY ts DESC LIMIT ?").all(Math.min(10,Number(arg('limit',10))||10)).filter(m=>{try{resolveMessageSelection(db,messageSelectionId(m));return true;}catch{return false;}}).map(messageSelectionId),request_id:new Date().toISOString()};
    if(type==='triage'&&!payload.message_ids.length){console.log('No unclassified messages.');return;}
    console.log('Queued #'+enqueue(db,type,payload));
    if(!arg('drain'))return;

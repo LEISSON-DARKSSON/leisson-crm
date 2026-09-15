@@ -7,7 +7,7 @@ import {migrateMailRecords,saveMailRecord} from '../lib/mail-records.mjs';
 import {reconcileSalesReplies,replyDecision,latestHumanReply} from '../lib/sales-safety.mjs';
 import {extraRoutes} from '../lib/routes2.mjs';
 import {parseContact,contactMail} from '../../site/lib/contact-data.mjs';
-import {requireCurrentMessage} from '../lib/mail-identity.mjs';
+import {requireCurrentMessage,resolveMessageSelection} from '../lib/mail-identity.mjs';
 
 const now=new Date('2026-09-15T12:00:00Z');
 const accounts=[{id:'gert',user:'gert@leisson.eu'},{id:'info',user:'info@leisson.eu'}];
@@ -159,9 +159,9 @@ await check('manual triage batches contain exact selected IDs and distinct reque
   const routes=extraRoutes(db,{}, {readBody:async()=>({task:'triaaz',ids}),json:(_res,status,data)=>{assert.equal(status,200);result=data;},mail:{}});
   await routes['POST /api/bulk/run']({},{});assert.equal(result.jobs.length,2);
   const first=db.prepare('SELECT payload FROM agent_jobs ORDER BY id').all().map(r=>JSON.parse(r.payload));
-  assert.deepEqual(first.flatMap(x=>x.message_ids),ids);assert.equal(new Set(first.map(x=>x.request_id)).size,1);assert.match(first[0].request_id,/^[a-f0-9-]{36}$/);
+  assert.deepEqual(first.flatMap(x=>x.message_ids).map(id=>{const m=resolveMessageSelection(db,id);assert.equal(m.account,'gert');return m.mailbox+':'+m.uid;}),ids);assert.equal(new Set(first.map(x=>x.request_id)).size,1);assert.match(first[0].request_id,/^[a-f0-9-]{36}$/);
   await routes['POST /api/bulk/run']({},{});const all=db.prepare('SELECT payload FROM agent_jobs ORDER BY id').all().map(r=>JSON.parse(r.payload));
-  assert.equal(all.length,4);assert.notEqual(all[0].request_id,all[2].request_id);assert.ok(all.every(x=>!x.message_ids.includes('INBOX:1')&&!x.message_ids.includes('INBOX:13')));
+  assert.equal(all.length,4);assert.notEqual(all[0].request_id,all[2].request_id);assert.ok(all.every(x=>!x.message_ids.map(id=>resolveMessageSelection(db,id).uid).includes(1)&&!x.message_ids.map(id=>resolveMessageSelection(db,id).uid).includes(13)));
 });
 await check('awaiting replies counts only recent actionable business humans, never old tags or self-tests',db=>{
   const add=(uid,extra={})=>mail(db,uid,'Soovime pakkumist.',{company_id:null,...extra});

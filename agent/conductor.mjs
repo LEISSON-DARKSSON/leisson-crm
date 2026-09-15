@@ -1,4 +1,5 @@
 // Deterministic planner. --dry opens SQLite read-only and creates no files.
+import {messageSelectionId,resolveMessageSelection} from '../lib/mail-identity.mjs';
 import { DatabaseSync } from 'node:sqlite';
 import { writeFileSync,readFileSync,existsSync } from 'node:fs';
 import { join,dirname,resolve } from 'node:path';
@@ -18,7 +19,8 @@ export function planConductor(db,{now=new Date(),maxDrafts=3,batch=10,maxAgeDays
   const existing=new Set(draftRows.map(d=>d.account+':'+d.uid));
   const remainingDrafts=Math.max(0,maxDrafts-draftRows.filter(d=>d.created?.slice(0,10)===now.toISOString().slice(0,10)).length);
   for(const m of rows) {
-    const id=m.mailbox+':'+m.uid;
+    const id=messageSelectionId(m);
+    try{resolveMessageSelection(db,id);}catch(e){skipped.push({message_id:id,reason:e.message});continue;}
     if(!m.classified) {
       const ts=Date.parse(m.ts);
       if(!Number.isFinite(ts)||ts>+now+300000||+now-ts>maxAgeDays*86400000) {
@@ -38,7 +40,7 @@ export function planConductor(db,{now=new Date(),maxDrafts=3,batch=10,maxAgeDays
   const jobs=[];
   for(let i=0;i<Math.min(unclassified.length,80);i+=batch) {
     const pack=unclassified.slice(i,i+batch);
-    jobs.push({type:'triage',payload:{message_ids:pack.map(m=>m.mailbox+':'+m.uid),source_versions:pack.map(messageVersion)}});
+    jobs.push({type:'triage',payload:{message_ids:pack.map(messageSelectionId),source_versions:pack.map(messageVersion)}});
   }
   jobs.push(...drafts.slice(0,remainingDrafts).map(payload=>({type:'draft',payload})));
   return {prefilter,jobs,skipped,counts:{unclassified:unclassified.length,draftCandidates:drafts.length,remainingDrafts}};
@@ -46,10 +48,10 @@ export function planConductor(db,{now=new Date(),maxDrafts=3,batch=10,maxAgeDays
 export function applyPlan(db,plan) {
   db.exec('BEGIN IMMEDIATE');
   try {
-    for(const m of plan.prefilter) db.prepare(`UPDATE messages SET classified=1,category=?,urgency='madal',
+    for(const m of plan.prefilter) {resolveMessageSelection(db,m.message_id);db.prepare(`UPDATE messages SET classified=1,category=?,urgency='madal',
       confidence=?,summary=?,reply_intent='automatic' WHERE mailbox=? AND uid=? AND account=? AND classified=0`)
-      .run(m.category,m.kindlus,'eelfilter: '+m.miks,m.mailbox,m.uid,m.account);
-    const ids=plan.jobs.map(j=>enqueue(db,j.type,j.payload));
+      .run(m.category,m.kindlus,'eelfilter: '+m.miks,m.mailbox,m.uid,m.account);}
+    const ids=plan.jobs.map(j=>{for(const id of j.payload.message_ids||[j.payload.message_id])resolveMessageSelection(db,id);return enqueue(db,j.type,j.payload);});
     db.exec('COMMIT');return ids;
   } catch(e){db.exec('ROLLBACK');throw e;}
 }

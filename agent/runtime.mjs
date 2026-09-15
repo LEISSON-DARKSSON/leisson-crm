@@ -1,3 +1,4 @@
+import {messageSelectionId,resolveMessageSelection} from '../lib/mail-identity.mjs';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,12 +9,8 @@ import { validate } from './schema-validation.mjs';
 import {draftDecision,companyContext} from './draft-policy.mjs';
 const HERE=dirname(fileURLToPath(import.meta.url));
 export const schemaFor=type=>JSON.parse(readFileSync(join(HERE,'schemas',type+'.json'),'utf8'));
-export function messageById(db,id) {
-  const i=String(id).lastIndexOf(':');
-  if(i<1||!/^\d+$/.test(String(id).slice(i+1)))throw new Error('invalid_message_id');
-  return db.prepare('SELECT * FROM messages WHERE mailbox=? AND uid=?').get(id.slice(0,i),Number(id.slice(i+1)));
-}
-const idOf=m=>m.mailbox+':'+m.uid;
+export function messageById(db,id) { return resolveMessageSelection(db,id); }
+const idOf=m=>m._selection_id||messageSelectionId(m);
 function contextMessage(m) {
   return {message_id:idOf(m),account:m.account,source_id:m.source_id??null,source_hash:messageVersion(m),
     from:m.addr,from_name:m.addr_name,subject:m.subject,ts:m.ts,body_text:m.body_text?.slice(0,12000)??null,
@@ -35,6 +32,7 @@ export function prepareInput(db,job,{now=new Date()}={}) {
     if(job.payload.source_hash && job.payload.source_hash!==messageVersion(m))throw new Error('source_changed');
     rows=[m];
   }
+  rows=rows.map(m=>resolveMessageSelection(db,m._selection_id||messageSelectionId(m)));
   const messages=rows.map(contextMessage);
   const input={runtime_version:RUNTIME_VERSION,type:job.type,today:now.toISOString().slice(0,10),messages};
   if(job.type!=='triage') {

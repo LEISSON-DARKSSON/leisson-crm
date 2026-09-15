@@ -448,7 +448,7 @@
         el('button', {
           class: 'linkbtn', type: 'button',
           text: (m.addr_name || m.addr || '') + ' — ' + (m.subject || '(pealkirjata)'),
-          onclick: () => { selMail = m.account + ':' + m.uid; picked.clear(); setView('inbox'); renderMailList(); renderMailDetail(); },
+          onclick: () => { selMail = mailKey(m); picked.clear(); setView('inbox'); renderMailList(); renderMailDetail(); },
         }),
       ]));
     }
@@ -529,8 +529,8 @@
     });
   }
 
-  const mailKey = (m) => m.account + ':' + m.uid;
-  const msgId = (m) => m.mailbox + ':' + m.uid;
+  const msgId = (m) => m.source_id ? 'source:'+m.source_id : 'legacy:'+encodeURIComponent(JSON.stringify([m.account,m.mailbox,Number(m.uid)]));
+  const mailKey = (m) => msgId(m);
   const companyName = (id) => (S.companies.find((c) => c.id === id) || {}).name;
 
   function renderMailList() {

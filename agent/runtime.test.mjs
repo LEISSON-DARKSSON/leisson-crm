@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {messageSelectionId} from '../lib/mail-identity.mjs';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {mkdtempSync,readFileSync,rmSync,readdirSync} from 'node:fs';
@@ -134,7 +135,7 @@ test('automatic triage skips old or invalid dates and keeps recent exact IDs',t=
  const add=db.prepare("INSERT INTO messages(mailbox,uid,ts,addr,subject,body_text,classified) VALUES('INBOX',?,?,?,'Question','Palun vastake',0)");
  add.run(2,'2000-01-01T00:00:00Z','old@example.test');add.run(3,'invalid','unknown@example.test');
  const plan=planConductor(db);assert.equal(plan.counts.unclassified,1);
- assert.deepEqual(plan.jobs[0].payload.message_ids,['INBOX:1']);assert.equal(plan.skipped.length,2);
+ assert.deepEqual(plan.jobs[0].payload.message_ids,[messageSelectionId(db.prepare('SELECT * FROM messages WHERE uid=1').get())]);assert.equal(plan.skipped.length,2);
  assert.equal(db.prepare('SELECT classified FROM messages WHERE uid=2').get().classified,0);
 });
 test('daily draft cap counts already created drafts across conductor runs',t=>{
@@ -147,7 +148,7 @@ test('daily draft cap counts already created drafts across conductor runs',t=>{
 test('manual triage accepts an explicit archived-era message ID without implicit bulk selection',t=>{
  const {db,path}=fixture(t);db.prepare("UPDATE messages SET classified=0,ts='2000-01-01T00:00:00Z'").run();
  const r=spawnSync(process.execPath,[join(CRM,'agent','worker.mjs'),'--enqueue=triage','--message=INBOX:1'],{env:{...process.env,CRM_DB_PATH:path},encoding:'utf8',windowsHide:true,shell:false});
- assert.equal(r.status,0,r.stderr);assert.deepEqual(JSON.parse(db.prepare('SELECT payload FROM agent_jobs').get().payload).message_ids,['INBOX:1']);
+ assert.equal(r.status,0,r.stderr);assert.deepEqual(JSON.parse(db.prepare('SELECT payload FROM agent_jobs').get().payload).message_ids,[messageSelectionId(db.prepare('SELECT * FROM messages WHERE uid=1').get())]);
 });
 
 test('newer company refusal and suppression block prepared drafts before commit',t=>{
