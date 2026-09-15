@@ -1,0 +1,83 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "items"
+  ],
+  "properties": {
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "message_id",
+          "category",
+          "urgency",
+          "reply_intent",
+          "confidence",
+          "suspicious",
+          "suggest_archive",
+          "summary"
+        ],
+        "properties": {
+          "message_id": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "vastus_pakkumisele",
+              "paring",
+              "kohtumine",
+              "arve_raha",
+              "hange_toetus",
+              "klienditoo",
+              "teenusepakkuja",
+              "uudiskiri",
+              "ramps"
+            ]
+          },
+          "urgency": {
+            "type": "string",
+            "enum": [
+              "korge",
+              "keskmine",
+              "madal"
+            ]
+          },
+          "reply_intent": {
+            "type": "string",
+            "enum": [
+              "positive",
+              "not_now",
+              "declined",
+              "unsubscribe",
+              "has_provider",
+              "automatic",
+              "unknown"
+            ]
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "suspicious": {
+            "type": "boolean"
+          },
+          "suggest_archive": {
+            "type": "boolean"
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          }
+        }
+      }
+    }
+  }
+}

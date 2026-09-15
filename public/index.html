@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="et" data-mode="night">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Leisson CRM</title>
+<link rel="icon" href="/leisson.svg">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/orbit.css">
+<link rel="stylesheet" href="/app.css">
+<link rel="stylesheet" href="/agent.css">
+<link rel="stylesheet" href="/crm2.css">
+</head>
+<body>
+<header class="nav">
+  <div class="nav-brand">
+    <span class="wordmark">LEISSON</span><span class="wordmark dim">&nbsp;CRM</span>
+  </div>
+  <nav class="views" role="tablist" aria-label="Vaated">
+    <button class="view-tab" type="button" role="tab" data-view="pipeline" aria-selected="true">Müügitoru</button>
+    <button class="view-tab" type="button" role="tab" data-view="inbox" aria-selected="false">Postkast <span class="badge" id="inboxBadge" hidden>0</span></button>
+    <button class="view-tab" type="button" role="tab" data-view="stats" aria-selected="false">Statistika</button>
+    <button class="view-tab" type="button" role="tab" data-view="services" aria-selected="false">Teenused</button>
+    <button class="view-tab" type="button" role="tab" data-view="billing" aria-selected="false">Arved &amp; pakkumised</button>
+    <button class="view-tab" type="button" role="tab" data-view="agents" aria-selected="false">Agendid</button>
+  </nav>
+  <div class="nav-stats" id="stats"></div>
+  <div class="nav-acts">
+    <span class="sync-note" id="syncNote"></span>
+    <button class="btn ghost sm" id="btnSync" type="button">Sünkrooni</button>
+    <a class="btn ghost sm" href="/signature" target="_blank" rel="noopener">Allkiri</a>
+  </div>
+</header>
+
+<main class="shell" id="viewPipeline">
+  <aside class="col-list" aria-label="Sihtmärgid">
+    <div class="filters">
+      <input id="q" class="input" type="search" placeholder="Otsi nime, segmenti, asukohta…" autocomplete="off">
+      <div class="chips" id="listChips" role="group" aria-label="Nimekiri"></div>
+      <div class="chips" id="prioChips" role="group" aria-label="Prioriteet"></div>
+      <div class="chips" id="statusChips" role="group" aria-label="Staatus"></div>
+    </div>
+    <ol class="list" id="list"></ol>
+  </aside>
+  <section class="col-detail" id="detail" aria-live="polite">
+    <div class="empty"><p class="orbit-type-label">Vali vasakult ettevõte</p></div>
+  </section>
+  <aside class="col-side" id="detailSide" aria-label="Leid, pakkumine ja logi"></aside>
+</main>
+
+<main class="shell" id="viewInbox" hidden>
+  <aside class="col-list" aria-label="Kirjad">
+    <div class="filters">
+      <input id="qm" class="input" type="search" placeholder="Otsi saatjat või pealkirja…" autocomplete="off">
+      <div class="chips" id="mailChips" role="group" aria-label="Postkasti filtrid"></div>
+      <div class="chips" id="catChips" role="group" aria-label="Kategooriad"></div>
+      <div class="bulkbar" id="bulkBar">
+        <label><input type="checkbox" id="selAll"> Vali kõik nähtavad</label>
+        <span class="n" id="selCount">0 valitud</span>
+      </div>
+    </div>
+    <ol class="list" id="mailList"></ol>
+  </aside>
+  <section class="col-detail" id="mailDetail" aria-live="polite">
+    <div class="empty"><p class="orbit-type-label">Vali kiri</p></div>
+  </section>
+  <aside class="col-side" id="mailDetailSide" aria-label="Klassifikatsioon ja seos"></aside>
+</main>
+
+<main class="wide" id="viewStats" hidden><div class="sheet" id="statsBody"></div></main>
+<main class="wide" id="viewServices" hidden><div class="sheet" id="servicesBody"></div></main>
+<main class="wide" id="viewBilling" hidden><div class="sheet" id="billingBody"></div></main>
+<main class="wide" id="viewAgents" hidden><div class="sheet" id="agentsBody"></div></main>
+
+<div class="toast" id="toast" hidden></div>
+<script src="/app.js"></script>
+<script src="/views.js"></script>
+</body>
+</html>

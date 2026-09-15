@@ -1,0 +1,337 @@
+/* Leisson CRM — massitöö, statistika, teenused, arved, agendid.
+   Orbit tokenid, monokroom: tooni kannavad ainult signal ja status-*. */
+
+/* --- neli laia vaadet: kogu ekraani laius, materjal tulpadena ---
+   Veerulaotus, mitte grid: paneelid on eri kõrgusega ja veerud täidavad
+   ekraani ilma auguta. 2650 px annab neli veergu, 1440 kaks, telefon ühe.
+   Leht ei keri kunagi külgsuunas — ainult see kast kerib püstsuunas. */
+main.wide { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden;
+  max-width: none; margin-inline: 0; padding: 22px clamp(16px, 1.8vw, 32px) 48px; }
+main.wide .sheet { display: grid; gap: 22px; align-items: start; max-width: none; padding: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 1800px) { main.wide .sheet { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 2400px) { main.wide .sheet { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 900px)  { main.wide .sheet { grid-template-columns: minmax(0, 1fr); } }
+main.wide .sheet > * { min-width: 0; }
+main.wide .sheet > .head { grid-column: 1 / -1; }
+/* tabeliga plokk vajab kaht veergu, muidu kerib ta omas raamis ja seis-veerg kaob */
+main.wide .sheet > .panel.laic { grid-column: span 2; }
+@media (max-width: 900px) { main.wide .sheet > .panel.laic { grid-column: auto; } }
+
+/* --- postkasti massivalik --- */
+.bulkbar {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 9px 12px; border: 1px solid var(--orbit-color-hairline); background: var(--orbit-color-paper);
+}
+.bulkbar.on { border-color: var(--orbit-color-signal); }
+.bulkbar label { display: inline-flex; align-items: center; gap: 9px; cursor: pointer;
+  font-family: var(--orbit-font-data); font-size: 12.5px; color: var(--orbit-color-ink-2); }
+.bulkbar input { width: 18px; height: 18px; accent-color: var(--orbit-color-signal); cursor: pointer; }
+.bulkbar .n { margin-left: auto; font-family: var(--orbit-font-data); font-size: 12.5px;
+  color: var(--orbit-color-ink); font-variant-numeric: tabular-nums; }
+
+li.mailrow { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 0 10px;
+  padding-left: 10px; border-left: 2px solid transparent; }
+li.mailrow.on { background: var(--orbit-color-paper); border-left-color: var(--orbit-color-signal); }
+li.mailrow > .cb { width: 18px; height: 18px; margin-top: 15px; accent-color: var(--orbit-color-signal); cursor: pointer; }
+li.mailrow > .row { min-width: 0; }
+
+/* --- massitöö ülesanded --- */
+.tasks { display: grid; gap: 1px; background: var(--orbit-color-hairline); border: 1px solid var(--orbit-color-hairline); }
+.task { background: var(--orbit-color-canvas); display: grid; grid-template-columns: 20px minmax(0, 1fr) auto;
+  gap: 14px; align-items: start; padding: 13px 15px; cursor: pointer; }
+.task.on { background: var(--orbit-color-paper); }
+.task input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--orbit-color-signal); }
+.task .t { min-width: 0; }
+.task .t b { display: block; font-size: 15px; font-weight: 600; }
+.task .t span { display: block; margin-top: 2px; font-size: 13.5px; color: var(--orbit-color-ink-3); }
+.task .c { font-family: var(--orbit-font-data); font-size: 12px; color: var(--orbit-color-ink-2);
+  text-align: right; white-space: nowrap; }
+
+.gatebox { display: grid; gap: 12px; }
+.kv2 { display: grid; grid-template-columns: minmax(110px, 190px) minmax(0, 1fr); gap: 0; }
+.kv2 .k { font-family: var(--orbit-font-data); font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--orbit-color-ink-3); padding: 9px 14px 9px 0; border-bottom: 1px solid var(--orbit-color-hairline); }
+.kv2 .v { font-size: 15px; color: var(--orbit-color-ink-2); padding: 9px 0;
+  border-bottom: 1px solid var(--orbit-color-hairline); overflow-wrap: anywhere; }
+.kv2 .k:last-of-type, .kv2 .v:last-of-type { border-bottom: 0; }
+
+.meter { height: 12px; background: var(--orbit-color-paper); border: 1px solid var(--orbit-color-hairline); }
+.meter i { display: block; height: 100%; background: var(--orbit-color-ink); }
+
+/* --- suured mõõdikud --- */
+.bigstats { display: grid; grid-template-columns: repeat(auto-fit, minmax(146px, 1fr)); gap: 18px 26px;
+  border-top: 1px solid var(--orbit-color-hairline); border-bottom: 1px solid var(--orbit-color-hairline);
+  padding: 20px 0; }
+.bigstats > div { display: grid; gap: 3px; min-width: 0; }
+.bigstats b { font-family: var(--orbit-font-display); font-weight: 700; font-size: 36px; line-height: 1;
+  font-variant-numeric: tabular-nums; }
+.bigstats b.signal { color: var(--orbit-color-signal); }
+.bigstats span { font-family: var(--orbit-font-data); font-size: 11px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--orbit-color-ink-3); }
+
+/* --- ribadiagramm --- */
+.bars { display: grid; }
+.bar { display: grid; grid-template-columns: minmax(130px, auto) minmax(70px, 1fr) minmax(110px, auto);
+  gap: 16px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--orbit-color-hairline); }
+.bar:last-child { border-bottom: 0; }
+.bar .k { font-size: 14.5px; color: var(--orbit-color-ink-2); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
+.bar .track { display: block; height: 10px; background: var(--orbit-color-paper); min-width: 0; }
+.bar .track i { display: block; height: 100%; background: var(--orbit-color-hairline-strong); min-width: 2px; }
+.bar .track i.top { background: var(--orbit-color-ink); }
+.bar u { text-decoration: none; text-align: right; white-space: nowrap;
+  font-family: var(--orbit-font-data); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+
+/* --- tabel --- */
+table.tbl { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+table.tbl th { text-align: left; font-family: var(--orbit-font-data); font-size: 11px; letter-spacing: .11em;
+  text-transform: uppercase; font-weight: 400; color: var(--orbit-color-ink-3);
+  padding: 10px 12px; background: var(--orbit-color-paper);
+  border-bottom: 1px solid var(--orbit-color-hairline); white-space: nowrap; }
+table.tbl td { padding: 10px 12px; border-bottom: 1px solid var(--orbit-color-hairline);
+  vertical-align: middle; color: var(--orbit-color-ink-2); }
+table.tbl tr:last-child td { border-bottom: 0; }
+table.tbl td.n { font-family: var(--orbit-font-data); font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.tbl td b { color: var(--orbit-color-ink); }
+.input.sm { height: 32px; font-size: 13px; padding: 0 8px; }
+
+/* --- protsessi etapid --- */
+.steps { display: grid; border-top: 1px solid var(--orbit-color-hairline); }
+@media (min-width: 1200px) { .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 48px; } }
+.step { display: grid; grid-template-columns: 44px minmax(0, 1.2fr) minmax(0, .9fr); gap: 16px;
+  padding: 15px 0; border-bottom: 1px solid var(--orbit-color-hairline); }
+.step > * { min-width: 0; }
+.step > b { font-family: var(--orbit-font-display); font-weight: 700; font-size: 26px; line-height: 1;
+  color: var(--orbit-color-ink-3); font-variant-numeric: tabular-nums; }
+.step h4 { margin: 0 0 3px; font-family: var(--orbit-font-display); font-weight: 600; font-size: 18px; }
+.step p { margin: 0; font-size: 14.5px; color: var(--orbit-color-ink-2); }
+.step .gate { display: grid; gap: 4px; align-content: start;
+  font-family: var(--orbit-font-data); font-size: 12px; color: var(--orbit-color-ink-3); }
+@media (max-width: 760px) { .step { grid-template-columns: 34px 1fr; } .step .gate { grid-column: 2; } }
+
+/* --- ahel --- */
+.chain { display: grid; gap: 1px; background: var(--orbit-color-hairline); border: 1px solid var(--orbit-color-hairline); }
+.chain .link { background: var(--orbit-color-canvas); display: grid; grid-template-columns: 26px minmax(0, 1fr) auto;
+  gap: 14px; align-items: center; padding: 12px 15px; }
+.chain .link.stop { background: var(--orbit-color-paper); }
+.chain .n { font-family: var(--orbit-font-data); font-size: 12px; color: var(--orbit-color-ink-3); }
+.chain .t { font-size: 14.5px; overflow-wrap: anywhere; }
+
+/* --- võlgnevuse redel --- */
+.ladder { display: grid; gap: 1px; background: var(--orbit-color-hairline); border: 1px solid var(--orbit-color-hairline); }
+.lad { background: var(--orbit-color-canvas); display: grid; grid-template-columns: 110px minmax(0, 1fr);
+  gap: 14px; padding: 12px 15px; align-items: baseline; }
+.lad b { font-family: var(--orbit-font-data); font-size: 12.5px; color: var(--orbit-color-ink); }
+.lad span { font-size: 14.5px; color: var(--orbit-color-ink-2); }
+
+/* --- generaator ja dokumendid --- */
+.genrow { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+.genrow .field.grow { flex: 1 1 320px; }
+ul.doclist { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; }
+ul.doclist li { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap;
+  font-family: var(--orbit-font-data); font-size: 13px; }
+
+/* --- klassifikatsiooniriba --- */
+.clsbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.clsbar .why { flex-basis: 100%; margin: 4px 0 0; }
+
+/* --- sildid --- */
+.tag.cat { border-color: var(--orbit-color-hairline-strong); }
+.tag.hot { border-color: var(--orbit-color-status-warn); color: var(--orbit-color-status-warn); }
+.tag.bad { border-color: var(--orbit-color-status-crit); color: var(--orbit-color-status-crit); }
+.btn.danger { border-color: var(--orbit-color-status-crit); color: var(--orbit-color-status-crit); }
+.btn[disabled] { opacity: .4; cursor: not-allowed; }
+
+/* --- päis on ÜKS rida ---
+   Sakid, mõõdikud ja teonupud on kõik vertikaalselt tsentris. Režiiminuppu
+   ei ole: see võttis rea, mida on vaja ühele reale mahtumiseks. Kui ruumi
+   napib, kerivad sakid omas raamis — leht ise mitte kunagi. */
+.nav { flex-wrap: nowrap; height: var(--orbit-size-nav); min-height: var(--orbit-size-nav);
+  padding-block: 0; align-items: center; gap: 20px; }
+.nav > * { min-width: 0; }
+.nav-brand { flex: 0 0 auto; }
+.views { flex: 0 1 auto; min-width: 0; overflow-x: auto; scrollbar-width: thin; }
+.views::-webkit-scrollbar { height: 4px; }
+.view-tab { white-space: nowrap; flex: 0 0 auto; }
+.nav-stats { flex: 1 1 auto; min-width: 0; margin-left: 0; gap: 20px;
+  justify-content: flex-end; overflow: hidden; flex-wrap: nowrap; }
+.nav-acts { flex: 0 0 auto; flex-wrap: nowrap; }
+
+@media (max-width: 1700px) { .sync-note { display: none; } }
+@media (max-width: 1280px) {
+  .nav { flex-wrap: wrap; height: auto; padding-block: 6px; gap: 10px 14px; }
+  .nav-stats { flex-wrap: wrap; gap: 14px; justify-content: flex-start; }
+  .nav-acts { margin-left: auto; }
+}
+@media (max-width: 560px) {
+  main.wide { padding-inline: 14px; }
+  .bar { grid-template-columns: 1fr auto; gap: 3px 10px; }
+  .bar .track { grid-column: 1 / -1; }
+  .kv2 { grid-template-columns: 1fr; }
+  .kv2 .k { padding-bottom: 0; border-bottom: 0; }
+  .task { grid-template-columns: 20px minmax(0, 1fr); }
+  .task .c { grid-column: 2; text-align: left; }
+  .lad { grid-template-columns: 1fr; gap: 2px; }
+  .bigstats { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+}
+
+/* lai tabel kerib omas raamis, mitte lehe kaupa */
+.panel table.tbl { display: block; overflow-x: auto; white-space: normal; }
+.panel table.tbl thead, .panel table.tbl tbody { display: table; width: 100%; }
+
+/* ============================================================================
+   KOLM TULPA — müügitoru ja postkast
+   ----------------------------------------------------------------------------
+   Reegel: LEHT EI KERI ÜHESKI SUUNAS. Kerivad ainult kastid omaette.
+   Vasak tulp on nimekiri, keskmine on TÖÖ (kiri / kirja sisu ja vastus),
+   parem tulp on taust (leid, pakkumine, logi / klassifikatsioon, seos).
+   Keskmise tulba nupud on püsiv jalus: nad ei kao kunagi kerimisega ära,
+   sest kerib ainult sisuaken, mitte kaart.
+   ========================================================================== */
+.shell {
+  grid-template-columns: minmax(260px, 330px) minmax(0, 1fr) minmax(300px, 420px);
+  grid-template-areas: "list detail side";
+  overflow: hidden;
+}
+.col-list { grid-area: list; }
+.col-detail { grid-area: detail; }
+.col-side { grid-area: side; }
+
+.col-list { overflow: hidden; min-width: 0; }
+.col-detail { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.col-side {
+  border-left: 1px solid var(--orbit-color-hairline);
+  background: var(--orbit-color-canvas);
+  overflow-y: auto; overflow-x: hidden; min-height: 0; min-width: 0;
+}
+
+/* keskmine tulp: pealkiri püsib, kaardid jagavad ülejäänud kõrguse */
+.sheet.detail-main {
+  max-width: none; width: 100%; height: 100%; min-height: 0;
+  display: flex; flex-direction: column; gap: var(--orbit-space-4);
+  padding: var(--orbit-space-5) var(--orbit-space-5) var(--orbit-space-4);
+}
+.sheet.detail-main > .head { flex: 0 0 auto; }
+.sheet.detail-main > .panel { min-height: 0; }
+.sheet.detail-main > .panel.letter,
+.sheet.detail-main > .panel.reply {
+  flex: 1 1 0; display: flex; flex-direction: column; gap: var(--orbit-space-3);
+}
+/* MOODETUD 14.09.2026, 1440x960: vana jaotus (kiri 1.25) jattis vastusekastile
+   310 px. Sellest soi mustandiriba 112 ja jalus 53 - tekstivali kahanes 26 px-ni
+   ja jai jaluse taha peitu. panel.reply overflow oli "visible", seega sisu
+   lihtsalt loigati ara ja KERIDA EI SAANUD. Kolm asja koos parandavad selle:
+   1) vastusekast saab kirjaga vordse osa ja oma alampiiri,
+   2) tekstivali ei kahane alla loetava korguse,
+   3) kui ruumi ikka ei jatku, kerib KAART ise - jalus jaab kleepununa alla. */
+.sheet.detail-main > .panel.letter { flex-grow: 1; min-height: 200px; }
+.sheet.detail-main > .panel.reply {
+  min-height: 330px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+/* NB spetsiifilisus: ".field.fill > :last-child" on (0,3,0) ja voidab iga
+   (0,2,1) reegli, ukskoik mis jarjekorras. Seeparast kaib alampiir siit,
+   (0,4,1) pealt - muidu jaab min-height: 0 kehtima ja vali kahaneb 26 px-ni. */
+.sheet.detail-main > .panel.reply .field.fill { min-height: 176px; flex: 1 1 auto; }
+.sheet.detail-main > .panel.reply .field.fill > textarea { min-height: 150px; }
+
+/* see üks väli venib ja tema sisu kerib — mitte kaart, mitte leht */
+.field.fill { display: flex; flex-direction: column; gap: 6px; min-height: 0; flex: 1 1 auto; }
+.field.fill > :last-child { flex: 1 1 auto; min-height: 0; }
+.panel.letter textarea, .panel.reply textarea { height: 100%; resize: none; overflow: auto; }
+.panel.letter .mailbody { height: 100%; margin: 0; overflow: auto; }
+
+/* püsiv jalus: Saada kiri / Salvesta mustand on alati ekraanil */
+.panel-foot {
+  flex: 0 0 auto; margin-top: auto;
+  padding-top: var(--orbit-space-3);
+  border-top: 1px solid var(--orbit-color-hairline);
+  position: sticky; bottom: 0; background: var(--orbit-color-paper);
+}
+
+/* parem tulp: kaardid üksteise all, oma kerimisega */
+/* minmax(0,1fr) EI OLE kaunistus: grid-veeru vaikimisi alampiir on min-content,
+   nii et üks pikk e-posti aadress logis venitab kogu tulba ekraanist välja.
+   Sama lugu flex-lastega (min-width: auto). Mõõdetud: 459 px 419 px raamis. */
+.sheet.side-stack {
+  max-width: none; width: 100%;
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--orbit-space-4);
+  padding: var(--orbit-space-5) var(--orbit-space-4) var(--orbit-space-6);
+  align-content: start;
+}
+.sheet.side-stack > *, .sheet.detail-main > * { min-width: 0; }
+.sheet.side-stack .panel > *, .sheet.detail-main .panel > * { min-width: 0; }
+.col-side .log li, .col-side .doclist li { overflow-wrap: anywhere; }
+.sheet.side-stack .panel.split { grid-template-columns: minmax(0, 1fr); }
+.sheet.side-stack .panel.split > .side { grid-column: 1; grid-row: auto; }
+
+/* massitöö paneel võtab keskmise tulba endale ja kerib ise */
+.col-detail > .sheet:not(.detail-main) { overflow-y: auto; max-width: none; width: 100%; }
+
+/* --- vaba ostja vorm --- */
+.formgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px 16px; }
+.formgrid .wide2 { grid-column: span 2; }
+.formgrid .endrow { align-self: end; }
+
+/* --- dokumendirida kannab nüüd ka kustutusnuppu --- */
+ul.doclist li { align-items: center; }
+ul.doclist li .btn { margin-left: auto; }
+
+/* --- kitsamad ekraanid --- */
+@media (max-width: 1440px) {
+  .shell { grid-template-columns: minmax(230px, 290px) minmax(0, 1fr) minmax(270px, 340px); }
+}
+@media (max-width: 1180px) {
+  /* kolmas tulp läheb keskmise alla, nimekiri jääb vasakule terve kõrguse */
+  .shell {
+    grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.45fr) minmax(0, 1fr);
+    grid-template-areas: "list detail" "list side";
+  }
+  .col-side { border-top: 1px solid var(--orbit-color-hairline); }
+}
+@media (max-width: 820px) {
+  /* Telefonis on kerimisvaba ekraan vale eesmark: kolm kasti korraga jatab
+     igauhele 200 px. Siin laheb leht tavalisse voogu ja kerib pusti nagu
+     iga teine leht. Kulgsuunas ei keri ta ikka kunagi. */
+  .shell { display: block; overflow: visible; }
+  .col-list, .col-detail, .col-side { display: block; overflow: visible; min-height: 0; }
+  /* In normal flow the column must contain both filters and the scrolling list.
+     The older 44vh cap makes the following detail panel cover list rows. */
+  .col-list { max-height: none; border-right: 0; border-bottom: 1px solid var(--orbit-color-hairline); }
+  .col-side { border-left: 0; border-top: 1px solid var(--orbit-color-hairline); }
+  .list { max-height: 52vh; overflow-y: auto; }
+  .sheet.detail-main { height: auto; padding: var(--orbit-space-4); }
+  .sheet.detail-main > .panel.letter,
+  .sheet.detail-main > .panel.reply { flex: 0 0 auto; }
+  .panel.letter textarea, .panel.reply textarea { height: auto; min-height: 220px; resize: vertical; }
+  .panel.letter .mailbody { height: auto; max-height: 60vh; }
+  .panel-foot { position: static; }
+}
+@media (max-width: 640px) {
+  .formgrid .wide2 { grid-column: auto; }
+}
+
+/* Nimekirjarea metarida: .row-meta oli overflow:hidden, seega pikk segmenditekst
+   lõigati vaikselt ära, aga element ise ulatus ikka raamist välja. Nüüd lõigatakse
+   TEKST kolme punktiga ja kast jääb raami. Värav mõõdab seda 390 px juures. */
+.row-meta { min-width: 0; }
+.row-meta > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Mustandi selgitus on kokku pandud: kirja tekst peab jaama ekraanile nahtavaks. */
+.draft-why { margin: 6px 0 2px; }
+.draft-why > summary {
+  cursor: pointer;
+  list-style: none;
+  font: inherit;
+  opacity: .72;
+  padding: 2px 0;
+  user-select: none;
+}
+.draft-why > summary::-webkit-details-marker { display: none; }
+.draft-why > summary::before { content: '▸ '; display: inline-block; width: 1em; }
+.draft-why[open] > summary::before { content: '▾ '; }
+.draft-why > summary:hover { opacity: 1; }
+.draft-why > .why { margin-top: 4px; }

@@ -1,0 +1,47 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "message_id",
+    "draft_revision",
+    "subject",
+    "body",
+    "changed",
+    "notes",
+    "blocker"
+  ],
+  "properties": {
+    "message_id": {
+      "type": "string"
+    },
+    "draft_revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "subject": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "body": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 8000
+    },
+    "changed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "blocker": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

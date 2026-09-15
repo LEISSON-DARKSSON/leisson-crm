@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "crm": {
+      "command": "node",
+      "args": ["agent/mcp-server.mjs"],
+      "env": { "CRM_AGENT_SOURCE": "db" }
+    }
+  }
+}
