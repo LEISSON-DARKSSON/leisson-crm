@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+data/
+node_modules/
+*.log
+aruanded/_*.md
+aruanded/_*.html
+
+# Private historical sales data and one-off operator artifacts
+seed/
+win/tmp/
+aruanded/
+signature/
+tmp.txt

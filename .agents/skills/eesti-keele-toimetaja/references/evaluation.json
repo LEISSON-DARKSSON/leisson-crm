@@ -1,0 +1,14 @@
+[
+  {
+    "input": "Hind 590 €, ettemaks 50%, tarne 5–7 tööpäeva.",
+    "expect": "all numbers and conditions preserved"
+  },
+  {
+    "input": "See võib lihtsustada päringu saatmist.",
+    "expect": "uncertainty preserved; no guarantee"
+  },
+  {
+    "input": "Me ei soovi teenust.",
+    "expect": "negative meaning preserved"
+  }
+]
