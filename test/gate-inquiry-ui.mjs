@@ -15,6 +15,16 @@ const fixture={
   salesAccounts:[{id:'gert',user:'gert@leisson.eu'}],defaultAccount:'legacy',pollMinutes:30,
   counts:{ootel:1,kiri:0,kohtumine:0,pakkumine:0,voidetud:0,ei:0},statuses:['ootel','kiri','ei'],statusLabels:{ootel:'Ootel',kiri:'Kiri',ei:'Ei'},
   companies:[company],messages:[message],activity:[],drafts:[],docs:[],services:activeServices(),catalogVersion:CATALOG.version,revenue:{},
+  revenueWorkbench:{available:true,mailbox:'gert@leisson.eu',generatedAt:'2026-09-15T12:00:00Z',
+    summary:{businesses:3,confirmedBuyers:0,reviewOnlyDrafts:2,sent:0,scheduled:0},
+    prospects:[
+      {companyId:'fixture',company:'Fixture Company',crmStatus:'ootel',priority:'First research candidate',officialUrl:'https://example.test/',email:'owner@example.test',contactVerification:'Public business address',outreachPermission:'unverified',currentNeedConfirmed:false,receivedInterest:false,
+        observations:[{id:'F-1',statement:'Observed link destination.',notProven:'No purchase intent proven.'}],questions:[{question:'Should this link be corrected?',nextVerification:'Confirm the need first.'}],nextAction:'Owner reviews the need question.',
+        draft:{from:'gert@leisson.eu',to:'owner@example.test',subject:'Fixture question',body:'<img src=x onerror=alert(1)> Review-only body.',approved:false,scheduled:false,sendable:false}},
+      {companyId:'fixture-two',company:'Second Business',crmStatus:'ootel',priority:'Second research candidate',email:'second@example.test',currentNeedConfirmed:false,receivedInterest:false,observations:[],questions:[],nextAction:'Check the need.',
+        draft:{from:'gert@leisson.eu',to:'second@example.test',subject:'Second question',body:'Second review-only body.',approved:false,scheduled:false,sendable:false}},
+      {companyId:'fixture-three',company:'Third Business',crmStatus:'ootel',priority:'Wait for evidence',email:'third@example.test',currentNeedConfirmed:false,receivedInterest:false,observations:[],questions:[],nextAction:'Collect current evidence.',draft:null,draftOmissionReason:'Current evidence is missing.'},
+    ]},
   webInquiries:[{source_id:'leisson.eu:fixture',first_mail_source_id:source,name:'Fixture Owner',company:'Fixture Company',email:'owner@example.test',
     service_id:'inquiry-repair',catalog_version:CATALOG.version,scope:'Päringuteekond korda',status:'needs_review',message:'<img src=x onerror=alert(1)> Need a form repair.',
     first_imported_at:'2026-09-15T10:00:00Z',reply_to_mismatch:0}],
@@ -49,7 +59,20 @@ try {
   const page=await context.newPage(), errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(origin);
+  await page.locator('#workbenchShortcut').waitFor();
+  assert.equal(await page.locator('#list [data-workbench-list]').count(),3);
+  assert.equal(await page.locator('#detail [data-workbench-prospect]').count(),1);
+  assert.equal(await page.locator('#detail [data-workbench-draft]').count(),1);
+  assert((await page.locator('#detail').innerText()).includes('gert@leisson.eu'));
+  assert((await page.locator('#detail .workbench-summary').textContent()).includes('0 kinnitatud ostjat'));
+  assert.equal(await page.locator('#detail img').count(),0,'untrusted draft body rendered as text');
+  assert.equal(await page.locator('#detail').getByRole('button',{name:/saada/i}).count(),0,'review-only workbench has no send action');
+  assert.equal(await page.getByRole('button',{name:'Ava ettevõte CRM-is'}).count(),0,'stale company composer is not linked from a review draft');
+  await page.locator('#list [data-workbench-list="fixture-two"]').click();
+  assert((await page.locator('#detail').innerText()).includes('Second review-only body.'));
+  assert(!(await page.locator('#detail').innerText()).includes('Fixture subject'),'workbench selection never opens the company legacy letter');
   await page.locator('#inquiryShortcut').waitFor();
+  await page.locator('#inquiryShortcut').click();
   assert.equal(await page.locator('#detail [data-inquiry-source=web]').count(),1);
   assert.equal(await page.locator('#detail [data-inquiry-source=prouxaudit]').count(),1);
   await page.locator('#detail [data-inquiry-source=web] summary').click();
@@ -64,6 +87,7 @@ try {
   assert.equal(await page.locator('#viewInbox').isVisible(),true);
   assert.equal(await page.locator('#mailChips').getByRole('button',{name:/legacy|leisson/}).count(),1,'all-account inbox retained');
   await page.getByRole('tab',{name:'Müügitoru',exact:true}).click();
+  await page.locator('#companyShortcut').click();
   await page.locator('#list .row').first().click();
   const selects=await page.locator('#detail select').evaluateAll(nodes=>nodes.map(n=>({id:n.id,options:[...n.options].map(o=>({value:o.value,text:o.text}))})));
   const sender=selects.find(s=>s.options.some(o=>o.text.includes('@leisson.eu')));
@@ -84,6 +108,7 @@ try {
     await page.setViewportSize({width,height:844});
     await page.evaluate(()=>localStorage.setItem('leisson-crm-view','pipeline'));
     await page.reload();
+    await page.locator('#companyShortcut').click();
     await page.locator('#list .row').last().waitFor({state:'attached'});
     const layout=await page.evaluate(()=>({listBottom:document.querySelector('#list').getBoundingClientRect().bottom,columnBottom:document.querySelector('#viewPipeline .col-list').getBoundingClientRect().bottom}));
     assert(layout.listBottom<=layout.columnBottom+1,'mobile list must stay inside its column, without detail overlap at '+width);
@@ -92,6 +117,6 @@ try {
     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth));
   }
   assert.deepEqual(errors,[]);
-  console.log('Inquiry UI: local evidence, untrusted text, source ownership, inbox navigation and gert-only sender passed.');
+  console.log('Revenue workbench and inquiry UI: review-only drafts, local evidence, source ownership, inbox navigation and gert-only sender passed.');
   await context.close();
 } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}

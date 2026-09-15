@@ -5,6 +5,7 @@ import {revenueSummary} from './lib/salesdb.mjs';
 import {activeServices,CATALOG_VERSION} from '../packages/service-catalog/index.mjs';
 import {listProUXAuditLeads} from './lib/prouxaudit-import.mjs';
 import {listWebInquiries} from './lib/web-inquiry.mjs';
+import {loadRevenueWorkbench} from './lib/revenue-workbench.mjs';
 // Leisson CRM — kohalik HTTP-server (ainult 127.0.0.1). Nullsõltuvusega router + taustapoller.
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
@@ -89,6 +90,7 @@ function state() {
     services:activeServices(),catalogVersion:CATALOG_VERSION,
     proUXLeads:listProUXAuditLeads(db),
     webInquiries:listWebInquiries(db),
+    revenueWorkbench:loadRevenueWorkbench(),
     salesAccounts:cfg.accounts.filter(a=>String(a.user).toLowerCase()==='gert@leisson.eu').map(a=>({id:a.id,user:a.user,name:a.name})),
     outbound:db.prepare('SELECT id,company_id,recipient,subject,state,created,accepted_at,error FROM outbound_messages ORDER BY created DESC LIMIT 50').all(),
     accounts: cfg.accounts.map((a) => ({ id: a.id, user: a.user, name: a.name })),

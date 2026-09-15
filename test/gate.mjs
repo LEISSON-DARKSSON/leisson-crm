@@ -162,6 +162,7 @@ try {
         errors.push(m.text() + (src ? ' <- ' + src : ''));
       });
       await page.goto(`http://127.0.0.1:${PORT}/`, { waitUntil: 'load' });
+      await page.locator('#companyShortcut').click();
       await page.waitForSelector('#list .row', { timeout: 8000 });
       await page.locator('#list .row').first().click();
       await page.waitForTimeout(600);
