@@ -1,0 +1,29 @@
+/* Agendikiht: mustandid ja teine võti. Kõik värvid tulevad Orbit tokenitest. */
+
+.row-meta .tag.draft {
+  border-color: var(--orbit-color-signal);
+  color: var(--orbit-color-signal);
+}
+.row-meta .tag.draft.ootab_kinnitust {
+  background: var(--orbit-color-signal);
+  color: var(--orbit-color-canvas);
+  font-weight: 600;
+  letter-spacing: .06em;
+}
+
+.draftbar {
+  border-left: 3px solid var(--orbit-color-hairline-strong);
+  background: var(--orbit-color-paper);
+  padding: 12px 14px;
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.draftbar.ootab_kinnitust { border-left-color: var(--orbit-color-signal); }
+.draftbar.mustand { border-left-color: var(--orbit-color-warn, var(--orbit-color-hairline-strong)); }
+.draftbar b {
+  font-family: var(--orbit-font-data, ui-monospace, monospace);
+  font-size: 12px;
+  letter-spacing: .1em;
+}
+.draftbar .why { margin: 0; font-size: 13.5px; }
