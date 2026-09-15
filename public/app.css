@@ -220,6 +220,13 @@ textarea {
   gap: var(--orbit-space-3);
   border-bottom: 1px solid var(--orbit-color-hairline);
 }
+.pipeline-shortcuts { display: grid; gap: 6px; }
+.pipeline-shortcuts .btn { width: 100%; justify-content: flex-start; }
+.pipeline-shortcuts .btn[aria-pressed="true"] {
+  border-color: var(--orbit-color-signal);
+  color: var(--orbit-color-signal);
+  background: var(--orbit-color-signal-soft);
+}
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip {
   font-family: var(--orbit-type-micro-family);
@@ -352,6 +359,27 @@ textarea {
   margin: 0;
 }
 .panel p { margin: 0; max-width: var(--orbit-space-measure); }
+.workbench { max-width: 1040px; }
+.workbench-title { display: flex; align-items: start; justify-content: space-between; gap: var(--orbit-space-4); }
+.workbench-title h2 { margin: 0; font-family: var(--orbit-type-h3-family); font-size: var(--orbit-type-h3-size); text-transform: none; color: var(--orbit-color-ink); letter-spacing: 0; }
+.workbench-contact { overflow-wrap: anywhere; }
+.workbench-state { display: flex; flex-wrap: wrap; gap: 6px; }
+.workbench-state .tag { border: 1px solid var(--orbit-color-hairline-strong); border-radius: var(--orbit-radius-1); padding: 4px 8px; font-family: var(--orbit-type-micro-family); font-size: var(--orbit-type-micro-size); color: var(--orbit-color-ink-2); }
+.workbench-block { display: grid; gap: 6px; }
+.workbench-block h3 { margin: 0; font-family: var(--orbit-type-label-family); font-size: var(--orbit-type-label-size); }
+.workbench-block ul { margin: 0; padding-left: var(--orbit-space-5); display: grid; gap: 8px; }
+.workbench-block li { max-width: var(--orbit-space-measure); }
+.workbench-block li .why { display: block; margin-top: 2px; }
+.workbench-evidence { border-top: 1px solid var(--orbit-color-hairline); padding-top: var(--orbit-space-3); display: grid; gap: var(--orbit-space-3); }
+.workbench-evidence > summary { cursor: pointer; color: var(--orbit-color-ink-2); font-family: var(--orbit-type-button-family); font-weight: var(--orbit-font-weight-semibold); }
+.workbench-next { display: grid; gap: 6px; border-top: 1px solid var(--orbit-color-hairline); padding-top: var(--orbit-space-3); }
+.workbench-next h3 { margin: 0; font-family: var(--orbit-type-label-family); font-size: var(--orbit-type-label-size); }
+.workbench-draft { border: 1px solid var(--orbit-color-status-warn); border-radius: var(--orbit-radius-1); padding: var(--orbit-space-4); display: grid; gap: var(--orbit-space-3); }
+.workbench-draft .draft-lock { color: var(--orbit-color-status-warn); font-family: var(--orbit-type-data-family); font-weight: var(--orbit-font-weight-semibold); }
+.draft-meta { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px var(--orbit-space-3); margin: 0; }
+.draft-meta dt { color: var(--orbit-color-ink-3); }
+.draft-meta dd { margin: 0; overflow-wrap: anywhere; }
+.workbench-summary { color: var(--orbit-color-ink-2); font-family: var(--orbit-type-data-family); font-size: var(--orbit-type-data-size); }
 /* Tekst jääb loetavale mõõdule, laius läheb kõrvalveergu (sama reegel kui leisson.eu sisulehtedel). */
 .panel.split { grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 1080px) {

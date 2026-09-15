@@ -32,7 +32,7 @@
     "jarelkiri:kuiv": "node agent/jarelkiri.mjs --kuiv",
     "agent:policy": "node agent/probe-codex-policy.mjs",
     "agent:runtime-test": "node --test agent/runtime.test.mjs agent/auth-cache.test.mjs agent/scheduled-run.test.mjs agent/public-scope.test.mjs",
-    "test:offline": "node test/gate-agent.mjs && node test/gate-aruanne.mjs && node test/gate-sales.mjs && node test/gate-triage.mjs && node test/gate-saatja.mjs && node test/gate-hinnakiri.mjs && node test/gate-jarelkiri.mjs && node test/gate-kylmkiri.mjs && node test/gate-eelfilter.mjs && node --test agent/runtime.test.mjs agent/auth-cache.test.mjs agent/scheduled-run.test.mjs agent/public-scope.test.mjs && node test/gate-prouxaudit-import.mjs && node test/gate-revenue-safety.mjs && node test/web-inquiry.mjs && node test/gate-state-invariants.mjs && node test/gate-bulk-identity.mjs && node test/gate-owner-sales-pause.mjs && node test/gate-mail-source-scope.mjs"
+    "test:offline": "node test/gate-agent.mjs && node test/gate-aruanne.mjs && node test/gate-sales.mjs && node test/gate-triage.mjs && node test/gate-saatja.mjs && node test/gate-hinnakiri.mjs && node test/gate-jarelkiri.mjs && node test/gate-kylmkiri.mjs && node test/gate-eelfilter.mjs && node --test agent/runtime.test.mjs agent/auth-cache.test.mjs agent/scheduled-run.test.mjs agent/public-scope.test.mjs && node test/gate-prouxaudit-import.mjs && node test/gate-revenue-safety.mjs && node test/gate-revenue-workbench.mjs && node test/web-inquiry.mjs && node test/gate-state-invariants.mjs && node test/gate-bulk-identity.mjs && node test/gate-owner-sales-pause.mjs && node test/gate-mail-source-scope.mjs"
   },
   "dependencies": {
     "imapflow": "^1.0.171",
