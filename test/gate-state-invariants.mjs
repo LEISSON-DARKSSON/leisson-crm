@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {open} from '../lib/db.mjs';
 import {migrateAgent} from '../lib/agentdb.mjs';
 import {migrateSales,createOffer,createInvoice,recordPayment,deleteDoc,revenueSummary} from '../lib/salesdb.mjs';
-import {migrateOutbound,previewOutbound,dispatchOutbound,consumeDispatchAuthorization} from '../lib/outbound.mjs';
+import {migrateOutbound,previewOutbound,dispatchOutbound,consumeDispatchAuthorization,envelopeHash} from '../lib/outbound.mjs';
 import {migrateMailRecords,saveMailRecord} from '../lib/mail-records.mjs';
 import {reconcileSalesReplies,replyDecision,latestHumanReply} from '../lib/sales-safety.mjs';
 import {extraRoutes} from '../lib/routes2.mjs';
@@ -39,12 +39,29 @@ await check('unexpected SMTP sender produces unknown state and no retry',async d
   assert.equal(db.prepare('SELECT state FROM outbound_messages').get().state,'unknown');
   await assert.rejects(dispatchOutbound(db,p.approvalId,input,smtp,{now,accounts}),/juba kasutatud/);assert.equal(sent,1);
 });
-await check('reply to another source account still dispatches as gert with original threading',async db=>{
+await check('manual reply preview and historical approval reject another source account',async db=>{
   mail(db,1,'Soovime pakkumist.',{account:'info'});
   const reply={...input,kind:'reply',companyId:undefined,account:'info',accountId:'gert',uid:1};
-  const p=previewOutbound(db,reply,options);assert.equal(p.sourceAccount,'info');assert.equal(p.accountId,'gert');
-  await assert.rejects(dispatchOutbound(db,p.approvalId,{...reply,account:'gert'},async()=>{throw Error('must not send');},{now,accounts}),/Algse kirja konto/);
-  await dispatchOutbound(db,p.approvalId,reply,async e=>{consumeDispatchAuthorization(e.authorization);assert.equal(e.accountId,'gert');assert.equal(e.inReplyTo,'<1@example.ee>');return {accepted:[e.to],rejected:[],from:'gert@leisson.eu'};},{now,accounts});
+  assert.throws(()=>previewOutbound(db,reply,options),/ainult gert@leisson.eu/);
+  assert.throws(()=>previewOutbound(db,{...reply,uid:999},options),/Kirja ei leitud/);
+  assert.equal(db.prepare('SELECT COUNT(*) n FROM outbound_previews').get().n,0);
+  // A synthetic approval from the former policy must fail at dispatch too.
+  const envelope={kind:'reply',companyId:'a',accountId:'gert',sourceAccount:'info',uid:1,
+    to:input.to,subject:input.subject,body:input.body,sender:'gert@leisson.eu',text:input.body,html:'<p>'+input.body+'</p>'};
+  db.prepare('INSERT INTO outbound_previews(id,kind,company_id,account,uid,envelope,content_hash,source_hash,created,expires) VALUES(?,?,?,?,?,?,?,?,?,?)')
+    .run('legacy-info-reply','reply','a','gert',1,JSON.stringify(envelope),envelopeHash(envelope),'legacy-source',now.toISOString(),new Date(+now+60000).toISOString());
+  let calls=0;
+  await assert.rejects(dispatchOutbound(db,'legacy-info-reply',reply,async()=>{calls++;throw Error('must not send');},{now,accounts}),/ainult gert@leisson.eu/);
+  assert.equal(calls,0);assert.equal(db.prepare('SELECT COUNT(*) n FROM outbound_messages').get().n,0);
+});
+await check('authorized gert reply retains original message threading',async db=>{
+  mail(db,1,'Soovime pakkumist.');
+  const reply={...input,kind:'reply',companyId:undefined,account:'gert',accountId:'gert',uid:1};
+  const p=previewOutbound(db,reply,options);assert.equal(p.sourceAccount,'gert');
+  await dispatchOutbound(db,p.approvalId,reply,async e=>{
+    consumeDispatchAuthorization(e.authorization);assert.equal(e.accountId,'gert');assert.equal(e.inReplyTo,'<1@example.ee>');
+    return {accepted:[e.to],rejected:[],from:'gert@leisson.eu'};
+  },{now,accounts});
 });
 await check('reply derives company and cannot bypass newer refusal by omitting it',db=>{
   mail(db,1,'Soovime pakkumist.');

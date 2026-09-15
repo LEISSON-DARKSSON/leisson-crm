@@ -1,3 +1,4 @@
+import {assertMailSource,CRM_MAIL_SOURCE_ACCOUNT} from '../lib/mail-source-scope.mjs';
 // Deterministic planner. --dry opens SQLite read-only and creates no files.
 import {messageSelectionId,resolveMessageSelection} from '../lib/mail-identity.mjs';
 import { DatabaseSync } from 'node:sqlite';
@@ -12,7 +13,7 @@ import { migrateAgent,enqueue,messageVersion,runtimePause } from '../lib/agentdb
 const ROOT=join(dirname(fileURLToPath(import.meta.url)),'..');
 export function planConductor(db,{now=new Date(),maxDrafts=3,batch=10,maxAgeDays=21}={}) {
   batch=Math.min(10,Math.max(1,batch));maxDrafts=Math.min(5,Math.max(1,maxDrafts));
-  const rows=db.prepare("SELECT * FROM messages WHERE direction='in' AND archived=0 AND deleted IS NULL ORDER BY ts DESC").all();
+  const rows=db.prepare("SELECT * FROM messages WHERE account=? AND direction='in' AND archived=0 AND deleted IS NULL ORDER BY ts DESC").all(CRM_MAIL_SOURCE_ACCOUNT);
   const sentDomains=new Set(db.prepare("SELECT DISTINCT lower(c.email) e FROM activity a JOIN companies c ON c.id=a.company_id WHERE a.kind='sent' AND c.email IS NOT NULL").all().map(r=>r.e.split('@')[1]).filter(Boolean));
   const prefilter=[],unclassified=[],drafts=[],skipped=[];
   const draftRows=db.prepare('SELECT account,uid,status,created FROM drafts').all();
@@ -48,10 +49,10 @@ export function planConductor(db,{now=new Date(),maxDrafts=3,batch=10,maxAgeDays
 export function applyPlan(db,plan) {
   db.exec('BEGIN IMMEDIATE');
   try {
-    for(const m of plan.prefilter) {resolveMessageSelection(db,m.message_id);db.prepare(`UPDATE messages SET classified=1,category=?,urgency='madal',
+    for(const m of plan.prefilter) {assertMailSource(resolveMessageSelection(db,m.message_id));db.prepare(`UPDATE messages SET classified=1,category=?,urgency='madal',
       confidence=?,summary=?,reply_intent='automatic' WHERE mailbox=? AND uid=? AND account=? AND classified=0`)
       .run(m.category,m.kindlus,'eelfilter: '+m.miks,m.mailbox,m.uid,m.account);}
-    const ids=plan.jobs.map(j=>{for(const id of j.payload.message_ids||[j.payload.message_id])resolveMessageSelection(db,id);return enqueue(db,j.type,j.payload);});
+    const ids=plan.jobs.map(j=>{for(const id of j.payload.message_ids||[j.payload.message_id])assertMailSource(resolveMessageSelection(db,id));return enqueue(db,j.type,j.payload);});
     db.exec('COMMIT');return ids;
   } catch(e){db.exec('ROLLBACK');throw e;}
 }

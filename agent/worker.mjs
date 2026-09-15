@@ -1,3 +1,4 @@
+import {assertMailSource,CRM_MAIL_SOURCE_ACCOUNT} from '../lib/mail-source-scope.mjs';
 // One leased job per process turn. No SMTP/IMAP imports or Claude/API fallback.
 import {messageSelectionId,resolveMessageSelection} from '../lib/mail-identity.mjs';
 import { DatabaseSync } from 'node:sqlite';
@@ -57,8 +58,8 @@ async function main() {
    const type=String(arg('enqueue')),message=arg('message');
    if(['draft','edit'].includes(type)&&!message)throw new Error('message_id_required');
    if(type==='edit')throw new Error('Edit is scheduled only after a successful versioned draft.');
-   const selectedId=message?messageSelectionId(resolveMessageSelection(db,String(message))):null;
-   const payload=selectedId?(type==='triage'?{message_ids:[selectedId],request_id:new Date().toISOString()}:{message_id:selectedId}):{message_ids:db.prepare("SELECT * FROM messages WHERE direction='in' AND classified=0 AND archived=0 AND deleted IS NULL AND julianday('now')-julianday(ts) BETWEEN -0.0035 AND 21 ORDER BY ts DESC LIMIT ?").all(Math.min(10,Number(arg('limit',10))||10)).filter(m=>{try{resolveMessageSelection(db,messageSelectionId(m));return true;}catch{return false;}}).map(messageSelectionId),request_id:new Date().toISOString()};
+   const selectedId=message?messageSelectionId(assertMailSource(resolveMessageSelection(db,String(message)))):null;
+   const payload=selectedId?(type==='triage'?{message_ids:[selectedId],request_id:new Date().toISOString()}:{message_id:selectedId}):{message_ids:db.prepare("SELECT * FROM messages WHERE account=? AND direction='in' AND classified=0 AND archived=0 AND deleted IS NULL AND julianday('now')-julianday(ts) BETWEEN -0.0035 AND 21 ORDER BY ts DESC LIMIT ?").all(CRM_MAIL_SOURCE_ACCOUNT,Math.min(10,Number(arg('limit',10))||10)).filter(m=>{try{resolveMessageSelection(db,messageSelectionId(m));return true;}catch{return false;}}).map(messageSelectionId),request_id:new Date().toISOString()};
    if(type==='triage'&&!payload.message_ids.length){console.log('No unclassified messages.');return;}
    console.log('Queued #'+enqueue(db,type,payload));
    if(!arg('drain'))return;
