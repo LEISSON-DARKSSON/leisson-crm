@@ -49,6 +49,11 @@ ja pärast saatmist registreeritud laekumised. Ajalisest järgnevusest ei järel
 Soovitus puudutab ainult uut ettevalmistatavat versiooni; kinnitatud kampaaniat ega hinda
 ei muudeta automaatselt. Uus versioon läbib sama täieliku kinnituse.
 
+Kampaania kinnitus salvestatakse nimega `local-crm-operator`. Kohalik `127.0.0.1` ühendus,
+lubatud Origin ja CSRF-token kaitsevad teiste veebilehtede päringute eest, kuid **ei tõenda
+Gerti isikut**. Sama Windowsi kasutaja õigustega kohaliku protsessi vastu see ei ole
+autentimine. Enne saatja ajastamist tuleb omaniku kinnitusvoog eraldi üle vaadata.
+
 Luna medium liigitab, Sol medium koostab/toimetab. Mudelil pole SMTP võtmeid, shelli ega saatmistööriista.
 Kvoodi, autentimise või tööriistapoliitika viga peatab töö; Claude'i või tasulise API varuvarianti pole.
 Jooksu ajalugu näitab tegelikke tokeneid ja teenusepakkujat. Ajalooline Claude'i dollarikulu jääb ajalooks.

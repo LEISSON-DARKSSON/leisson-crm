@@ -34,12 +34,14 @@ const send=async e=>{
  assert.throws(()=>approveCampaign(db,id,'wrong'),/räsi/);
  assert.equal(campaignView(db,id).campaign.status,'prepared');
  approveCampaign(db,id,prepared.campaign.snapshot_hash,{now});
+ assert.equal(campaignView(db,id).campaign.approved_by,'local-crm-operator');
  assert.throws(()=>approveCampaign(db,id,prepared.campaign.snapshot_hash,{now}),/pole kinnitamiseks valmis/);
  const [first,second]=await Promise.all([runCampaignOnce(db,id,{...options,limits,send}),runCampaignOnce(db,id,{...options,limits,send})]);
  assert.equal(first.status,'accepted');assert.notEqual(second.status,'accepted');assert.equal(sendCalls.length,1);
  assert.equal(sendCalls[0].preparedText,prepared.items[0].snapshot.text);
  assert.equal(campaignView(db,id).items[0].status,'accepted');
  assert.equal(db.prepare('SELECT COUNT(*) n FROM outbound_messages').get().n,1);
+ assert.equal(db.prepare("SELECT approved_by FROM outbound_previews WHERE approved_by='local-crm-approved-campaign'").get().approved_by,'local-crm-approved-campaign');
  assert.equal((await runCampaignOnce(db,id,{...options,now:new Date(2026,8,16,10,8),limits,send})).status,'accepted');
  assert.equal(sendCalls.length,2);
  const evidence=campaignEvidence(db,id);
