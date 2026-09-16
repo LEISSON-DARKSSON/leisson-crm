@@ -37,9 +37,21 @@ peatab selle kirja; uus variant vajab uut eelvaadet ja kinnitust. Tuttavad jää
 müügipausiga välja. Loobumine ja inimvastus peatavad vana külmkirja.
 
 Deterministlik töötaja on vaikimisi **väljas**, ajastajat ei paigaldata:
-`CRM_CAMPAIGN_SEND_ENABLED=1 node agent/campaign-worker.mjs <kinnitatud-kampaania-id>`
+`node agent/campaign-worker.mjs <kinnitatud-kampaania-id>` keskkonnamuutujaga
+`CRM_CAMPAIGN_SEND_ENABLED=1`
 teeb ühe postkasti sünkroonimise ja kõige rohkem ühe saatmiskatse. Saatja peab olema
 `gert@leisson.eu`; tööaeg, päevane/tunnine piir ja minimaalne vahe kehtivad.
+Pärast omaniku täpse kampaania kinnituse kontrolli saab ühe sweep'i teha käsitsi
+PowerShellis CRM-i kaustast:
+```powershell
+$env:CRM_CAMPAIGN_SEND_ENABLED = '1'
+try { node agent/campaign-worker.mjs --sweep }
+finally { Remove-Item Env:CRM_CAMPAIGN_SEND_ENABLED -ErrorAction SilentlyContinue }
+```
+See leiab ainult `approved` kampaania `pending` kirja ja teeb kõige rohkem ühe katse.
+Käsu kordamine või ajastajasse lisamine on eraldi aktiveerimissamm; praegu ei ole
+Windowsi ajastajat ega aktiivset saatmisülesannet. Kinnituse puudumisel ei leita
+saadetist ja SMTP-d ei avata.
 SMTP ebaselguse või katkestuse korral ei korrata kirja automaatselt. Kui protsess katkeb
 pärast kirja võtmist, jääb see käsitsi kontrolli ootama ja peatab järgmise automaatse katse.
 Ära lülita ajastajat sisse enne, kui Gert on päris kampaania täpse loendi kinnitanud.

@@ -16,6 +16,7 @@
     "test": "node test/gate.mjs && npm run test:offline",
     "saatja": "node agent/saatja.mjs",
     "campaign:worker": "node agent/campaign-worker.mjs",
+    "campaign:sweep": "node agent/campaign-worker.mjs --sweep",
     "campaign:gate": "node test/gate-campaign.mjs",
     "saatja:seis": "node agent/saatja.mjs --seis",
     "saatja:kuiv": "node agent/saatja.mjs --dry",

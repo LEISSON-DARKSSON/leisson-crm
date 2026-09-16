@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {open} from '../lib/db.mjs';
 import {migrateSales} from '../lib/salesdb.mjs';
 import {migrateOutbound,consumeDispatchAuthorization} from '../lib/outbound.mjs';
-import {prepareCampaign,approveCampaign,campaignView,campaignEvidence,runCampaignOnce,migrateCampaigns} from '../lib/campaign.mjs';
+import {prepareCampaign,approveCampaign,campaignView,campaignEvidence,nextApprovedCampaign,runCampaignOnce,migrateCampaigns} from '../lib/campaign.mjs';
 
 const now=new Date(2026,8,16,10,0);
 const accounts=[{id:'gert',user:'gert@leisson.eu'}];
@@ -25,6 +25,7 @@ const send=async e=>{
  const db=makeDb();
  assert.throws(()=>prepareCampaign(db,['a','a'],options),/eri ettevõtet/);
  const prepared=prepareCampaign(db,['a','b'],options),id=prepared.campaign.id;
+ assert.equal(nextApprovedCampaign(db),null,'sweep cannot select an unapproved campaign');
  assert.equal(prepareCampaign(db,['a','b'],options).campaign.id,id,'same manifest does not duplicate a campaign');
  assert.equal(prepared.campaign.status,'prepared');
  assert.equal(prepared.items.length,2);
@@ -34,6 +35,7 @@ const send=async e=>{
  assert.throws(()=>approveCampaign(db,id,'wrong'),/räsi/);
  assert.equal(campaignView(db,id).campaign.status,'prepared');
  approveCampaign(db,id,prepared.campaign.snapshot_hash,{now});
+ assert.equal(nextApprovedCampaign(db),id);
  assert.equal(campaignView(db,id).campaign.approved_by,'local-crm-operator');
  assert.throws(()=>approveCampaign(db,id,prepared.campaign.snapshot_hash,{now}),/pole kinnitamiseks valmis/);
  const [first,second]=await Promise.all([runCampaignOnce(db,id,{...options,limits,send}),runCampaignOnce(db,id,{...options,limits,send})]);
@@ -44,6 +46,7 @@ const send=async e=>{
  assert.equal(db.prepare("SELECT approved_by FROM outbound_previews WHERE approved_by='local-crm-approved-campaign'").get().approved_by,'local-crm-approved-campaign');
  assert.equal((await runCampaignOnce(db,id,{...options,now:new Date(2026,8,16,10,8),limits,send})).status,'accepted');
  assert.equal(sendCalls.length,2);
+ assert.equal(nextApprovedCampaign(db),null,'completed campaign is not swept again');
  const evidence=campaignEvidence(db,id);
  assert.equal(evidence.accepted,2);assert.equal(evidence.humanReplies,0);
  assert.equal(evidence.postSendPayments,0);assert.equal(evidence.activeCampaignChanged,false);
