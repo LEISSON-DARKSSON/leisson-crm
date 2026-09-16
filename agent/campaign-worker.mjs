@@ -16,7 +16,9 @@ const db=open();
 try{
   migrateOutbound(db);migrateCampaigns(db);
   // IMAP must succeed before the sales decision. BODY.PEEK leaves mail unread.
-  await syncInbox(db,cfg.defaultAccount,{limit:150,bodies:true});
+  const sync=await syncInbox(db,cfg.defaultAccount,{limit:null,bodies:true});
+  if(!sync.complete || sync.bodyCount!==sync.seen)
+    throw new Error('Postkasti täielik kirjasisu ei ole kontrollitud; automaatne saatmine peatatud');
   reconcileSalesReplies(db,{apply:true});
   const result=await runCampaignOnce(db,id,{accountId:cfg.defaultAccount,accounts:cfg.accounts,
     composeText,composeHtml,send:sendMail});
