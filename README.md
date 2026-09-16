@@ -26,7 +26,28 @@ SMTP ebaselge tulemus jääb kontrollimiseks; automaatset kordussaatmist ei teht
 `node agent/probe-codex-policy.mjs` — kohaliku tööriistapoliitika kontroll.
 `node agent/scheduled-run.mjs` — eraldatud sünkroonimine, otsustaja ja üks järjekorratäitja.
 Tööpäeviti 08–18 Tallinnas, kontroll iga 30 minuti järel; muutuseta ei kutsuta mudelit.
-Automaatne saatja ja järelkirjade saatja peavad jääma välja lülitatuks. Loobumiste töötlemine säilib.
+Vana üldine automaatne saatja ja järelkirjade saatja peavad jääma välja lülitatuks. Loobumiste töötlemine säilib.
+
+### Kinnitatud kampaania
+
+Ava CRM-is **Kampaaniad**. Vali ainult asjakohased ärikontaktid, vaata üle iga saaja, teema,
+täielik tekst, HTML-versioon ja allkiri ning kinnita kogu muutumatu loend ühe korraga.
+Ettevalmistus ega kinnitamine ei saada kirju. Saaja, kirja, allkirja või kliendi seisu muutus
+peatab selle kirja; uus variant vajab uut eelvaadet ja kinnitust. Tuttavad jäävad omaniku
+müügipausiga välja. Loobumine ja inimvastus peatavad vana külmkirja.
+
+Deterministlik töötaja on vaikimisi **väljas**, ajastajat ei paigaldata:
+`CRM_CAMPAIGN_SEND_ENABLED=1 node agent/campaign-worker.mjs <kinnitatud-kampaania-id>`
+teeb ühe postkasti sünkroonimise ja kõige rohkem ühe saatmiskatse. Saatja peab olema
+`gert@leisson.eu`; tööaeg, päevane/tunnine piir ja minimaalne vahe kehtivad.
+SMTP ebaselguse või katkestuse korral ei korrata kirja automaatselt. Kui protsess katkeb
+pärast kirja võtmist, jääb see käsitsi kontrolli ootama ja peatab järgmise automaatse katse.
+Ära lülita ajastajat sisse enne, kui Gert on päris kampaania täpse loendi kinnitanud.
+
+Kampaania tulemuste vaade koondab saadetised, viimased inimvastused, kirjeldatud vajadused
+ja pärast saatmist registreeritud laekumised. Ajalisest järgnevusest ei järeldu müügi põhjus.
+Soovitus puudutab ainult uut ettevalmistatavat versiooni; kinnitatud kampaaniat ega hinda
+ei muudeta automaatselt. Uus versioon läbib sama täieliku kinnituse.
 
 Luna medium liigitab, Sol medium koostab/toimetab. Mudelil pole SMTP võtmeid, shelli ega saatmistööriista.
 Kvoodi, autentimise või tööriistapoliitika viga peatab töö; Claude'i või tasulise API varuvarianti pole.
