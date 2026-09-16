@@ -333,6 +333,16 @@ try {
       await page.waitForTimeout(250);
       if (m.body > 200) ok(`${label}: kirja sisu laetud (${m.body} tm)`);
       else bad(`${label}: kirja tekstiväli tühi`);
+      await page.goto(`http://127.0.0.1:${PORT}/campaigns.html`,{waitUntil:'load'});
+      await page.waitForSelector('#candidates label',{timeout:8000});
+      const campaignUi=await page.evaluate(()=>({
+        scrollWidth:document.documentElement.scrollWidth,clientWidth:document.documentElement.clientWidth,
+        candidates:document.querySelectorAll('#candidates label').length,
+        approvalDisabled:document.getElementById('approve').disabled,
+      }));
+      if(campaignUi.scrollWidth<=campaignUi.clientWidth && campaignUi.candidates>0 && campaignUi.approvalDisabled)
+        ok(`${label}: kampaania valik nähtav ja kinnitamine enne eelvaadet keelatud`);
+      else bad(`${label}: kampaania leht on vigane või lubab kinnitamata saatmise`);
       if (!errors.length) ok(`${label}: konsoolivigu ei ole`);
       else bad(`${label}: konsoolivead — ${errors.slice(0, 3).join(' | ')}`);
       await ctx.close();
