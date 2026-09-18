@@ -1,10 +1,12 @@
 import {randomUUID} from 'node:crypto';
 import {migrateOutbound,previewOutbound,dispatchOutbound} from './lib/outbound.mjs';
+import {migrateCampaigns,prepareCampaign,campaignView,approveCampaign,stopCampaign,campaignEvidence} from './lib/campaign.mjs';
 import {reconcileSalesReplies} from './lib/sales-safety.mjs';
 import {revenueSummary} from './lib/salesdb.mjs';
 import {activeServices,CATALOG_VERSION} from '../packages/service-catalog/index.mjs';
 import {listProUXAuditLeads} from './lib/prouxaudit-import.mjs';
 import {listWebInquiries} from './lib/web-inquiry.mjs';
+import {loadRevenueWorkbench} from './lib/revenue-workbench.mjs';
 // Leisson CRM — kohalik HTTP-server (ainult 127.0.0.1). Nullsõltuvusega router + taustapoller.
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
@@ -25,6 +27,7 @@ migrateAgent(db);          // agent_jobs, agent_runs, drafts + messages klassifi
 initSales(db);             // offers, invoices, invoice_lines, counters, message_groups, suppressions, stages
 const seeded = process.env.CRM_NO_SEED === '1' ? {inserted:0} : seed(db);
 migrateOutbound(db);
+migrateCampaigns(db);
 const csrfToken=randomUUID();
 
 const MIME = {
@@ -89,6 +92,7 @@ function state() {
     services:activeServices(),catalogVersion:CATALOG_VERSION,
     proUXLeads:listProUXAuditLeads(db),
     webInquiries:listWebInquiries(db),
+    revenueWorkbench:loadRevenueWorkbench(),
     salesAccounts:cfg.accounts.filter(a=>String(a.user).toLowerCase()==='gert@leisson.eu').map(a=>({id:a.id,user:a.user,name:a.name})),
     outbound:db.prepare('SELECT id,company_id,recipient,subject,state,created,accepted_at,error FROM outbound_messages ORDER BY created DESC LIMIT 50').all(),
     accounts: cfg.accounts.map((a) => ({ id: a.id, user: a.user, name: a.name })),
@@ -121,6 +125,33 @@ const routes = {
     try {const input=await readBody(req);if(input.kind!=='reply') input.body=lisaLoobumisrida(input.body);
       const result=previewOutbound(db,input,{accountId:cfg.defaultAccount,accounts:cfg.accounts,composeText:mail.composeText,composeHtml:mail.composeHtml});json(res,200,result);
     }catch(e){json(res,400,{error:e.message});}
+  },
+  'GET /api/campaigns': async(req,res)=>{
+    const rows=db.prepare('SELECT id,status,snapshot_hash,created,approved_at,stopped_at FROM sales_campaigns ORDER BY created DESC LIMIT 30').all();
+    json(res,200,{campaigns:rows});
+  },
+  'POST /api/campaign/prepare': async(req,res)=>{
+    try{
+      const {companyIds}=await readBody(req);
+      json(res,200,prepareCampaign(db,companyIds,{accountId:cfg.defaultAccount,accounts:cfg.accounts,
+        composeText:mail.composeText,composeHtml:mail.composeHtml}));
+    }catch(e){json(res,400,{error:e.message});}
+  },
+  'POST /api/campaign/view': async(req,res)=>{
+    try{const {id}=await readBody(req);json(res,200,campaignView(db,id));}
+    catch(e){json(res,400,{error:e.message});}
+  },
+  'POST /api/campaign/evidence': async(req,res)=>{
+    try{const {id}=await readBody(req);json(res,200,campaignEvidence(db,id));}
+    catch(e){json(res,400,{error:e.message});}
+  },
+  'POST /api/campaign/approve': async(req,res)=>{
+    try{const {id,hash}=await readBody(req);json(res,200,approveCampaign(db,id,hash));}
+    catch(e){json(res,400,{error:e.message});}
+  },
+  'POST /api/campaign/stop': async(req,res)=>{
+    try{const {id}=await readBody(req);json(res,200,stopCampaign(db,id));}
+    catch(e){json(res,400,{error:e.message});}
   },
   // Local canonical mail only: opening inquiry evidence does not fetch, mark read or send mail.
   'POST /api/inquiry/message': async(req,res)=>{

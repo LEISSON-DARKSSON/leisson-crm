@@ -42,7 +42,8 @@ try {
       source({ id: 'trailing-dot', email: 'owner@example.test.' }),
       source({ id: 'followup', intent: 'result_followup' })]), options);
     const all = listProUXAuditLeads(db, { now: new Date(now) });
-    for (const id of ['missing','invalid','trailing-dot','followup']) assert.equal(all.find((l) => l.source_id === id).readiness.can_prepare, false);
+    for (const id of ['missing','invalid','trailing-dot']) assert.equal(all.find((l) => l.source_id === id), undefined);
+    assert.equal(all.find((l) => l.source_id === 'followup').readiness.can_prepare, false);
     assert.equal(all.find((l) => l.source_id === 'followup').readiness.followup_owner, 'prouxaudit');
   });
   check('upstream handled and stale source snapshots block action', () => {

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="et"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kampaaniad · Leisson CRM</title><link rel="stylesheet" href="/app.css">
+<style>
+body{max-width:1050px;margin:auto;padding:24px;color:#eee;background:#080808;font:16px/1.5 system-ui}
+a{color:#9bc6ff}button{padding:10px 14px;margin:6px 6px 6px 0;cursor:pointer}
+section,article{border:1px solid #555;border-radius:8px;padding:16px;margin:16px 0}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;padding:16px;background:#181818;border:1px solid #555}
+.row{display:flex;gap:12px;align-items:center}.muted{color:#aaa}.error{color:#ffba77}
+</style></head><body>
+<a href="/">← CRM</a><h1>Kinnitatud müügikampaaniad</h1>
+<p>Saadab ainult gert@leisson.eu kontolt. Kinnitad korraga iga saaja, teema ja kogu kirja koos allkirjaga.
+Kinnitamine ei saada kirju. Kampaania töötaja ja ajastaja on eraldi välja lülitatud.</p>
+<section><h2>Vali ettevõtted</h2><p class="muted">Maksimaalselt 20 kirja kampaanias. Isiklikud tuttavad jäta välja; server kontrollib müügipausi ja kontakti alust.</p>
+<div id="candidates"></div><button id="prepare" type="button">Koosta täpne eelvaade</button></section>
+<section id="review" hidden><h2>Kontrolli kogu saadetist</h2><p id="summary"></p><div id="letters"></div>
+<label class="row"><input type="checkbox" id="checked"> Kinnitan kõik kuvatud saajad, teemad ja allkirjaga kirjad täpselt sellisel kujul.</label>
+<button id="approve" type="button" disabled>Kinnita muutumatu kampaania</button><button id="stop" type="button">Peata</button></section>
+<section id="evidence" hidden><h2>Tulemuste ülevaade</h2><p>Soovitused on sisend järgmise eraldi kinnitatava versiooni koostamiseks.</p><div id="evidenceBody"></div></section>
+<section><h2>Varasemad kampaaniad</h2><div id="history"></div></section>
+<p id="message" role="status" aria-live="polite"></p>
+<script type="module">
+const $=id=>document.getElementById(id);let csrf='',active=null;
+async function post(path,data){const r=await fetch(path,{method:'POST',headers:{'content-type':'application/json','x-crm-csrf':csrf},body:JSON.stringify(data)});
+ const d=await r.json();if(!r.ok)throw Error(d.error||'Päring ebaõnnestus');return d}
+function notice(s,error=false){$('message').textContent=s;$('message').className=error?'error':''}
+function make(tag,text){const e=document.createElement(tag);e.textContent=text;return e}
+function show(view){active=view;$('review').hidden=false;$('letters').replaceChildren();
+ $('summary').textContent='Kampaania '+view.campaign.id+' · '+view.items.length+' kirja · '+view.campaign.status+' · räsi '+view.campaign.snapshot_hash;
+ for(const item of view.items){const a=document.createElement('article'),s=item.snapshot;
+  a.append(make('h3',(item.position+1)+'. '+s.to),make('p','Saatja: '+s.sender+' · Teema: '+s.subject),
+    make('p','Täielik tekst koos allkirjaga:'),make('pre',s.text));
+  const details=document.createElement('details');details.append(make('summary','HTML-versiooni lähtekood'),make('pre',s.html));a.append(details);
+  if(item.status!=='pending')a.append(make('p','Seis: '+item.status+(item.error?' · '+item.error:'')));
+  $('letters').append(a)}
+ $('checked').checked=false;$('approve').disabled=true;
+ $('approve').hidden=view.campaign.status!=='prepared';$('stop').hidden=!['prepared','approved'].includes(view.campaign.status);
+ $('evidence').hidden=false;post('/api/campaign/evidence',{id:view.campaign.id}).then(e=>{
+  $('evidenceBody').replaceChildren(make('p','Vastu võetud kirju '+e.accepted+' · inimvastuseid '+e.humanReplies+
+    ' · vajaduse põhjendusega kontakte '+e.contactsWithRecordedNeed+' · pärast saatmist registreeritud makseid '+e.postSendPayments+' €'),
+    make('p','Vastuste liigid: '+JSON.stringify(e.replyIntents)),make('p',e.causality));
+  const list=document.createElement('ul');for(const recommendation of e.recommendations)list.append(make('li',recommendation));
+  $('evidenceBody').append(list);
+ }).catch(e=>notice(e.message,true));
+ $('review').scrollIntoView({behavior:'smooth'});
+}
+async function refresh(){const s=await (await fetch('/api/state')).json();csrf=s.csrfToken;
+ const c=$('candidates');c.replaceChildren();
+ for(const company of s.companies.filter(x=>x.status==='ootel'&&x.email&&x.subject&&x.body)){
+  const label=document.createElement('label');label.className='row';
+  const check=document.createElement('input');check.type='checkbox';check.value=company.id;
+  label.append(check,make('span',company.name+' · '+company.email+' · '+(company.need_evidence?'kontakti alus olemas':'kontakti alus puudu')));
+  c.append(label)}
+ const h=$('history');h.replaceChildren();const list=await (await fetch('/api/campaigns')).json();
+ for(const item of list.campaigns){const b=document.createElement('button');b.type='button';b.textContent=item.created+' · '+item.status+' · '+item.id;
+  b.onclick=async()=>{try{show(await post('/api/campaign/view',{id:item.id}))}catch(e){notice(e.message,true)}};h.append(b)}
+}
+$('prepare').onclick=async()=>{try{const ids=[...$('candidates').querySelectorAll('input:checked')].map(x=>x.value);
+ show(await post('/api/campaign/prepare',{companyIds:ids}));notice('Eelvaade valmis. Ühtegi kirja ei saadetud.')}catch(e){notice(e.message,true)}};
+$('checked').onchange=()=>{$('approve').disabled=!$('checked').checked};
+$('approve').onclick=async()=>{if(!active||!$('checked').checked)return;
+ try{show(await post('/api/campaign/approve',{id:active.campaign.id,hash:active.campaign.snapshot_hash}));
+ notice('Kampaania kinnitatud; saatjat ega ajastajat ei käivitatud.');await refresh()}
+ catch(e){notice(e.message,true)}};
+$('stop').onclick=async()=>{if(!active)return;try{await post('/api/campaign/stop',{id:active.campaign.id});
+ show(await post('/api/campaign/view',{id:active.campaign.id}));notice('Kampaania peatatud.');await refresh()}
+ catch(e){notice(e.message,true)}};
+refresh().catch(e=>notice(e.message,true));
+</script></body></html>

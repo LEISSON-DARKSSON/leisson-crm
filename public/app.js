@@ -22,6 +22,8 @@
   let sel = null;
   let selMail = null;
   let view = 'pipeline';
+  let pipelinePanel = 'workbench';
+  let selWorkbench = null;
   const bodies = new Map();
   const filter = { prio: new Set(), status: new Set(), list: new Set(), q: '' };
   const mailFilter = { account: null, unread: false, linked: false, q: '', cat: null };
@@ -89,8 +91,9 @@
   async function load() {
     S = await api('/api/state');
     if (!mailFilter.account) mailFilter.account = 'all';
+    if (!selWorkbench) selWorkbench=(S.revenueWorkbench?.prospects || [])[0]?.companyId || null;
     renderStats();
-    renderInquiryShortcut();
+    renderPipelineShortcuts();
     renderChips();
     renderList();
     renderDetail();
@@ -99,14 +102,88 @@
     renderMailDetail();
   }
 
-  function renderInquiryShortcut() {
-    let button = $('#inquiryShortcut');
-    if (!button) {
-      button = el('button', { id:'inquiryShortcut', class:'btn ghost sm', type:'button',
-        onclick:()=>{sel=null;picked.clear();setView('pipeline');renderDetail();} });
-      $('#q').before(button);
+  function renderPipelineShortcuts() {
+    const workbench=S.revenueWorkbench || {summary:{businesses:0,reviewOnlyDrafts:0}};
+    const choose=(mode)=>{pipelinePanel=mode;sel=null;filter.q='';$('#q').value='';picked.clear();setView('pipeline');renderPipelineShortcuts();renderChips();renderList();renderDetail();};
+    $('#pipelineShortcuts').replaceChildren(
+      el('button',{id:'workbenchShortcut',class:'btn ghost sm',type:'button','aria-pressed':pipelinePanel==='workbench'?'true':'false',
+        text:'Müügitöölaud · '+(workbench.summary?.businesses || 0)+' · mustandid '+(workbench.summary?.reviewOnlyDrafts || 0),onclick:()=>choose('workbench')}),
+      el('button',{id:'inquiryShortcut',class:'btn ghost sm',type:'button','aria-pressed':pipelinePanel==='inquiries'?'true':'false',
+        text:'Veebi ja auditi päringud · '+((S.webInquiries || []).length + (S.proUXLeads || []).length),onclick:()=>choose('inquiries')}),
+      el('button',{id:'companyShortcut',class:'btn ghost sm',type:'button','aria-pressed':pipelinePanel==='companies'?'true':'false',
+        text:'Kõik ettevõtted · '+S.companies.length,onclick:()=>choose('companies')}),
+    );
+  }
+
+  function renderRevenueWorkbench(host) {
+    const board=S.revenueWorkbench || {available:false,prospects:[],summary:{}};
+    if (!board.available) {
+      host.replaceChildren(el('div',{class:'sheet'},[
+        el('h1',{text:'Müügitöölaud'}),
+        el('section',{class:'panel'},[
+          el('h2',{text:'Kohalik tõend puudub'}),
+          el('p',{text:board.reason || 'Müügitöölaua andmeid ei ole veel loodud.'}),
+          el('p',{class:'why',text:'Müügikirju ei ole selle vaate kaudu saadetud ega ajastatud.'}),
+        ]),
+      ]));
+      return;
     }
-    button.textContent = 'Veebi ja auditi päringud · ' + ((S.webInquiries || []).length + (S.proUXLeads || []).length);
+    const row=(board.prospects || []).find((item)=>item.companyId===selWorkbench) || (board.prospects || [])[0];
+    if (!row) {
+      host.replaceChildren(el('div',{class:'sheet'},[el('h1',{text:'Müügitöölaud'}),el('p',{class:'why',text:'Töölaual ei ole veel kontakte.'})]));
+      return;
+    }
+    selWorkbench=row.companyId;
+    const observationRows=(row.observations || []).map((item)=>el('li',{},[
+        el('strong',{text:(item.id ? item.id+' · ' : '')+item.statement}),
+        item.notProven ? el('span',{class:'why',text:' Piir: '+item.notProven}) : null,
+      ].filter(Boolean)));
+    const questionRows=(row.questions || []).map((item)=>el('li',{},[
+        el('strong',{text:item.question}),
+        item.nextVerification ? el('span',{class:'why',text:' Järgmine kontroll: '+item.nextVerification}) : null,
+      ].filter(Boolean)));
+    const draft=row.draft ? el('section',{class:'workbench-draft','data-workbench-draft':'true'},[
+        el('p',{class:'draft-lock',text:'KINNITAMATA · EI OLE SAATMISEKS VALMIS'}),
+        el('dl',{class:'draft-meta'},[
+          el('dt',{text:'Saatja'}),el('dd',{text:row.draft.from}),
+          el('dt',{text:'Saaja'}),el('dd',{text:row.draft.to}),
+          el('dt',{text:'Teema'}),el('dd',{text:row.draft.subject}),
+        ]),
+        el('pre',{class:'mailbody',text:row.draft.body}),
+        el('p',{class:'why',text:'Saatmine vajab Gerdi eraldi kinnitust täpsele saajale, teemale ja tekstile.'}),
+      ]) : el('p',{class:'why',text:'Mustand puudub: '+(row.draftOmissionReason || 'vajadus ja tõend vajavad veel kontrolli.')});
+    const evidence=el('details',{class:'workbench-evidence'},[
+      el('summary',{text:'Kontrollitud taust ja piirid'}),
+      observationRows.length ? el('section',{class:'workbench-block'},[el('h3',{text:'Tähelepanekud'}),el('ul',{},observationRows)]) : null,
+      questionRows.length ? el('section',{class:'workbench-block'},[el('h3',{text:'Järgmine kontrollküsimus'}),el('ul',{},questionRows)]) : null,
+    ].filter(Boolean));
+    const card=el('article',{class:'panel workbench-card','data-workbench-prospect':row.companyId},[
+        el('div',{class:'workbench-title'},[
+          el('div',{},[el('h2',{text:row.company}),el('p',{class:'why',text:row.crmStatus || 'uurimisel'})]),
+          row.officialUrl ? el('a',{class:'btn ghost sm',href:row.officialUrl,target:'_blank',rel:'noopener noreferrer',text:'Ava veeb'}) : null,
+        ]),
+        el('div',{class:'workbench-state'},[
+          el('span',{class:'tag',text:'Vajadus kinnitatud: '+(row.currentNeedConfirmed?'jah':'ei')}),
+          el('span',{class:'tag',text:'Ostuhuvi: '+(row.receivedInterest?'jah':'ei')}),
+          el('span',{class:'tag',text:'Saatmine: blokeeritud'}),
+        ]),
+        el('p',{class:'workbench-contact',text:'Kontakt: '+(row.email || 'puudub')+' · '+String(row.contactVerification || 'kontrollimata').replace('Fresh HTTP 200; mailto anchor','värske HTTP 200; avalik e-posti link')}),
+        el('p',{class:'why',text:'Kontakti alus: '+String(row.outreachPermission || 'kontrollimata').replace(/^unverified\b/i,'kontrollimata').replace('booking-role contact may need to refer website decisions','broneeringute kontakt võib vajada veebimuudatuse otsustajale suunamist')}),
+        draft,
+        el('section',{class:'workbench-next'},[el('h3',{text:'Järgmine samm'}),el('p',{text:row.nextAction || 'Vajadus vajab kontrolli.'})]),
+        evidence,
+      ].filter(Boolean));
+    host.replaceChildren(el('div',{class:'sheet workbench'},[
+      el('div',{class:'head'},[
+        el('h1',{text:'Müügitöölaud'}),
+        el('div',{class:'head-meta'},[
+          el('span',{text:'Postkast '+board.mailbox}),
+          el('span',{text:'Uuendatud '+dt(board.generatedAt)}),
+        ]),
+      ]),
+      el('p',{class:'workbench-summary',text:(board.summary?.businesses || 0)+' kontakti · '+(board.summary?.reviewOnlyDrafts || 0)+' kinnitamata mustandit · '+(board.summary?.confirmedBuyers || 0)+' kinnitatud ostjat · 0 saadetud või ajastatud'}),
+      card,
+    ]));
   }
 
   async function showInquiryMail(sourceId) {
@@ -199,6 +276,11 @@
 
   /* ---------- müügitoru filtrid ---------- */
   function renderChips() {
+    const companyMode=pipelinePanel==='companies';
+    $('#q').placeholder=companyMode ? 'Otsi nime, segmenti, asukohta…' : pipelinePanel==='workbench' ? 'Otsi töölaua kontakti…' : 'Päringud on paremal';
+    $('#listChips').hidden=!companyMode;
+    $('#prioChips').hidden=!companyMode;
+    $('#statusChips').hidden=!companyMode;
     const lists = [['parnu', 'Pärnu I'], ['parnu2', 'Pärnu II'], ['plaan', 'Müügiplaan']];
     $('#listChips').replaceChildren(...lists.map(([k, label]) => {
       const n = S.companies.filter((c) => c.listid === k).length;
@@ -246,11 +328,24 @@
   const unreadFor = (id) => S.messages.filter((m) => m.company_id === id && m.unread).length;
 
   function renderList() {
+    if (pipelinePanel==='workbench') {
+      const q=filter.q;
+      const rows=(S.revenueWorkbench?.prospects || []).filter((row)=>!q || [row.company,row.email,row.priority].join(' ').toLowerCase().includes(q));
+      $('#list').replaceChildren(...rows.map((row,index)=>el('li',{},el('button',{
+        class:'row workbench-row',type:'button','aria-current':selWorkbench===row.companyId?'true':'false','data-workbench-list':row.companyId,
+        onclick:()=>{selWorkbench=row.companyId;sel=null;renderList();renderDetail();},
+      },[
+        el('div',{class:'row-top'},[el('span',{class:'row-name',text:(index+1)+'. '+row.company}),el('span',{class:'row-price',text:row.draft?'Mustand':'Kontroll'})]),
+        el('div',{class:'row-meta'},[el('span',{text:row.email || 'kontakt puudub'}),el('span',{text:row.currentNeedConfirmed?'vajadus kinnitatud':'vajadus kinnitamata'})]),
+      ]))));
+      return;
+    }
+    if (pipelinePanel==='inquiries') { $('#list').replaceChildren(); return; }
     $('#list').replaceChildren(...visible().map((c) => {
       const u = unreadFor(c.id);
       return el('li', {}, el('button', {
         class: 'row', type: 'button', 'aria-current': sel === c.id ? 'true' : 'false',
-        onclick: () => { sel = c.id; renderList(); renderDetail(); },
+        onclick: () => { sel = c.id; renderPipelineShortcuts(); renderList(); renderDetail(); },
       }, [
         el('div', { class: 'row-top' }, [
           el('span', { class: 'row-name', text: c.name }),
@@ -303,7 +398,9 @@
     const host = $('#detail');
     const side = $('#detailSide');
     if (!sel) {
-      renderInquiryPanel(host);
+      if (pipelinePanel === 'inquiries') renderInquiryPanel(host);
+      else if (pipelinePanel === 'workbench') renderRevenueWorkbench(host);
+      else host.replaceChildren(el('div',{class:'empty'},el('p',{class:'orbit-type-label',text:'Vali vasakult ettevõte'})));
       side.replaceChildren();
       return;
     }
