@@ -14,7 +14,15 @@ import { loadAllSeedCompanies, matchExisting, buildTokenFrequency } from '../lib
 // niigi korduvad (hotell, villa, Parnu ise jne), on valistatud, et signaal
 // ei upuks murasse.
 const all = loadAllSeedCompanies();
-assert.ok(all.length > 0, 'seed-failid peavad sisaldama ettevotteid');
+
+// seed/*.json on .gitignore'is (privaatne muugiandmestik), seega CI-s ja
+// varskes kloonis neid EI OLE. Korpusekontroll on siis sisutu ja jaetakse
+// vahele -- sunteetiline regressioonitest faili lopus jookseb ALATI, sest
+// just tema kaitseb loogikat, mida on kaks korda parandatud (17.09, 20.09).
+// Enne 20.09.2026 peatas siin olnud assert kogu CI crm-offline too.
+if (all.length === 0) {
+  console.log('INFO seed-dedupe: seed/*.json puuduvad (CI voi varske kloon) -- korpusekontroll jai vahele.');
+} else {
 
 const freq = buildTokenFrequency(all);
 const exactDupes = [];
@@ -39,6 +47,7 @@ assert.equal(exactDupes.length, 0,
   exactDupes.map(d => `${d.id} vs ${d.match.id} (${d.reason})`).join('; '));
 
 console.log(`PASS seed-dedupe: ${all.length} kirjet ${new Set(all.map(c => c._file)).size} failis, 0 tapset dubli.`);
+}
 
 // REGRESSIOONITEST 20.09.2026: matchExisting EI TOHI lasta norgemal ('possible')
 // vastel varasemas kirjes peita tugevamat ('exact') vastet hilisemas kirjes.
