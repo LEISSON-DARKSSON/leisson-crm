@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtempSync, readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
-import { migrateHanked, upsertHange, listHanked, HANKE_STATES } from '../lib/hanked.mjs';
+import { migrateHanked, upsertHange, listHanked, setState, setNote, markExpired, HANKE_STATES } from '../lib/hanked.mjs';
 
 function testDb() {
   const dir = mkdtempSync(join(tmpdir(), 'hanked-'));
@@ -215,4 +215,182 @@ function testDb() {
     'kordusmigratsioon jatab baasi terveks');
   db.close();
   console.log('PASS hanked: migratsioon on kordusjooksukindel');
+}
+
+// ---------------------------------------------------------------------------
+// ULESANNE 2: seis, markus ja aegumine.
+// ---------------------------------------------------------------------------
+
+// S1: sunk ei tohi inimese valju (state, note) ule kirjutada - see on kogu vaate invariant.
+{
+  const db = testDb();
+  upsertHange(db, { ref: 's1', title: 'Vana pealkiri', deadline: '2026-10-01', buyer: 'Vana ostja' });
+  setState(db, 's1', 'valmistun');
+  setNote(db, 's1', 'Küsi majutuse kohta');
+  const seis = upsertHange(db, { ref: 's1', title: 'Uus pealkiri', deadline: '2026-11-15' });
+  assert.equal(seis, 'uuendatud', 'olemasolev hange annab uuendatud');
+  const rida = db.prepare('SELECT * FROM hanked WHERE ref = ?').get('s1');
+  assert.equal(rida.state, 'valmistun', 'sunk ei tohi inimese seisu ule kirjutada');
+  assert.equal(rida.note, 'Küsi majutuse kohta', 'sunk ei tohi inimese markust ule kirjutada');
+  assert.equal(rida.title, 'Uus pealkiri', 'avastusvali pealkiri uueneb sunkimisel');
+  assert.equal(rida.deadline, '2026-11-15', 'avastusvali tahtaeg uueneb sunkimisel');
+  db.close();
+  console.log('PASS hanked: sunk ei puutu inimese valju');
+}
+
+// S2: aegumine puudutab ainult seisu 'uus' - masin ei tohi inimese otsust ule kirjutada.
+{
+  const db = testDb();
+  upsertHange(db, { ref: 'aeg-uus', title: 'Moodunud tahtaeg', deadline: '2026-09-01' });
+  upsertHange(db, { ref: 'aeg-esit', title: 'Moodunud, aga esitatud', deadline: '2026-09-01' });
+  setState(db, 'aeg-esit', 'esitatud');
+  assert.equal(markExpired(db, '2026-09-20'), 1, 'aeguda tohib tapselt uks hange');
+  assert.equal(db.prepare('SELECT state FROM hanked WHERE ref = ?').get('aeg-uus').state, 'aegunud',
+    'seisus uus olev moodunud hange aegub');
+  assert.equal(db.prepare('SELECT state FROM hanked WHERE ref = ?').get('aeg-esit').state, 'esitatud',
+    'esitatud hange ei tohi aeguda');
+  assert.equal(markExpired(db, '2026-09-20'), 0, 'teine jooks ei leia enam midagi');
+  db.close();
+  console.log('PASS hanked: aegumine puudutab ainult seisu uus');
+}
+
+// S3: tulevikutahtaeg, tuhi tahtaeg ja puuduv tahtaeg ei tohi aeguda.
+// Tuhi string peab kaituma nagu listHanked-is (NULLIF), muidu aegub tahtajata hange kohe.
+{
+  const db = testDb();
+  upsertHange(db, { ref: 'tulev', title: 'Tahtaeg tulevikus', deadline: '2026-12-01' });
+  db.exec("INSERT INTO hanked (ref,title,deadline) VALUES ('tyhi','Tuhja tahtajaga','')");
+  db.exec("INSERT INTO hanked (ref,title,deadline) VALUES ('puudub','Ilma tahtajata',NULL)");
+  assert.equal(markExpired(db, '2026-09-20'), 0, 'midagi ei tohi aeguda');
+  for (const ref of ['tulev', 'tyhi', 'puudub']) {
+    assert.equal(db.prepare('SELECT state FROM hanked WHERE ref = ?').get(ref).state, 'uus',
+      ref + ' peab jaama seisu uus');
+  }
+  db.close();
+  console.log('PASS hanked: tuhi ja tulevikutahtaeg ei aegu');
+}
+
+// S4: tundmatu seis ja olematu hange annavad eestikeelse vea, mitte vaikse ebaonnestumise.
+{
+  const db = testDb();
+  upsertHange(db, { ref: 's4', title: 'Vigade test' });
+  assert.throws(() => setState(db, 's4', 'banaan'), /Tundmatu seis: banaan/,
+    'nimekirjavaline seis peab andma eestikeelse vea');
+  assert.equal(db.prepare('SELECT state FROM hanked WHERE ref = ?').get('s4').state, 'uus',
+    'ebaonnestunud setState ei tohi rida muuta');
+  assert.throws(() => setState(db, 'puudub-01', 'vaatan'), /Hanget ei leitud: puudub-01/,
+    'olematu hange peab setState-is viskama');
+  assert.throws(() => setNote(db, 'puudub-01', 'Markus'), /Hanget ei leitud: puudub-01/,
+    'olematu hange peab setNote-is viskama');
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM hanked').get().c, 1,
+    'ebaonnestunud kutse ei tohi uut rida luua');
+  db.close();
+  console.log('PASS hanked: tundmatu seis ja olematu hange annavad vea');
+}
+
+// S5: tuhjendamine annab NULL-i, mitte tuhja stringi - muidu ei saa "on markus" enam kusida.
+{
+  const db = testDb();
+  upsertHange(db, { ref: 's5', title: 'Markuse test' });
+  setNote(db, 's5', '  Helista neljapaeval  ');
+  assert.equal(db.prepare('SELECT note FROM hanked WHERE ref = ?').get('s5').note, 'Helista neljapaeval',
+    'markus salvestub trimmituna');
+  setNote(db, 's5', '   ');
+  assert.equal(db.prepare('SELECT note FROM hanked WHERE ref = ?').get('s5').note, null,
+    'tuhikutest markus tuhjendab valja NULL-iks');
+  setNote(db, 's5', 'Uuesti');
+  setNote(db, 's5', null);
+  assert.equal(db.prepare('SELECT note FROM hanked WHERE ref = ?').get('s5').note, null,
+    'null tuhjendab markuse');
+  db.close();
+  console.log('PASS hanked: markuse tuhjendamine annab NULL-i');
+}
+
+// S6: numbriline viitenumber peab leidma sama rea ka seisu-, markuse- ja aegumisteel.
+{
+  const db = testDb();
+  upsertHange(db, { ref: 12345, title: 'Numbriline viide', deadline: '2026-09-01' });
+  setState(db, 12345, 'vaatan');
+  setNote(db, 12345, 'Numbriline markus');
+  const rida = db.prepare('SELECT * FROM hanked WHERE ref = ?').get('12345');
+  assert.equal(rida.state, 'vaatan', 'numbriline ref leiab rea setState-is');
+  assert.equal(rida.note, 'Numbriline markus', 'numbriline ref leiab rea setNote-is');
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM hanked').get().c, 1,
+    'numbriline ref ei tohi teist rida tekitada');
+  setState(db, '  12345  ', 'uus');
+  assert.equal(markExpired(db, '2026-09-20'), 1, 'numbriliselt loodud rida aegub tavaparaselt');
+  db.close();
+  console.log('PASS hanked: numbriline viitenumber toimib koigil kolmel teel');
+}
+
+// C1: nullpikkusega tuhik ja BOM naevad valja nagu paris vaartus, aga on formaadimargid -
+// enne trimmi eemaldamata kirjutaksid nad head andmed ule ja paaseksid pealkirjavalvest labi.
+{
+  const db = testDb();
+  upsertHange(db, { ref: 'c1', title: 'Vana pealkiri', buyer: 'Vana ostja', deadline: '2026-12-01' });
+  upsertHange(db, { ref: 'c1', title: '​', buyer: '﻿ ‍', deadline: '​ ' });
+  const rida = db.prepare('SELECT * FROM hanked WHERE ref = ?').get('c1');
+  assert.equal(rida.title, 'Vana pealkiri', 'nullpikkusega tuhik ei tohi pealkirja ule kirjutada');
+  assert.equal(rida.buyer, 'Vana ostja', 'BOM ei tohi ostjat ule kirjutada');
+  assert.equal(rida.deadline, '2026-12-01', 'nullpikkusega tuhik ei tohi tahtaega ule kirjutada');
+  assert.throws(() => upsertHange(db, { ref: 'c1-uus', title: '​' }),
+    /c1-uus ilma pealkirjata/, 'nullpikkusega tuhikust pealkiri ei tohi valvest labi paaseda');
+  assert.equal(db.prepare("SELECT COUNT(*) AS c FROM hanked WHERE ref = 'c1-uus'").get().c, 0,
+    'nullpikkusega pealkirjaga kirje ei tohi baasi jouda');
+  upsertHange(db, { ref: 'c1', title: '﻿Puhas pealkiri​' });
+  assert.equal(db.prepare('SELECT title FROM hanked WHERE ref = ?').get('c1').title, 'Puhas pealkiri',
+    'paris vaartus sailib, formaadimargid koritakse maha');
+  db.close();
+  console.log('PASS hanked: nullpikkusega tuhik ei havita andmeid');
+}
+
+// C2: vale tuupi viitenumber (false, {}, NaN) laheks String()-ist labi rampsreana.
+{
+  const db = testDb();
+  for (const vigane of [false, {}, NaN, true, []]) {
+    assert.throws(() => upsertHange(db, { ref: vigane, title: 'Ramps' }),
+      /vigase viitenumbriga/, 'vale tuupi viitenumber peab andma eestikeelse vea');
+  }
+  assert.throws(() => setState(db, {}, 'vaatan'), /vigase viitenumbriga/,
+    'setState peab vale tuupi viitenumbri tagasi lukkama');
+  assert.throws(() => setNote(db, NaN, 'Markus'), /vigase viitenumbriga/,
+    'setNote peab vale tuupi viitenumbri tagasi lukkama');
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM hanked').get().c, 0,
+    'vale tuupi viitenumbriga kirje ei tohi baasi jouda');
+  // NULL ja undefined jaavad endise, tapsema sonumi juurde.
+  assert.throws(() => upsertHange(db, { ref: null, title: 'Ramps' }), /ilma viitenumbrita/,
+    'NULL-viitenumber annab endiselt "ilma viitenumbrita"');
+  db.close();
+  console.log('PASS hanked: vale tuupi viitenumber ei paase valvest labi');
+}
+
+// C3a: vahemalu korduskatse peab tootama ka INSERT-harus, mitte ainult UPDATE-harus.
+{
+  const db = testDb();
+  upsertHange(db, { ref: 'c3a-vana', title: 'Enne sulgemist' });
+  db.close();
+  db.open();
+  assert.equal(upsertHange(db, { ref: 'c3a-uus', title: 'Parast avamist' }), 'uus',
+    'uue rea lisamine peab tootama ka parast close() + open()');
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM hanked').get().c, 2,
+    'molemad read on baasis');
+  db.close();
+  console.log('PASS hanked: korduskatse tootab ka INSERT-harus');
+}
+
+// C3b: proovi() teeb TAPSELT uhe korduskatse - pusiv finalized-viga peab kutsujani joudma,
+// mitte lopmatusse tsuklisse jaama ega vaikselt alla neelatud saama.
+{
+  const db = testDb();
+  const parisPrepare = db.prepare.bind(db);
+  const katki = () => { throw new Error('statement has been finalized'); };
+  let kordi = 0;
+  db.prepare = () => { kordi += 1; return { get: katki, run: katki, all: katki }; };
+  assert.throws(() => upsertHange(db, { ref: 'c3b', title: 'Pusiv rike' }),
+    /finalized/, 'pusiv finalized-viga peab joudma kutsujani muutmata');
+  assert.equal(kordi, 6, 'vahemalu ehitatakse uuesti tapselt uks kord (3 + 3 lauset)');
+  db.prepare = parisPrepare;
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM hanked').get().c, 0, 'rida ei joudnud baasi');
+  db.close();
+  console.log('PASS hanked: pusiv finalized-viga jouab kutsujani');
 }
