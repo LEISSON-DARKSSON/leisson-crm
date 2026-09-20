@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { mkdtempSync, readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { migrateHanked, upsertHange, listHanked, setState, setNote, markExpired, HANKE_STATES,
-  segmentOf, parseRss, FIT } from '../lib/hanked.mjs';
+  segmentOf, parseRss, FIT, score } from '../lib/hanked.mjs';
 
 function testDb() {
   const dir = mkdtempSync(join(tmpdir(), 'hanked-'));
@@ -926,4 +926,260 @@ ${kirjed.join('\n')}
   assert.ok(/CDATA/.test(lahtekood) && /topelt/i.test(lahtekood),
     'tagi() juures peab olema selgitus, miks olemeid dekodeeritakse ka CDATA sees');
   console.log('PASS hanked: eraldaja on noutud ja otsused on koodis kirjas');
+}
+
+// ---------------------------------------------------------------------------
+// ULESANNE 4: sobivuse skoor ja pohjendus.
+// score() on PUHAS: ei baasi, ei vorku, ei mudelit. Seega ei ole siin uhtegi testDb().
+// ---------------------------------------------------------------------------
+
+// S1: teostusplaani kolm juhtumit (rida ~314).
+{
+  const r = score({ title: 'Veebilehe arendus', segment: 'väike veebileht', est: 45000,
+    menetlus: 'Lihthange', crit: ['price', 'quality'], deadline: '2026-12-01' },
+    { today: '2026-10-01', ajalugu: null });
+  assert.equal(r.points, 80, '40 + 10 + 15 + 10 + 5');
+  assert.equal(r.verdict, 'PAKU');
+  assert.ok(r.why.some((x) => x.includes('+15')), 'pohjendus sisaldab maksumuse rida');
+
+  const s = score({ title: 'Infosüsteemi arendus', segment: 'nišš', est: 4000000,
+    menetlus: 'Avatud hankemenetlus', crit: ['price'], deadline: '2026-12-01',
+    rollid: 3 }, { today: '2026-10-01', ajalugu: { medianTenders: 11 } });
+  assert.equal(s.verdict, 'ALLTÖÖVÕTT', 'kolm rolli sunnib alltoovottu');
+  assert.ok(s.points < 35, 'alltoovotu hange ei tohi ka punktides ules joosta');
+
+  const a = score({ title: 'UX audit', segment: 'nišš', est: 30000, menetlus: 'Väikehange',
+    crit: ['quality'], deadline: '2026-10-02' }, { today: '2026-10-01', ajalugu: null });
+  const b = score({ title: 'UX audit', segment: 'nišš', est: 30000, menetlus: 'Väikehange',
+    crit: ['quality'], deadline: '2026-11-02' }, { today: '2026-10-01', ajalugu: null });
+  assert.equal(b.points - a.points, 15, 'alla kolme paeva tahtaeg maksab 15 punkti');
+
+  // Iga rida on inimloetav ja iseseisev: "+15 · maksumus 57 000 €".
+  for (const rida of [...r.why, ...s.why, ...a.why]) {
+    assert.match(rida, /^[+-]?\d+ · \S/, 'pohjenduse rida peab olema kujul "+15 · tekst": ' + rida);
+  }
+  console.log('PASS hanked: skoor ja põhjendus');
+}
+
+// S2 (otsus 1): tundmatu segment EI saa nisipunkte. score() on eksporditud ja teda
+// kutsutakse ka valjastpoolt RSS-ahelat (kasitsi import, ulesande 6 eForms-tee),
+// seega +40 pimesi jagamine tahendaks, et score_why valetab inimesele naha.
+{
+  const tundmatu = score({ segment: null, est: 40000 }, { today: '2026-10-01' });
+  assert.ok(!tundmatu.why.some((x) => x.startsWith('+40')), 'tundmatu segment ei tohi anda nisipunkte');
+  assert.equal(tundmatu.points, 15, 'jarele jaab ainult maksumus');
+  assert.ok(tundmatu.why.some((x) => /tundmatu segment/.test(x)),
+    'tundmatu segment peab pohjenduses NAHTAV olema, mitte vaikselt puuduma');
+
+  const praht = score({ segment: 'muu suvaline' }, { today: '2026-10-01' });
+  assert.equal(praht.points, 0, 'suvaline segmendisilt ei ole niss');
+  assert.equal(praht.verdict, 'JÄTA');
+
+  assert.equal(score({ segment: 'nišš' }, { today: '2026-10-01' }).points, 40);
+  assert.equal(score({ segment: 'väike veebileht' }, { today: '2026-10-01' }).points, 50,
+    'vaike veebileht saab 40 + 10');
+  console.log('PASS hanked: tundmatu segment ei saa nisipunkte');
+}
+
+// S3 (otsus 2): maksumuse vahemik 140 001 - 1 000 000 on TEADLIK auk, mitte unustus.
+// Selles vahemikus ei ole hange meie suurusjark ega ka veel "uksi ei kata" -
+// punktitabel ei utle midagi ja meie ei arva ka.
+{
+  const p = (est) => score({ segment: 'nišš', est }, { today: '2026-10-01' }).points - 40;
+  assert.equal(p(50000), 15, 'piir 50 000 kuulub veel alumisse vahemikku');
+  assert.equal(p(50001), 10);
+  assert.equal(p(140000), 10, 'piir 140 000 kuulub veel keskmisse vahemikku');
+  assert.equal(p(140001), 0, 'keskmine vahemik on teadlik auk');
+  assert.equal(p(1000000), 0, 'tapselt miljon ei ole veel karistus');
+  assert.equal(p(1000001), -10);
+  assert.equal(p(0), 15, 'null eurot on maksumus, mitte puuduv vali');
+
+  const augus = score({ segment: 'nišš', est: 500000 }, { today: '2026-10-01' });
+  assert.ok(!augus.why.some((x) => /maksumus/.test(x)), 'augus ei teki maksumuse rida');
+  console.log('PASS hanked: maksumuse keskmine vahemik on teadlik auk');
+}
+
+// S4 (otsus 3): alltoovotu pohjus peab nimetama PARIS pohjuse. Plaani naidiskood
+// kusis 'rollid >= 3 ? ... : ...' ja null-rollide korral langes see kaibe harru
+// juhuslikult oigesti - aga kahe pohjuse korral oleks teine vaikselt kadunud.
+{
+  const kaive = score({ segment: 'nišš', kaiveNoue: 200000 }, { today: '2026-10-01' });
+  assert.equal(kaive.verdict, 'ALLTÖÖVÕTT');
+  const kr = kaive.why.find((x) => x.startsWith('-25'));
+  assert.ok(/käibenõue 200 000 €/.test(kr), 'kaibest tulnud alltoovott peab raakima kaibest: ' + kr);
+  assert.ok(!/rolli/.test(kr), 'kaibest tulnud alltoovott ei tohi raakida rollidest: ' + kr);
+
+  const molemad = score({ segment: 'nišš', rollid: 4, kaiveNoue: 60000 }, { today: '2026-10-01' });
+  const mr = molemad.why.find((x) => x.startsWith('-25'));
+  assert.ok(/4 rolli/.test(mr) && /käibenõue/.test(mr), 'molemad pohjused peavad kirjas olema: ' + mr);
+  assert.equal(molemad.points, 15, '-25 rakendub UKS kord, ka kahe pohjuse korral');
+
+  assert.equal(score({ segment: 'nišš', rollid: 2, kaiveNoue: 50000 }, { today: '2026-10-01' }).verdict,
+    'KAALU', 'piirid on >= 3 rolli ja > 50 000 kaivet - kumbki ei ole siin uletatud');
+
+  // docs voidab h ule - MOLEMAS suunas.
+  assert.equal(score({ segment: 'nišš', rollid: 1 }, { today: '2026-10-01', docs: { rollid: 5 } }).verdict,
+    'ALLTÖÖVÕTT', 'docs tostab rollid ules');
+  assert.equal(score({ segment: 'nišš', rollid: 5 }, { today: '2026-10-01', docs: { rollid: 1 } }).verdict,
+    'KAALU', 'docs vottab rollid maha');
+
+  // ALLTOOVOTT on ulimuslik ka siis, kui punkte on PAKU jagu.
+  const tugev = score({ segment: 'väike veebileht', est: 45000, crit: ['quality'], rollid: 3 },
+    { today: '2026-10-01', docs: { qualityWeight: 60 } });
+  assert.equal(tugev.points, 60, '50 + 15 + 20 - 25');
+  assert.equal(tugev.verdict, 'ALLTÖÖVÕTT', 'alltoovott voidab ka 60 punkti');
+  console.log('PASS hanked: alltöövõtu põhjus nimetab päris põhjuse');
+}
+
+// S5 (otsus 4): vigane tahtaeg ei tohi VAIKSELT karistuse ara jatta. Date.parse annab
+// katkise kuupaeva peal NaN ja 'NaN < 3' on false - ehk -15 oleks markamatult kadunud.
+{
+  const katki = score({ segment: 'nišš', deadline: '13.10.2026' }, { today: '2026-10-01' });
+  assert.equal(katki.points, 40, 'loetamatu tahtaeg ei muuda punkte');
+  assert.ok(katki.why.some((x) => /tähtaeg loetamatu/.test(x)),
+    'loetamatu tahtaeg peab olema NAHTAV rida, mitte vaikus');
+
+  assert.ok(score({ segment: 'nišš', deadline: '2026-02-31' }, { today: '2026-10-01' })
+    .why.some((x) => /loetamatu/.test(x)), '31. veebruar ei ole kuupaev');
+
+  const puudub = score({ segment: 'nišš', deadline: null }, { today: '2026-10-01' });
+  assert.ok(!puudub.why.some((x) => /tähta/.test(x)), 'PUUDUV tahtaeg ei tekita ridagi');
+  assert.equal(puudub.points, 40);
+
+  // markExpired lubab kellaajaga kuju ('2026-09-20 17:00') - score peab sama lugema.
+  assert.equal(score({ segment: 'nišš', deadline: '2026-10-02 17:00' }, { today: '2026-10-01' }).points,
+    25, 'kellaajaga tahtaeg loetakse ara');
+  assert.equal(score({ segment: 'nišš', deadline: '2026-10-04' }, { today: '2026-10-01' }).points,
+    40, 'kolm paeva on piir - siin karistust ei ole');
+  assert.equal(score({ segment: 'nišš', deadline: '2026-10-03' }, { today: '2026-10-01' }).points,
+    25, 'kaks paeva on alla piiri');
+
+  const moodas = score({ segment: 'nišš', deadline: '2026-09-27' }, { today: '2026-10-01' });
+  assert.equal(moodas.points, 25);
+  assert.ok(moodas.why.some((x) => /möödas/.test(x)),
+    'moodunud tahtaeg utleb seda otse, mitte "tahtajani -4 paeva"');
+
+  // today on MEIE oma vali, mitte RHR-i oma - vaikne eksimus on siin halvem kui viga.
+  assert.throws(() => score({ segment: 'nišš' }, { today: '01.10.2026' }), /Vigane kuupäev/);
+  assert.throws(() => score({ segment: 'nišš' }, { today: null }), /Vigane kuupäev/);
+  assert.throws(() => score({ segment: 'nišš' }, { today: '2026-02-31' }), /Vigane kuupäev/);
+  console.log('PASS hanked: vigane tähtaeg ei kao vaikselt');
+}
+
+// S6 (otsus 5): arvuvormindus on UKS reegel kogu pohjenduses - '57 000 €', mitte '57000'.
+{
+  const r = score({ segment: 'nišš', est: 57000, kaiveNoue: 1250000 }, { today: '2026-10-01' });
+  assert.ok(r.why.some((x) => x.startsWith('+10 · maksumus 57 000 €')),
+    'maksumus vormindatakse tuhandeeraldajaga: ' + JSON.stringify(r.why));
+  assert.ok(r.why.some((x) => /käibenõue 1 250 000 €/.test(x)), 'sama reegel kehtib kaibenoudele');
+  for (const rida of r.why) {
+    assert.ok(!/\d{4,}/.test(rida), 'uhtegi vormindamata arvu ei tohi pohjenduses olla: ' + rida);
+  }
+  // Murdosa umardatakse, mitte ei lekita '57000.4 €'.
+  assert.ok(score({ segment: 'nišš', est: 57000.4 }, { today: '2026-10-01' })
+    .why.some((x) => x.includes('57 000 €')), 'murdosa umardatakse taisarvuks');
+  console.log('PASS hanked: arvuvormindus on ühtne');
+}
+
+// S7 (otsus 6): maksumust valideeritakse nagu viide() mujal failis - puuduv vali on
+// "ei tea" (vaikus), katkine vali on NAHTAV rida.
+{
+  assert.equal(score({ segment: 'nišš', est: '45000' }, { today: '2026-10-01' }).points, 55,
+    'arvuna kirjutatud string loetakse ara');
+  assert.equal(score({ segment: 'nišš', est: '45 000' }, { today: '2026-10-01' }).points, 55,
+    'tuhikutega string loetakse ara');
+
+  for (const vigane of [-5000, 'kokkuleppel', NaN, true, {}]) {
+    const r = score({ segment: 'nišš', est: vigane }, { today: '2026-10-01' });
+    assert.equal(r.points, 40, 'katkine maksumus ei anna ega vota punkte: ' + String(vigane));
+    assert.ok(r.why.some((x) => /maksumus teadmata/.test(x)),
+      'katkine maksumus peab olema NAHTAV: ' + String(vigane));
+  }
+  for (const puuduv of [null, undefined, '']) {
+    const r = score({ segment: 'nišš', est: puuduv }, { today: '2026-10-01' });
+    assert.ok(!r.why.some((x) => /maksumus/.test(x)), 'PUUDUV maksumus ei tekita ridagi');
+  }
+  assert.throws(() => score(null, { today: '2026-10-01' }), /Vigane hange/);
+  assert.throws(() => score('314159', { today: '2026-10-01' }), /Vigane hange/);
+  console.log('PASS hanked: maksumust valideeritakse nagu viide()');
+}
+
+// S8 (otsus 7): punktid VOIVAD jaada negatiivseks ja me ei loika neid nulli -
+// negatiivne skoor jarjestab halvimad hanked nimekirja lopus oiges jarjekorras.
+{
+  const r = score({ segment: null, est: 4000000, rollid: 6, deadline: '2026-10-02' },
+    { today: '2026-10-01', ajalugu: { medianTenders: 12 } });
+  assert.equal(r.points, -60, '0 - 10 - 25 - 10 - 15');
+  assert.equal(r.verdict, 'ALLTÖÖVÕTT');
+
+  const ilma = score({ segment: null, est: 4000000, deadline: '2026-10-02' },
+    { today: '2026-10-01', ajalugu: { medianTenders: 12 } });
+  assert.equal(ilma.points, -35);
+  assert.equal(ilma.verdict, 'JÄTA');
+  console.log('PASS hanked: skoor võib olla negatiivne');
+}
+
+// S9: ulejaanud punktitabel - kvaliteedikriteerium, kerge menetlus, CPV ajalugu,
+// verdikti piirid.
+{
+  const k = (crit, docs) => score({ segment: 'nišš', crit }, { today: '2026-10-01', docs });
+  assert.equal(k(['quality']).points, 50, 'kvaliteedikriteerium ilma kaaluta annab +10');
+  assert.equal(k(['quality'], { qualityWeight: 50 }).points, 60, 'kaal 50 % annab +20');
+  assert.equal(k(['quality'], { qualityWeight: 49 }).points, 50);
+  assert.equal(k(['quality'], { qualityWeight: 0 }).points, 50, 'kaal 0 on teada, mitte puuduv');
+  assert.ok(k(['quality'], { qualityWeight: 0 }).why.some((x) => /0 %/.test(x)),
+    'teadaolev kaal 0 peab pohjenduses naha olema');
+  assert.equal(k('quality').points, 50, 'crit voib olla ka uksik string');
+  assert.equal(k(['Quality']).points, 50, 'suurtaht ei tohi kriteeriumi peita');
+  assert.equal(k(['price']).points, 40);
+  assert.equal(k(null).points, 40);
+
+  for (const m of ['Lihthange', 'lihthange', 'Väikehange', 'Vaikehange', 'Liht hange']) {
+    assert.equal(score({ segment: 'nišš', menetlus: m }, { today: '2026-10-01' }).points, 45,
+      'kerge menetlus annab +5: ' + m);
+  }
+  assert.equal(score({ segment: 'nišš', menetlus: 'Avatud hankemenetlus' }, { today: '2026-10-01' }).points,
+    40, 'avatud hankemenetlus ei ole kerge menetlus');
+
+  const aj = (medianTenders) => score({ segment: 'nišš' }, { today: '2026-10-01', ajalugu: { medianTenders } }).points;
+  assert.equal(aj(8), 30, 'kaheksa pakkujat on rahvarohke');
+  assert.equal(aj(7), 40, 'seitse jaab kahe reegli vahele');
+  assert.equal(aj(4), 40);
+  assert.equal(aj(3), 45, 'kolm voi vahem on meie vaikne hange');
+
+  // Verdikti piirid.
+  assert.equal(score({ segment: 'nišš', crit: ['quality'] }, { today: '2026-10-01', docs: { qualityWeight: 60 } }).verdict,
+    'PAKU', '60 punkti on juba PAKU');
+  assert.equal(score({ segment: 'nišš', est: 45000 }, { today: '2026-10-01' }).verdict, 'KAALU', '55 on KAALU');
+  assert.equal(score({ segment: 'nišš' }, { today: '2026-10-01' }).verdict, 'KAALU', '40 on KAALU');
+  assert.equal(aj(8), 30);
+  assert.equal(score({ segment: 'nišš' }, { today: '2026-10-01', ajalugu: { medianTenders: 8 } }).verdict,
+    'JÄTA', '30 on juba JATA');
+  console.log('PASS hanked: kvaliteet, menetlus, ajalugu ja verdikti piirid');
+}
+
+// S10: score on PUHAS - sama sisend annab sama valjundi, sisendit ei muudeta,
+// baasi ega vorku ei puututa. See ei ole kosmeetika: ulesandes 5 kutsub sunkimine
+// score-i tsuklis ja tulemus laheb baasi veergu score_why.
+{
+  const h = { title: 'UX audit', segment: 'nišš', est: 45000, crit: ['quality'],
+    menetlus: 'Lihthange', deadline: '2026-12-01' };
+  const koopia = JSON.parse(JSON.stringify(h));
+  const valikud = { today: '2026-10-01', ajalugu: { medianTenders: 5 }, docs: { qualityWeight: 60 } };
+  const a = score(h, valikud);
+  const b = score(h, valikud);
+  assert.deepEqual(a, b, 'sama sisend peab andma sama valjundi');
+  assert.deepEqual(h, koopia, 'score ei tohi sisendit muuta');
+
+  // Ilma valikuteta kutse peab tootama (today vaikimisi tanane).
+  const c = score(h);
+  assert.ok(Number.isFinite(c.points) && typeof c.verdict === 'string' && Array.isArray(c.why),
+    'uheargumendiline kutse peab tootama');
+
+  const lahtekood = readFileSync(new URL('../lib/hanked.mjs', import.meta.url), 'utf8');
+  const keha = lahtekood.slice(lahtekood.indexOf('export function score('));
+  assert.ok(keha.length > 100, 'score peab olema failis olemas');
+  assert.ok(!/\bfetch\s*\(|db\.prepare|db\.exec/.test(keha),
+    'score keha ei tohi puutuda baasi ega vorku');
+  console.log('PASS hanked: score on puhas funktsioon');
 }
