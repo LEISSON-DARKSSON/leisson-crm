@@ -152,6 +152,11 @@ async function refresh(){const s=await (await fetch('/api/state')).json();csrf=s
  queuedHidden=eligible.length-companies.length;
  for(const id of [...selected])if(!companies.some(c=>c.id===id))selected.delete(id);
  renderChips();renderCandidates();
+ // Server puhastas just praegu (GET /api/campaigns) read, mille saajale on
+ // juba kiri väljas — teata sellest, mitte ei jäta vaikselt kaduma.
+ if(list.prunedNow?.length)
+  notice(list.prunedNow.length+' saaja(t) eemaldati automaatselt pooleliolevast kampaaniast, sest neile on juba kiri saadetud: '+
+   list.prunedNow.map(p=>p.name).join(', '));
  const h=$('history');h.replaceChildren();
  for(const item of list.campaigns){const b=document.createElement('button');b.type='button';b.textContent=item.created+' · '+item.status+' · '+item.id;
   b.onclick=async()=>{try{queue=[];queueIndex=-1;show(await post('/api/campaign/view',{id:item.id}))}catch(e){notice(e.message,true)}};h.append(b)}

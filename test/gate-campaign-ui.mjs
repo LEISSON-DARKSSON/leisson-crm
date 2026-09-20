@@ -44,12 +44,34 @@ function currentlyQueuedIds(){
    for(const it of items) if(it.status==='pending') ids.add(it.companyId);
  return [...ids];
 }
+// Simuleerib lib/campaign.mjs pruneAlreadySentItems'i: kui companyId on
+// sentElsewhere hulgas (kiri läks välja kampaaniaväliselt, nt käsitsi), siis
+// iga PENDING rida temaga blokeeritakse KOHE, kui kampaaniaid loetakse —
+// mitte alles siis, kui sweep sinnamaani jõuab. Idempotentne, samasugune
+// "räägi mis just parandati" tagastus nagu server.mjs GET /api/campaigns teeb.
+const sentElsewhere=new Set();
+function pruneNow(){
+ const justPruned=[];
+ for(const {campaign,items} of campaigns.values()){
+  if(campaign.status!=='prepared'&&campaign.status!=='approved')continue;
+  for(const it of items){
+   if(it.status==='pending'&&sentElsewhere.has(it.companyId)){
+    it.status='blocked';it.error='Saajale on juba kiri saadetud';
+    justPruned.push({name:byId[it.companyId]?.name||it.companyId,campaignId:campaign.id});
+   }
+  }
+ }
+ return justPruned;
+}
 const json=(res,data)=>{res.writeHead(200,{'content-type':'application/json'});res.end(JSON.stringify(data));};
 const files={'/campaigns.html':'campaigns.html','/app.css':'app.css'};
 async function readBody(req){let raw='';for await(const chunk of req)raw+=chunk;return raw?JSON.parse(raw):{}}
 const server=createServer(async(req,res)=>{
  if(req.url==='/api/state')return json(res,{csrfToken:'fixture-csrf',companies});
- if(req.url==='/api/campaigns')return json(res,{campaigns:[...campaigns.values()].map(v=>({id:v.campaign.id,created:v.campaign.created,status:v.campaign.status})),queuedCompanyIds:currentlyQueuedIds()});
+ if(req.url==='/api/campaigns'){
+  const prunedNow=pruneNow();
+  return json(res,{campaigns:[...campaigns.values()].map(v=>({id:v.campaign.id,created:v.campaign.created,status:v.campaign.status})),queuedCompanyIds:currentlyQueuedIds(),prunedNow});
+ }
  if(req.method==='POST'){
   writes.push(req.url);
   const body=await readBody(req);
@@ -135,6 +157,20 @@ try {
  assert.equal(await page.locator('#candidates .cand').count(),3,'all 25 already-queued recipients are hidden, only b0/c0/p0 remain selectable');
  assert.equal(await page.locator('#candidates').getByText('Firma A',{exact:false}).count(),0,'no queued Firma A* row leaks into the candidate list');
  assert(((await page.locator('#eligibleCount').textContent())||'').includes('25 peidetud'),'the hidden count is surfaced, not silent');
+
+ // Gerdi otsene soov 20.09.2026: kes on saanud kirja täiesti kampaaniaväliselt
+ // (nt käsitsi, nagu AS SA.MET), see rida eemaldatakse pooleliolevast
+ // kampaaniast KOHE (mitte alles siis, kui sweep sinna jõuab) ja Gert saab
+ // sellest märguande, mitte vaikset kadumist.
+ sentElsewhere.add('a20');byId.a20.status='kiri';
+ await page.reload();
+ await page.getByText(/saaja\(t\) eemaldati automaatselt/).waitFor();
+ const pruneMsg=(await page.locator('#message').textContent())||'';
+ assert(pruneMsg.includes('1 saaja'),'exactly one recipient was pruned this reload: '+pruneMsg);
+ assert(pruneMsg.includes('Firma A20'),'the pruned recipient is named: '+pruneMsg);
+ assert.equal(await page.locator('#candidates .cand').count(),3,'a20 does not reappear as selectable — it is no longer ootel');
+ await page.reload();
+ assert.equal(((await page.locator('#message').textContent())||'').trim(),'','second reload finds nothing new to prune — no repeated notice');
 
  const allowed=new Set(['/api/campaign/prepare','/api/campaign/view','/api/campaign/approve','/api/campaign/evidence','/api/campaign/stop']);
  assert(writes.every(w=>allowed.has(w)),'only campaign endpoints were ever called: '+JSON.stringify(writes));

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {open} from '../lib/db.mjs';
 import {migrateSales} from '../lib/salesdb.mjs';
 import {migrateOutbound,consumeDispatchAuthorization} from '../lib/outbound.mjs';
-import {prepareCampaign,approveCampaign,campaignView,campaignEvidence,nextApprovedCampaign,runCampaignOnce,migrateCampaigns} from '../lib/campaign.mjs';
+import {prepareCampaign,approveCampaign,campaignView,campaignEvidence,nextApprovedCampaign,runCampaignOnce,migrateCampaigns,pruneAlreadySentItems} from '../lib/campaign.mjs';
 
 const now=new Date(2026,8,16,10,0);
 const accounts=[{id:'gert',user:'gert@leisson.eu'}];
@@ -144,4 +144,36 @@ const send=async e=>{
  assert.equal(sent.status,'accepted','a later campaign is no longer starved by an earlier stuck one');
  db.close();
 }
-console.log('PASS frozen campaign: exact recipients and signed copy, explicit approval, single claim, reply/suppression/change gates, uncertain SMTP no retry, no duplicate-recipient deadlock');
+{
+ // Gerdi otsene soov 20.09.2026: kontroll, mis eemaldab pooleliolevast
+ // kampaaniast saaja, kellele on kiri juba väljas — kas kampaaniaväliselt
+ // (activity 'sent', nagu AS SA.MET 17:13 käsitsi saadetud kiri) või
+ // outbound_messages kaudu. See on ETTEVAATAV täiendus runCampaignOnce'i
+ // reaktiivsele blokeerimisele: prune jookseb iga kord, kui kampaaniad
+ // loetakse (GET /api/campaigns), mitte alles siis, kui sweep sinnamaani jõuab.
+ const db=makeDb();
+ const p=prepareCampaign(db,['a','b'],options);approveCampaign(db,p.campaign.id,p.campaign.snapshot_hash,{now});
+ // 'a' saab kirja täiesti väljaspool kampaaniasüsteemi (käsitsi rida activity's).
+ db.prepare("INSERT INTO activity(company_id,ts,kind,note) VALUES('a',?,'sent','käsitsi kiri')").run(now.toISOString());
+ const pruned=pruneAlreadySentItems(db);
+ assert.equal(pruned.length,1);assert.equal(pruned[0].company_id,'a');
+ const view=campaignView(db,p.campaign.id);
+ assert.equal(view.items.find(i=>i.company_id==='a').status,'blocked','already-sent recipient is pulled from the offered campaign');
+ assert.equal(view.items.find(i=>i.company_id==='b').status,'pending','untouched recipient stays queued');
+ assert.equal(pruneAlreadySentItems(db).length,0,'idempotent: nothing left to prune on a second pass');
+ db.close();
+}
+{
+ // Sama, aga saadetud kiri tuvastatud outbound_messages kaudu (mitte activity).
+ const db=makeDb();
+ const p=prepareCampaign(db,['a'],options);
+ // outbound_messages.approval_id on FK outbound_previews(id) peale — vaja on
+ // ka eelvaate rida, muidu ei lase foreign_keys=ON seda üldse sisestada.
+ db.prepare("INSERT INTO outbound_previews(id,kind,company_id,account,envelope,content_hash,source_hash,created,expires) VALUES('ap1','sales','a','gert','{}','h','sh',?,?)").run(now.toISOString(),now.toISOString());
+ db.prepare("INSERT INTO outbound_messages(id,approval_id,content_hash,company_id,account,recipient,subject,body,text,html,message_id,state,created) VALUES('m1','ap1','h','a','gert','office@firm-a.example','s','b','t','h','<x@leisson.eu>','accepted',?)").run(now.toISOString());
+ const pruned=pruneAlreadySentItems(db);
+ assert.equal(pruned.length,1);assert.equal(pruned[0].company_id,'a');
+ assert.equal(campaignView(db,p.campaign.id).items[0].status,'blocked');
+ db.close();
+}
+console.log('PASS frozen campaign: exact recipients and signed copy, explicit approval, single claim, reply/suppression/change gates, uncertain SMTP no retry, no duplicate-recipient deadlock, already-sent recipients pruned from offered campaigns');

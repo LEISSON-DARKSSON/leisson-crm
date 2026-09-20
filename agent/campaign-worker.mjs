@@ -3,7 +3,7 @@
 import {open} from '../lib/db.mjs';
 import {loadEnv} from '../lib/env.mjs';
 import {migrateOutbound} from '../lib/outbound.mjs';
-import {migrateCampaigns,nextApprovedCampaign,runCampaignOnce} from '../lib/campaign.mjs';
+import {migrateCampaigns,nextApprovedCampaign,runCampaignOnce,pruneAlreadySentItems} from '../lib/campaign.mjs';
 import {syncInbox,composeText,composeHtml,sendMail} from '../lib/mail.mjs';
 import {reconcileSalesReplies} from '../lib/sales-safety.mjs';
 
@@ -16,6 +16,12 @@ if(!cfg.defaultAccount)throw new Error('Ainult gert@leisson.eu saatjakonto on lu
 const db=open();
 try{
   migrateOutbound(db);migrateCampaigns(db);
+  // Enne valikut: kelle kiri on juba väljas (kampaaniaväliselt või mõnest
+  // teisest kampaaniast), see rida blokeeritakse kohe — sweep ei tohi
+  // kunagi proovida määratud läbikukkumisega rida, sest see valiks
+  // nextApprovedCampaign'is sama ummistavat kampaaniat uuesti (vt
+  // lib/campaign.mjs pruneAlreadySentItems ja 20.09.2026 ummiku märkmed).
+  pruneAlreadySentItems(db);
   const id=requested==='--sweep'?nextApprovedCampaign(db):requested;
   if(!id)console.log(JSON.stringify({status:'empty',reason:'Ühtegi kinnitatud ja ootel kampaaniat ei ole'}));
   else {
