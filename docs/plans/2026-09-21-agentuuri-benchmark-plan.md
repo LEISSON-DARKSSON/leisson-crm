@@ -796,3 +796,63 @@ Kui `audit_handoff` → `inquiry_accepted` suhe < 5 % — Task 12 revert ühe fa
 | 5 | 16–20 | 21 |
 | | **kokku** | **73** |
 | | puhver | 7 |
+
+---
+
+# PARANDUSED 2 (Task 0 mõõtmisest, 2026-09-21)
+
+Kolm plaani eeldust osutusid valeks. Mõõtmine on `docs/plans/baseline-2026-09-21.txt` ja `docs/plans/bundle-baseline.json`.
+
+## P2.1 — „First Load JS" veergu EI OLE OLEMAS
+
+**Plaanis seisis:** Task 0 samm 3 ja Task 11 samm 1 loevad route-tabelist `/[lang]` ja `/[lang]/prices` First Load JS numbri.
+
+**Tegelikult:** Next 16.3.5 Turbopack ei väljasta enam First Load JS veergu ega `app-build-manifest.json` faili. Marsruudipõhist kliendi-JS arvu ei ole võimalik buildi väljundist lugeda.
+
+**Parandus:** kimbueelarve värav mõõdab **`site/.next/static/**/*.js` kogumahtu baitides**. Kui kliendi-JS-i lisandub, see kasvab — sama veaklass püütakse kinni, ilma marsruudi lahutuseta.
+
+```
+baasjoon   628 525 B (14 faili)
+eelarve    633 645 B (baasjoon + 5 KB)
+```
+
+Task 11 sammud 1, 3, 4 ja 7 ning Task 4 samm 6 ja Task 10 samm 7 kasutavad seda arvu, mitte route-tabelit.
+
+## P2.2 — Arhitektuurieeldus PEAB PAIKA, Task 11 tehakse
+
+`Analytics.tsx` ja `Nav.tsx` on mõlemad `'use client'` ja mõlemad on `site/app/[lang]/layout.tsx`-is. `rootMainFiles` = **441 392 B igal lehel**. React'i kliendiruntime on juba kohal; valija hüdreerimissaar lisab ainult oma komponendi koodi.
+
+**Otsus: Task 11 TEHAKSE.**
+
+## P2.3 — `content/insights` on ET-ainus ja see on ÕIGE
+
+**Plaanis seisis:** Task 14 samm 2 — „ET + EN samas failis, mõlemal sama struktuur".
+
+**Tegelikult:** `site/app/[lang]/insights/[slug]/page.tsx` real 10 on `generateStaticParams` kõvakodeeritud `lang: 'et'` peale; read 12 ja 18 teevad `lang === 'et' ? … : null` ehk EN annab 404. Ükski `content/insights/*.mdx` ei sisalda `<Locale lang="en">` plokki — insights kasutab teist failivormi kui `content/pages` ja `content/work`.
+
+**Parandus: artikkel kirjutatakse EESTI KEELES AINULT.** See ei ole järeleandmine:
+
+- Ostupäring („kodulehe hind", „kodulehe tegemine") on eestikeelne.
+- `project_geo_ai_visibility`: **päringu KEEL, mitte IP, otsustab, kas kohalik pakkuja vastusesse jõuab** (arXiv 2608.30052), ja balti keelte vastustes tuleb 15,0–15,5 % tsitaate brändi enda saidilt — õhuke omakeelne veeb on struktuurne eelis.
+- Kõik kümme analüüsitud konkurenti kirjutavad hinnasisu ainult eesti keeles.
+
+**Task 14 maht: 8 h → 6 h.** Vabanenud 2 h lähevad puhvrisse (7 h → 9 h).
+
+**Lisandub Task 14 sammu 1 juurde:** `tests/claims.mjs` kontrollib praegu `content/work`, `content/docs`, `content/legal` ja `content/pages`. **`content/insights` ei ole üheski väravas** — uus allikavärav on selle kausta esimene kontroll ja peab seega ka põhistruktuuri (meta, pealkirjad, tüpograafia) katma, mitte ainult hinnaallikaid.
+
+## P2.4 — Kosmeetiline, aga tasub teada
+
+Build hoiatab: `Next.js ignored package-lock.json in C:\Users\gert because it is outside the current Git repository`. Sinu kodukaustas on eksinud `package-lock.json`. See ei mõjuta buildi, aga selle kustutamine vaigistab hoiatuse. Sama hoiatus soovitab `turbopack.root` seadistada `next.config.ts`-is — **ära tee seda sprindi sees**, see on eraldi muudatus oma väravajooksuga.
+
+## Uus kokkuvõte
+
+| Voor | Taskid | h |
+|---|---|---|
+| 0 | baasjoon | 1 · ✅ tehtud |
+| 1 | 1–4 | 9 |
+| 2 | 5–8 | 7 |
+| 3 | 9–12 | 19 |
+| 4 | 13–15 | 14 |
+| 5 | 16–20 | 21 |
+| | **kokku** | **71** |
+| | puhver | 9 |
