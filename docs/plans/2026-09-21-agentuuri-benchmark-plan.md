@@ -930,3 +930,42 @@ verify:tokens → portfell → claims → kaibemaks → toetused
 *Märkus: repo juures ei ole `package.json`-i (ainult `site/` ja `crm/` omad), seega npm-skripti ei saa juurde lisada — käsk on `node tools/local-gates.mjs`.*
 
 **Plaani mõju:** iga järgmise taski väravasamm asendub ühe reaga `node tools/local-gates.mjs`. Task 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 sammud „ehita + väravad" viitavad sellele.
+
+---
+
+# TÖÖKOHT 2 — worktree (21.09.2026, pärast haruvahetuse juhtumit)
+
+## Miks kolisime
+
+`feat/crm-riigihanked` sessioon vahetas peakataloogis haru **keset minu tööd**: Task 4 commit läks valele harule (reflog `HEAD@{1}: checkout: moving from feat/agentuuri-benchmark to feat/crm-riigihanked`). Midagi ei kadunud — `feat/crm-riigihanked` oli hargnenud täpselt minu HEAD-ist, nii et pointerite parandus oli piisav. Aga järgmine kord võib haru vahetuda keset buildi ja väravad kontrolliksid vale puu sisu.
+
+Peakataloogis on **kuus** aktiivset worktree'd/harut. Eeldus „töökataloog on minu päralt" oli vale.
+
+## Seadistus (töötab, 10/10 roheline)
+
+```
+C:\Users\gert\Desktop\LEISSON.CREATIVE\_worktrees\agentuuri-benchmark   ← feat/agentuuri-benchmark
+C:\Users\gert\Desktop\LEISSON.CREATIVE\Leisson Creative                 ← feat/crm-riigihanked (teine sessioon)
+```
+
+- **`node_modules` juurtasemel = junction** peakataloogi omale. Testid (playwright jne) leiavad selle. Töötab.
+- **`site/node_modules` = PÄRIS install, mitte junction.** Turbopack keeldub: *„Symlink [project]/node_modules is invalid, it points out of the filesystem root."* `npm install --no-audit --no-fund` `$env:NODE_ENV=''`-ga võttis **10 s**, 53 paketti. Varasem hirm pika installi ees oli alusetu.
+- **Väravad jooksevad pordil 3312**, et mitte tappa teise sessiooni serverit pordil 3311: `node tools\local-gates.mjs --port 3312`.
+- **Git worktree'is käib AINULT Desktop Commanderiga.** Linuxi VM ei suuda lahendada `.git`-faili, mis osutab Windowsi rajale (`fatal: not a git repository`). Failide lugemine ja muutmine VM-ist töötab normaalselt (kaust on ühendatud), ainult git mitte.
+
+## Enne worktree eemaldamist
+
+```
+cmd /c rmdir "<worktree>\node_modules"      # junction MAHA, muidu git worktree remove järgib linki
+git worktree remove <worktree>
+```
+
+## LEID — `.gitattributes` auk (parandatud, commit f96a5ce)
+
+Värske checkout Windowsis andis **44 `.mdx` faili CRLF-lõpudega** ja `tests/claims.mjs` kukkus **14 veaga**: tabeliparser loeb veerge `|`-märgi järgi ja viimane veerg sai varjatud `\r` sufiksi (`tabeli veergude arv ei klapi: 4/3`).
+
+`.gitattributes` lukustas juba `*.csv`, `*.mjs`, `*.json` — faili enda kommentaar kirjeldab **sama bug'i esimest poolt** („11.09 CRLF-bug, portfell.csv"). `.mdx` jäi vahele. Peakataloogi working copy oli LF ja CI on Linux, seega viga ei paistnud **kunagi** välja.
+
+Parandus: `*.mdx text eol=lf` ja `*.md text eol=lf`. Committed blob'id olid juba LF, seega normaliseerimine ei tekitanud ühtegi sisulist muudatust — `git diff` on pärast tühi.
+
+**Õppetund plaani jaoks:** väravad, mis jooksevad ainult CI-s (Linux), ei kaitse Windowsi arendaja vastu. `tools/local-gates.mjs` on nüüd see, mis seda vahet katab.
