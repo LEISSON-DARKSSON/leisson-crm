@@ -1001,3 +1001,46 @@ Kui hiljem tuleb tõend, et ostja ei suuda kaartide vahel valida (nt ProUXAuditi
 | + | Task 4 lõpetatud: päris foto | `gert.webp` 384×384, 11 kB; `<img>` mitte `next/image` → −15 747 B |
 
 **Voor 2 kulu: ~5 h planeeritud 7-st.**
+
+---
+
+# PARANDUSED 5 (Voor 3 käigus, 2026-09-21)
+
+## P5.1 — ProUXAudit ei toeta eeltäitmist. Task 12 on LINK, mitte URL-väli.
+
+Plaanis oli hero's `<form method="GET">` väljaga, mis saadab külastaja aadressi ProUXAuditi.
+
+**Mõõdetud brauseris:** `prouxaudit.com/audit` vorm kannab välja `name="targetUrl"`, aga `action` on `null` (React käsitleb ise) ja leht **ei loe ühtki päringuparameetrit**. Kontrollitud neli varianti — `?targetUrl=`, `?url=`, `?target=`, `?site=` — väli jääb igal juhul tühjaks.
+
+Väli leisson.eu-l tähendaks, et külastaja kirjutab oma aadressi **kaks korda**: ühe korra siin, teise korra seal. See on täpselt see umbtee, mille leidmiseks kogu analüüs tehti.
+
+**Tehtud:** üherealine tekstilink hero's, `utm_source=leisson.eu&utm_medium=hero`, koos auditi piirangu lausega (sama sõnastus, mis juba `prices.mdx`-is).
+
+**Järelduseks eraldi tööks (mitte selles sprindis, teine repo):** lisa PROUXAUDIT repos `/audit` lehele `searchParams.targetUrl` lugemine välja algväärtuseks. Umbes kümme rida, kasulik igale kampaanialingile, ja siis muutub siin ainult `href`. Skill `prouxaudit-pr` katab selle PR-i.
+
+## P5.2 — Minu enda viga: `picker_completed` ei oleks GA4-i jõudnud
+
+`site/components/Analytics.tsx` hoiab lubatute loendit: `trackEvent` viskab kõik loendist väljas oleva **vaikselt** ära. Task 11-s lisasin `trackEvent('picker_completed', …)`, aga ei lisanud seda loendisse — sündmus oleks kadunud ja keegi poleks märganud, sest edukriteerium mõõdetakse alles kuu pärast.
+
+Parandatud koos `audit_handoff`-iga; loendi juurde kirjutatud kommentaar, miks see juhtus. Mõlemad sündmused **tõestatud brauseris**: klikk → `gtag('event', …)` kohal.
+
+Klikijälgimine käib nüüd `data-track` atribuudi ja `Analytics.tsx` juba olemasoleva delegeeritud kuulari kaudu — null uut kliendikomponenti, null kimbukasvu.
+
+## P5.3 — Väravate pime vahemik: 560–1000 px
+
+Hero hinnarida jooksis ~800 px juures üle serva. `gates.mjs` mõõdab **390 ja 1280 px**; layout-mälu nõuab nelja laiust (1512 / 1100 / 1024 / 390), aga automaatne värav katab kaks.
+
+Viga ise: eraldaja `·` oli `white-space: nowrap` spani **sees** ja kahe kirje vahel polnud tühikut, seega brauseril polnud kusagil murda. Parandatud flex-wrapiga — murdekoht on nüüd igal laiusel, mõõdetud `scrollWidth === clientWidth`.
+
+**Leitud silmaga, mitte väravaga.** Kui selline viga kordub, on õige vastus lisada `gates.mjs`-i kolmas laius (~820 px) — aga see puudutab ka snapshot-baasjooni, seega on see omaette muudatus, mitte sprindi sees tehtav.
+
+## Voor 3 lõppseis
+
+| Task | Seis | Mõõdetud |
+|---|---|---|
+| 9 · enne→pärast case | ✅ `f6cd5ef` | claims 9 case study't 0 viga; portfell 15 rida |
+| 10 · valija server-baas | ✅ `cd9a376` | TDD 7 testi; värav püüdis 2 a11y-viga (label[for], 44 px puutepind) |
+| 11 · hüdreerimine + kimbuvärav | ✅ `1268f8f` | mõlemad teed tõestatud: curl annab serveri HTML-is tulemuse; brauseris `navigation entries = 1` |
+| 12 · mikroaudit | ✅ `9354f05` | link, mitte väli (P5.1); GA4 tõestatud |
+
+**Kliendi-JS: 633 054 B, eelarve 633 645 B — järel 591 B.** Voor 4 (`apple-design` pass + hinnaartikkel) on mõlemad CSS ja sisu, mitte JS, aga kui midagi kliendipoolset lisandub, tuleb baasjoon teadlikult tõsta ja commitis põhjendada.
