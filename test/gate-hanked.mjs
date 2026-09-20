@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtempSync, readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
-import { migrateHanked, upsertHange, listHanked, setState, setNote, markExpired, HANKE_STATES } from '../lib/hanked.mjs';
+import { migrateHanked, upsertHange, listHanked, setState, setNote, markExpired, HANKE_STATES,
+  segmentOf, parseRss } from '../lib/hanked.mjs';
 
 function testDb() {
   const dir = mkdtempSync(join(tmpdir(), 'hanked-'));
@@ -529,4 +530,222 @@ function testDb() {
   }
   db.close();
   console.log('PASS hanked: veateated on uhes stiilis ja neutraalsed');
+}
+
+// ---------------------------------------------------------------------------
+// ULESANNE 3: RSS-i lugeja ja nisifilter.
+// ---------------------------------------------------------------------------
+
+// Fikstuur on failis sees - varav ei tohi sattuda vorgust. Kirjed:
+// a) sobiv teenus, b) ehitustood (liigi jargi valja), b2) asjad (liigi jargi valja),
+// c) vaike veebileht, d) FIT tabab aga EXCL voidab, e) tahtajata,
+// f) CDATA + HTML-olemid, g) viitenumbrita.
+const RSS_FIKSTUUR = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<channel>
+<title>Riigihangete register</title>
+<item>
+  <title>314159 - Digitaalse eneseabiprogrammi „Aitab“ arendus- ja hooldustööd</title>
+  <link>https://riigihanked.riik.ee/rhr-web/#/procurement/10682825/notices</link>
+  <description>Teenused; Avatud hankemenetlus; Programmi arendus; Tähtaeg: 13.10.2026 11:00</description>
+  <pubDate>Wed, 10 Sep 2026 07:00:04 GMT</pubDate>
+  <dc:creator>Tervise Arengu Instituut</dc:creator>
+</item>
+<item>
+  <title>222222 - Brändiraamatu ja visuaalse keele loomine</title>
+  <link>https://riigihanked.riik.ee/rhr-web/#/procurement/10000002/notices</link>
+  <description>Ehitustööd; Avatud hankemenetlus; Muu; Tähtaeg: 01.11.2026 10:00</description>
+  <pubDate>Thu, 11 Sep 2026 06:00:00 GMT</pubDate>
+  <dc:creator>Mingi Vald</dc:creator>
+</item>
+<item>
+  <title>223344 - Mobiilirakenduse arendus</title>
+  <link>https://riigihanked.riik.ee/rhr-web/#/procurement/10000003/notices</link>
+  <description>Asjad; Lihthange; Muu; Tähtaeg: 02.11.2026 10:00</description>
+  <pubDate>Thu, 11 Sep 2026 06:10:00 GMT</pubDate>
+  <dc:creator>Teine Vald</dc:creator>
+</item>
+<item>
+  <title>333333 - Valla kodulehe uuendamine</title>
+  <link>https://riigihanked.riik.ee/rhr-web/#/procurement/10000004/notices</link>
+  <description>Teenused; Väikehange; Veebiarendus;
+     Tähtaeg: 05.09.2026 12:00</description>
+  <pubDate>Fri, 12 Sep 2026 05:00:00 GMT</pubDate>
+  <dc:creator>Tartu &apos;Linnavalitsus&apos;</dc:creator>
+</item>
+<item>
+  <title>444444 - Koolimaja ehitusaegse kasutajakogemuse uuring</title>
+  <link>https://riigihanked.riik.ee/rhr-web/#/procurement/10000005/notices</link>
+  <description>Teenused; Avatud hankemenetlus; Uuring; Tähtaeg: 10.11.2026 09:00</description>
+  <pubDate>Sat, 13 Sep 2026 05:00:00 GMT</pubDate>
+  <dc:creator>Kolmas Vald</dc:creator>
+</item>
+<item>
+  <title>555555 - Kasutajaliidese prototüüpimise teenus</title>
+  <link>https://riigihanked.riik.ee/rhr-web/#/procurement/10000006/notices</link>
+  <description>Eriteenused; Toetuse saaja ost; Disain</description>
+  <pubDate>Sun, 14 Sep 2026 05:00:00 GMT</pubDate>
+  <dc:creator>Neljas Vald</dc:creator>
+</item>
+<item>
+  <title><![CDATA[666666 - Veebilehe &quot;Kodu&quot; &amp; e-teenuste arendus &#8222;Uus&#8220;]]></title>
+  <link><![CDATA[https://riigihanked.riik.ee/rhr-web/#/procurement/10000007/notices]]></link>
+  <description>Teenused; Lihthange; Arendus &amp; hooldus; Tähtaeg: 20.12.2026 16:00</description>
+  <pubDate>Mon, 15 Sep 2026 05:00:00 GMT</pubDate>
+  <dc:creator>Kohila &amp; Co O&#xDC;</dc:creator>
+</item>
+<item>
+  <title>777777 - Tehisaru vestlusroboti arendus</title>
+  <link>https://riigihanked.riik.ee/rhr-web/#/procurement/10000008/notices</link>
+  <description>Sotsiaalteenused; Lihthange; Tehisaru; Tähtaeg: 1.11.2026 09:00</description>
+  <pubDate>Tue, 16 Sep 2026 05:00:00 GMT</pubDate>
+  <dc:creator>Politsei- ja Piirivalveamet</dc:creator>
+</item>
+<item>
+  <title>Teade ilma viitenumbrita veebilehe arenduse kohta</title>
+  <link>https://riigihanked.riik.ee/rhr-web/#/procurement/10000009/notices</link>
+  <description>Teenused; Lihthange; Muu; Tähtaeg: 03.11.2026 09:00</description>
+  <pubDate>Wed, 17 Sep 2026 05:00:00 GMT</pubDate>
+  <dc:creator>Viies Vald</dc:creator>
+</item>
+</channel>
+</rss>`;
+
+// F1: filter - liik ja nissifilter votavad oiged kirjed valja, oiged jaavad.
+{
+  const read = parseRss(RSS_FIKSTUUR);
+  assert.deepEqual(read.map((r) => r.ref), ['314159', '333333', '555555', '666666', '777777'],
+    'labi peavad saama tapselt need viis viitenumbrit');
+  const refs = new Set(read.map((r) => r.ref));
+  assert.ok(!refs.has('222222'), 'ehitustoode kirje peab valja jaama ka siis, kui pealkiri sobib');
+  assert.ok(!refs.has('223344'), 'asjade kirje peab valja jaama ka siis, kui pealkiri sobib');
+  assert.ok(!refs.has('444444'), 'EXCL-i tabav kirje peab valja jaama');
+  const a = read[0];
+  assert.equal(a.title, 'Digitaalse eneseabiprogrammi „Aitab“ arendus- ja hooldustööd',
+    'pealkirjast koritakse viitenumber ja mottekriips maha');
+  assert.equal(a.rhr_id, '10682825', 'rhr_id tuleb lingist');
+  assert.equal(a.buyer, 'Tervise Arengu Instituut', 'ostja tuleb dc:creator-ist');
+  assert.equal(a.nature, 'Teenused', 'liik on kirjelduse esimene vali');
+  assert.equal(a.menetlus, 'Avatud hankemenetlus', 'menetlus on kirjelduse teine vali');
+  assert.equal(a.est, null, 'RSS ei anna maksumust');
+  assert.equal(a.cpv, null, 'RSS ei anna CPV-d');
+  console.log('PASS hanked: RSS-i filter jatab alles ainult nissi teenused');
+}
+
+// F2: tahtaeg ja ilmumisaeg on ISO-kujul - eestikeelne kuju lohuks markExpired-i.
+{
+  const read = parseRss(RSS_FIKSTUUR);
+  const kaart = Object.fromEntries(read.map((r) => [r.ref, r]));
+  assert.equal(kaart['314159'].deadline, '2026-10-13', 'tahtaeg normaliseeritakse ISO-kujusse');
+  assert.equal(kaart['333333'].deadline, '2026-09-05', 'mitmerealine kirjeldus ei sega tahtaega');
+  assert.equal(kaart['777777'].deadline, '2026-11-01', 'uhekohaline paev polsterdatakse nulliga');
+  assert.equal(kaart['555555'].deadline, null, 'tahtajata kirje annab NULL-i, mitte tuhja stringi');
+  assert.equal(kaart['314159'].published, '2026-09-10', 'pubDate normaliseeritakse ISO-kujusse');
+  assert.equal(kaart['777777'].published, '2026-09-16', 'pubDate normaliseeritakse ISO-kujusse');
+  for (const r of read) {
+    assert.ok(r.deadline === null || /^\d{4}-\d{2}-\d{2}$/.test(r.deadline),
+      'iga tahtaeg on kas NULL voi ISO: ' + r.ref + ' = ' + JSON.stringify(r.deadline));
+    assert.ok(r.published === null || /^\d{4}-\d{2}-\d{2}$/.test(r.published),
+      'iga ilmumisaeg on kas NULL voi ISO: ' + r.ref + ' = ' + JSON.stringify(r.published));
+  }
+  console.log('PASS hanked: RSS-i kuupaevad on ISO-kujul');
+}
+
+// F3: segmentOf kolm haru ja EXCL voidab FIT-i.
+{
+  assert.equal(segmentOf('Tehisaru vestlusroboti arendus'), 'nišš', 'FIT ilma SMALLWEB-ita on niss');
+  assert.equal(segmentOf('Valla kodulehe uuendamine'), 'väike veebileht', 'koduleht on vaike veebileht');
+  assert.equal(segmentOf('Veebilehe arendus'), 'väike veebileht', 'veebileht on vaike veebileht');
+  assert.equal(segmentOf('Bussipeatuste hooldus'), null, 'FIT-i mittetabav pealkiri ei ole segment');
+  assert.equal(segmentOf('Koolimaja ehitusaegse kasutajakogemuse uuring'), null,
+    'EXCL peab FIT-i voitma');
+  assert.equal(segmentOf('Veebilehe sisekujunduse pildipank'), null,
+    'EXCL peab SMALLWEB-i voitma');
+  for (const tyhi of [null, undefined, '']) {
+    assert.equal(segmentOf(tyhi), null, 'tuhi pealkiri ei ole segment: ' + JSON.stringify(tyhi));
+  }
+  console.log('PASS hanked: segmentOf kolm haru ja EXCL voidab FIT-i');
+}
+
+// F4: HTML-olemid dekodeeritakse ja CDATA ei jata prahti pealkirja.
+{
+  const kaart = Object.fromEntries(parseRss(RSS_FIKSTUUR).map((r) => [r.ref, r]));
+  const f = kaart['666666'];
+  assert.equal(f.title, 'Veebilehe "Kodu" & e-teenuste arendus „Uus“',
+    'CDATA koritakse maha ja olemid dekodeeritakse');
+  assert.ok(!/CDATA|&amp;|&quot;|&#/.test(f.title), 'pealkirja ei tohi jaada CDATA- ega olemipraht');
+  assert.equal(f.buyer, 'Kohila & Co OÜ', 'kuueteistkumnendolem dekodeeritakse ka ostja nimes');
+  assert.equal(f.rhr_id, '10000007', 'CDATA-sse pakitud link annab ikka rhr_id');
+  assert.equal(f.menetlus, 'Lihthange', 'olemiga kirjeldus jaguneb ikka valjadeks');
+  assert.equal(kaart['333333'].buyer, "Tartu 'Linnavalitsus'", '&apos; dekodeeritakse');
+  assert.equal(f.segment, 'väike veebileht', 'dekodeeritud pealkiri lahebki segmendifiltrisse');
+  console.log('PASS hanked: CDATA ja HTML-olemid on lahendatud');
+}
+
+// F5: parser on valine sisend - ramps ei tohi kogu sunki maha votta.
+{
+  for (const ramps of ['', null, undefined, 42, {}, [], true, NaN,
+    '<rss><item><title>katki', '<<<>>>', '{"json":true}', '<item></item>',
+    '<item><title>314159 - Veebilehe arendus</title>']) {
+    const r = parseRss(ramps);
+    assert.ok(Array.isArray(r), 'parseRss peab alati andma massiivi: ' + JSON.stringify(ramps));
+    assert.equal(r.length, 0, 'ramps-sisend annab tuhja massiivi: ' + JSON.stringify(ramps));
+  }
+  console.log('PASS hanked: ramps-sisend annab tuhja massiivi');
+}
+
+// F6: integratsioon - RSS-i tulemus laheb otse upsertHange-i ja markExpired kaitub oigesti.
+// See test seob ulesanded 2 ja 3: kui tahtaeg ei oleks ISO-kujul, jaaks aegumine tegemata.
+{
+  const db = testDb();
+  const read = parseRss(RSS_FIKSTUUR);
+  assert.equal(read.length, 5, 'eeldus: fikstuurist tuleb viis rida');
+  for (const h of read) assert.equal(upsertHange(db, h), 'uus', 'iga RSS-i rida laheb baasi: ' + h.ref);
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM hanked').get().c, 5, 'viis rida baasis');
+  const seg = db.prepare('SELECT segment FROM hanked WHERE ref = ?').get('333333').segment;
+  assert.equal(seg, 'väike veebileht', 'segment salvestub');
+  // 333333 tahtaeg oli 05.09.2026 - moodas. Ulejaanud on tulevikus voi tahtajata.
+  assert.equal(markExpired(db, '2026-09-21'), 1, 'tapselt uks RSS-ist tulnud hange aegub');
+  assert.equal(db.prepare('SELECT state FROM hanked WHERE ref = ?').get('333333').state, 'aegunud',
+    'moodunud tahtajaga RSS-i hange aegub');
+  for (const ref of ['314159', '555555', '666666', '777777']) {
+    assert.equal(db.prepare('SELECT state FROM hanked WHERE ref = ?').get(ref).state, 'uus',
+      ref + ': tulevane voi tahtajata hange jaab nahtavaks');
+  }
+  // Kordussunk ei tohi ridu dubleerida ega inimese seisu ule kirjutada.
+  for (const h of read) upsertHange(db, h);
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM hanked').get().c, 5, 'kordussunk ei dubleeri');
+  assert.equal(db.prepare('SELECT state FROM hanked WHERE ref = ?').get('333333').state, 'aegunud',
+    'kordussunk ei tohi aegunud seisu tagasi keerata');
+  db.close();
+  console.log('PASS hanked: RSS-i tulemus laheb baasi ja aegub oigesti');
+}
+
+// F7 (ULEVAATUSE LAHTINE PUNKT): paljas aastaarv '2026' on SQLite-le Juliuse paev,
+// seega date('2026') EI ole NULL ja rida aegus vaikselt ara. Parser ei tooda sellist
+// vaartust kunagi, aga markExpired on ka toore SQL-i ja ulesande 6 eForms-parseri tee -
+// seega valvame kujundi baasi pool (GLOB), mitte ainult parseri pool.
+{
+  const db = testDb();
+  const read = parseRss(RSS_FIKSTUUR);
+  for (const h of read) {
+    assert.ok(h.deadline === null || /^\d{4}-\d{2}-\d{2}$/.test(h.deadline),
+      'parser ei tooda paljast aastaarvu ega muud kuju: ' + JSON.stringify(h.deadline));
+  }
+  // Toores SQL moodab parserist - GLOB peab teda kinni pidama.
+  for (const [ref, deadline] of Object.entries({
+    aasta: '2026', number: '45000', kuu: '2026-09', juliuse: '2440588',
+  })) {
+    db.exec(`INSERT INTO hanked (ref,title,deadline) VALUES ('${ref}','Toores SQL','${deadline}')`);
+  }
+  upsertHange(db, { ref: 'iso-moodas', title: 'ISO moodas', deadline: '2020-01-01' });
+  assert.equal(markExpired(db, '2026-09-21'), 1, 'aeguda tohib ainult ISO-kujuline tahtaeg');
+  for (const ref of ['aasta', 'number', 'kuu', 'juliuse']) {
+    assert.equal(db.prepare('SELECT state FROM hanked WHERE ref = ?').get(ref).state, 'uus',
+      ref + ': mitte-ISO tahtaeg peab jaama nahtavaks, mitte vaikselt aeguma');
+  }
+  assert.equal(db.prepare('SELECT state FROM hanked WHERE ref = ?').get('iso-moodas').state, 'aegunud',
+    'ISO-kujuline moodunud tahtaeg aegub endiselt');
+  db.close();
+  console.log('PASS hanked: paljas aastaarv ei aegu vaikselt');
 }
