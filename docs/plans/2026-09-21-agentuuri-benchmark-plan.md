@@ -1,0 +1,798 @@
+# Agentuuri-benchmark: 17 ideed — teostusplaan
+
+> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+
+**Goal:** Viia leisson.eu-le 17 mõõdetud konkurentsianalüüsist tuletatud muudatust, mis tõstavad kvalifitseeritud päringute arvu kontaktivormist.
+
+**Architecture:** Kõik onsite-muudatused toituvad ühest allikast (`site/data/service-catalog.json` → `sync-orbit` → `site/lib/pricing.ts`). Ükski hind ega tarneaeg ei kirjutata teksti. Uued pinnad on server-komponendid; ainus kliendi-JS on paketivalija hüdreerimissaar, mida kaitseb uus kimbueelarve värav. Saidiväline kiht (O1–O5) ei puuduta koodi.
+
+**Tech Stack:** Next.js 16 App Router · TypeScript · Orbit DS (`packages/orbit-tokens`, `packages/orbit-ui`) · oma MDX-parser · Resend · GA4 (`site/components/Analytics.tsx`) · väravad `tests/*.mjs` + `.github/workflows/orbit-gates.yml`
+
+**Disain:** `docs/plans/2026-09-21-agentuuri-benchmark-design.md` (commit 74601e6)
+
+---
+
+## KOHUSTUSLIK: keskkonnareeglid (loe enne esimest sammu)
+
+1. **Ehitus, väravad ja git käivad AINULT Windowsis Desktop Commanderiga.** Linuxi VM-is kukub `lightningcss`, Chromiumil puudub `libXdamage`, VM ei saa faile kustutada ega GitHubi.
+2. **Iga `npm install` / `npm ci` ette `$env:NODE_ENV=''`.** Gerti PowerShellis on `NODE_ENV` globaalselt `production` → devDependencies jäävad installimata ja `next build` kukub „Cannot find module '@tailwindcss/postcss'".
+3. **Kui `next build` annab veidra „Cannot find module" vea, kuigi moodul on olemas — kustuta `.next` ja ehita uuesti** (Turbopack cache'ib eelmise ebaõnnestunud resolutsiooni).
+4. **Commit-sõnumid ASCII-s.** Desktop Commanderi cmd-shell moonutab täpitähti. Kirjuta „vordlus", mitte „võrdlus".
+5. **Üks `btn-fill` lehe kohta.** `tests/gates.mjs` 4e CTA-hierarhia värav on juba kord katki läinud. Kõik uued nupud on `btn-ghost` või tekstilink.
+6. **Tabel peab olema `.table-scroll` sees ja `.prose-orbit` OTSENE laps**, muidu `no-hscroll@390` kukub. Eeskuju: `site/app/[lang]/prices/page.tsx` „Suuremad eritööd" sektsioon.
+7. **Väljalase** alles rohelise CI järel: `git push origin origin/main:release/production`.
+
+### Väravate käsurida (Windows, Desktop Commander, repo juur)
+
+```
+node packages/orbit-tokens/verify.mjs
+node tests/portfell.mjs
+node tests/claims.mjs
+cd site; $env:NODE_ENV=''; npx next build
+npx next start -p 3311     # eraldi protsess
+node tests/gates.mjs
+node tests/axe.mjs
+```
+
+---
+
+## PARANDUS disainidokumendi vastu (leitud koodi lugemisel 2026-09-21)
+
+Kolm eeldust olid valed — plaan kannab parandatud numbreid:
+
+| Idee | Disainis | Tegelikult | Uus h |
+|---|---|---|---|
+| 10 · kataloogi kärpimine | „avalehel 15 pakkumist" | **Avalehel on juba 3** (`ServiceCards` = `fixedOffers()` = `group==='primary'`). Kärpimine puudutab `/prices` lehte, kus on 3 + 3 growth + 6 bespoke + 1 product = 13 pinda | 3 → **2** |
+| 9 · sobib/ei sobi | „`fit` ja `excludes` kasutamata" | **`fit` on juba renderdatud** `ServiceCards`-is ja growth-kaartidel. Puudu on ainult `excludes` | 4 → **2** |
+| 4 · võrdlustabel | „uus tabelimuster" | **Muster on olemas** — `/prices` „Suuremad eritööd" kasutab juba `.table-scroll` + `.tbl` + `<caption>` + `scope` | 4 → **3** |
+
+**Vabanes 4 h → puhver 4 h + 4 h = 8 h.** Kogumaht 72 h tööd + 8 h puhver.
+
+---
+
+## Task 0: Baasjoon (KOHUSTUSLIK ENNE KÕIKE)
+
+**Files:** loeb ainult; kirjutab `docs/plans/baseline-2026-09-21.txt`
+
+**Step 1:** Puhas puu ja värske main.
+
+```
+git -C "C:\Users\gert\Desktop\LEISSON.CREATIVE\Leisson Creative" status --short --branch
+```
+Oodatud: `## main...origin/main`, tööpuu puhas.
+
+**Step 2:** Ehita ja salvesta route-tabel.
+
+```
+cd "C:\Users\gert\Desktop\LEISSON.CREATIVE\Leisson Creative\site"; $env:NODE_ENV=''; npx next build | Tee-Object -FilePath ..\docs\plans\baseline-2026-09-21.txt
+```
+Oodatud: build läbib. Failis on route-tabel koos „First Load JS" veeruga.
+
+**Step 3:** Loe failist kaks numbrit ja kirjuta need plaani kõrvale:
+- `/[lang]` First Load JS = ____ kB
+- `/[lang]/prices` First Load JS = ____ kB
+
+**Step 4:** Kontrolli arhitektuurieeldust — kas React'i kliendiruntime on juba igal lehel?
+
+```
+findstr /C:"'use client'" site\components\Analytics.tsx
+findstr /C:"Analytics" site\app\[lang]\layout.tsx
+```
+Oodatud: mõlemad leiavad vaste.
+
+**OTSUSTUSPUNKT:** kui `Analytics` EI ole juurpaigutuses kliendikomponendina, siis **Task 12 (3b hüdreerimine) jäetakse tegemata** ja valija jääb server-only'ks (Task 11). Kirjuta otsus siia faili.
+
+**Step 5:** Käivita kõik väravad korra läbi, et teada, mis on ENNE roheline.
+
+```
+node packages\orbit-tokens\verify.mjs; node tests\portfell.mjs; node tests\claims.mjs
+```
+Oodatud: kõik kolm 0-koodiga.
+
+**Step 6: Commit**
+
+```
+git add docs/plans/baseline-2026-09-21.txt docs/plans/2026-09-21-agentuuri-benchmark-plan.md
+git commit -m "docs(plans): teostusplaan + baasjoone mootmine enne agentuuri-benchmark sprinti"
+```
+
+---
+
+# VOOR 1 — kiired võidud (9 h)
+
+## Task 1 (idee 8): Telefon, asukoht, vastamisajad — 1 h
+
+**Files:**
+- Modify: `site/data/service-catalog.json` → `seller`
+- Modify: `site/lib/pricing.ts` (eksport)
+- Modify: `site/components/Footer.tsx`
+
+**Step 1:** Lisa `seller`-plokki kolm välja. Kataloog on ainus koht, kust need tulevad — nii jõuavad nad ühe muudatusega jalusesse, kontaktilehele ja JSON-LD-sse.
+
+```json
+"phone": "+372 XXXXXXXX",
+"phoneHours": { "et": "E–R 9–17", "en": "Mon–Fri 9–17" },
+"locality": { "et": "Tallinn, Eesti", "en": "Tallinn, Estonia" }
+```
+
+> **Gerti sisend vajalik:** telefoninumber. Kui Gert ei taha kõnesid, JÄTA TASK TEGEMATA ja märgi plaani „loobutud" — ära pane kohatäidet.
+
+**Step 2:** `pricing.ts`-is on `SELLER` juba eksporditud — uued väljad tulevad kaasa, koodimuudatust pole vaja. Kontrolli tüüpi:
+
+```
+cd site; npx tsc --noEmit
+```
+
+**Step 3:** Footer.tsx — LEISSON OÜ tulpa, `mailto` alla:
+
+```tsx
+<a href={'tel:' + SELLER.phone.replace(/\s/g, '')}>{SELLER.phone}</a>
+<span className="dim" style={{ display: 'block', fontSize: 12.5 }}>{tr(SELLER.phoneHours, lang)} · {tr(SELLER.locality, lang)}</span>
+```
+
+**Step 4:** Ehita ja kontrolli.
+
+```
+cd site; $env:NODE_ENV=''; npx next build
+node ..\tests\gates.mjs
+```
+Oodatud: PASS. Telefon nähtav jaluses igal lehel.
+
+**Step 5: Commit**
+
+```
+git add site/data/service-catalog.json site/components/Footer.tsx
+git commit -m "feat(site): telefon, vastamisajad ja asukoht kataloogist jalusesse"
+```
+
+---
+
+## Task 2 (idee 7): Hinnaankur hero'sse — 2 h
+
+**Files:** Modify `site/app/[lang]/page.tsx:20-22`
+
+**Konkurentsitõend:** Veebimets ja Navik panevad hinna JA tähtaja kõrvuti; Websystems peidab hinna ja kaotab ostja. leisson.eu-l on mõlemad olemas, aga `dim`-klassiga väiketekstina nuppude all.
+
+**Step 1:** Asenda praegune kaks `<p className="dim">` rida ühe nähtava tõendireaga. **Tekst, mitte nupp** — 4e värav.
+
+```tsx
+<p className="hero-anchor">
+  {fixedOffers().map((o, i) => <span key={o.id}>
+    {i > 0 && <span aria-hidden="true"> · </span>}
+    <a href={'/' + lang + '/prices#' + o.id}>{o.name[lang]}</a>{' '}
+    <b className="mono">{priceLabel(o, lang)}</b>{' '}
+    <span className="dim">{o.lead[lang]}</span>
+  </span>)}
+</p>
+<p className="dim">{et ? 'Selge töömaht · kirjalik hinnakinnitus · eesti ja inglise keel' : 'Defined scope · written price confirmation · Estonian and English'}</p>
+```
+
+**Step 2:** `site/app/globals.css` — `.hero-anchor` kasutab olemasolevaid tokeneid, mitte uusi väärtusi:
+
+```css
+.hero-anchor { margin-top: var(--orbit-space-4); font-size: 15px; line-height: 1.8; max-width: var(--orbit-space-measure); }
+.hero-anchor a { text-decoration: none; border-bottom: 1px solid currentColor; }
+```
+
+**Step 3:** Ehita + väravad. **Eriti kontrolli 4e-d** — lisasime hero'sse kolm linki.
+
+```
+cd site; $env:NODE_ENV=''; npx next build; npx next start -p 3311
+node ..\tests\gates.mjs
+```
+Oodatud: PASS. Kui 4e kukub „conflicting vocabulary" peale, on põhjus selles, et pakettide nimed loetakse CTA-kandidaatideks → mähi lingid `<span data-not-cta>` sisse ja lisa `gates.mjs` 4e filtrisse, NAGU tehti sisukorra ankrutega.
+
+**Step 4:** Mobiil 390 px — `no-hscroll` peab olema PASS. Kolm paketti punktidega ühel real MURRAB kitsal ekraanil; kontrolli, et `.hero-anchor` murdub ridadeks, mitte ei keri.
+
+**Step 5: Commit**
+
+```
+git add "site/app/[lang]/page.tsx" site/app/globals.css
+git commit -m "feat(site): hinnaankur hero'sse - pakett, hind ja tarneaeg korvuti"
+```
+
+---
+
+## Task 3 (idee 6): Vastuse lubadus vormi juures — 2 h
+
+**Files:** Modify `site/lib/i18n.ts` (`dict.contact`), `site/app/[lang]/contact/ContactForm.tsx`
+
+**Konkurentsitõend:** Veebimets lubab „Vastame tööpäeviti 2 tunni jooksul. Ei mingit spämi." Trinidad lubab „within 3 working days". Caotica, Websystems, Marketing Sharks, Veebiagentuur, Navik, Webabi — pärast saatmist ei luba midagi.
+
+**Step 1:** `dict.contact`-i kaks uut võtit:
+
+```ts
+promise: t('Vastan ühe tööpäeva jooksul. Pakkumine tuleb kirjalikult. Uudiskirja ei ole.',
+           'I reply within one business day. The proposal comes in writing. There is no newsletter.'),
+okNext: t('Päring on kohal. Vastan ühe tööpäeva jooksul aadressilt gert@leisson.eu — kontrolli ka rämpsposti.',
+          'Your enquiry has arrived. I reply within one business day from gert@leisson.eu — check your spam folder too.'),
+```
+
+**Step 2:** ContactForm.tsx — saatmisnupu KÕRVALE (mitte lehe algusesse):
+
+```tsx
+<p className="dim" style={{ fontSize: 13, margin: 0 }}>{tr(c.promise, lang)}</p>
+```
+ja õnnestumise olekus asenda `tr(c.ok, lang)` → `tr(c.okNext, lang)`.
+
+**Step 3:** Testi päriselt läbi — täida vorm ja saada.
+
+```
+npx next start -p 3311
+```
+Ava `http://localhost:3311/et/contact`, saada päring, kontrolli et kinnitustekst ilmub `role="status"` plokki ja ekraanilugeja loeb selle ette.
+
+**Step 4:** `node ..\tests\axe.mjs` — PASS.
+
+**Step 5: Commit**
+
+```
+git add site/lib/i18n.ts "site/app/[lang]/contact/ContactForm.tsx"
+git commit -m "feat(contact): vastuse lubadus nupu juures ja konkreetne kinnitustekst"
+```
+
+---
+
+## Task 4 (idee 2): Inimene lehele — 4 h
+
+**Files:**
+- Create: `site/components/Founder.tsx`, `site/public/gert.webp`
+- Modify: `site/lib/i18n.ts` (`dict.founder`), `site/app/[lang]/contact/page.tsx`, `site/app/[lang]/page.tsx`
+
+**Konkurentsitõend:** Brand Manualil kolm partnerit fotode, CV-de, otsemeilide ja telefonidega — „ülekantav 1:1, null infrastruktuuri". Trinidadil 30+ spetsialisti nimeliselt fotoga. Websystemsil ja Webabil nimed. leisson.eu-l **ei ühtegi nime ega nägu**.
+
+**Step 1:** Foto. Nõuded: WebP, ≤ 80 KB, ruut, min 480×480, päris foto (mitte stock — Trinidadi tugevus oli just see). Pane `site/public/gert.webp`.
+
+**Step 2:** `dict.founder`:
+
+```ts
+founder: {
+  name: t('Gert Leisson', 'Gert Leisson'),
+  role: t('Asutaja ja ainus tegija', 'Founder and sole practitioner'),
+  body: t('Ehitan töö ise algusest lõpuni. Sa räägid minuga, mitte projektijuhiga, ja pakkumise kirjutab sama inimene, kes koodi kirjutab.',
+          'I build the work myself from start to finish. You talk to me, not a project manager, and the proposal is written by the same person who writes the code.'),
+  alt: t('Gert Leisson, Leisson Creative asutaja', 'Gert Leisson, founder of Leisson Creative'),
+},
+```
+
+**Step 3:** `Founder.tsx` — server-komponent, `priority={false}` (ei tohi LCP-d võtta):
+
+```tsx
+import Image from 'next/image';
+import { dict, tr, type Lang } from '@/lib/i18n';
+import { SELLER } from '@/lib/pricing';
+
+export function Founder({ lang }: { lang: Lang }) {
+  const f = dict.founder;
+  return <aside className="founder panel">
+    <Image src="/gert.webp" alt={tr(f.alt, lang)} width={96} height={96} priority={false} />
+    <div>
+      <p><b>{tr(f.name, lang)}</b> · <span className="dim">{tr(f.role, lang)}</span></p>
+      <p>{tr(f.body, lang)}</p>
+      <p className="mono"><a href="mailto:gert@leisson.eu">gert@leisson.eu</a>{SELLER.phone && <> · <a href={'tel:' + SELLER.phone.replace(/\s/g, '')}>{SELLER.phone}</a></>}</p>
+    </div>
+  </aside>;
+}
+```
+
+**Step 4:** `globals.css`:
+
+```css
+.founder { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: var(--orbit-space-4); align-items: start; }
+.founder img { border-radius: var(--orbit-radius-2); }
+.founder p { max-width: var(--orbit-space-measure); }
+@media (max-width: 560px) { .founder { grid-template-columns: 1fr; } }
+```
+
+**Step 5:** Paiguta kahte kohta: kontaktilehel vormi KÕRVALE/KOHALE, avalehel lõpu kontaktiribale.
+
+**Step 6:** Ehita, mõõda, väravad.
+
+```
+cd site; $env:NODE_ENV=''; npx next build
+```
+**Kontrolli route-tabelist:** `/[lang]` ja `/[lang]/contact` First Load JS EI tohi kasvada (pilt ei ole JS). Võrdle Task 0 baasjoonega.
+
+```
+npx next start -p 3311; node ..\tests\gates.mjs; node ..\tests\axe.mjs
+```
+Oodatud: PASS, sh `no-hscroll@390` (seepärast on 560 px media query).
+
+**Step 7: Commit**
+
+```
+git add site/components/Founder.tsx site/public/gert.webp site/lib/i18n.ts site/app/globals.css "site/app/[lang]/contact/page.tsx" "site/app/[lang]/page.tsx"
+git commit -m "feat(site): asutaja plokk - nimi, nagu ja otsekontakt kontaktilehel ja avalehel"
+```
+
+---
+
+# VOOR 2 — kataloogipind (7 h)
+
+## Task 5: Kataloogivärav (automatiseerimine, ~20 min)
+
+**Files:** Modify `tests/claims.mjs` (lõppu, enne kokkuvõtet)
+
+**Miks:** ideed Task 6–8 loevad kõik `fit`, `excludes` ja `lead` välju. Praegu ei kontrolli neid ükski värav → uus pakett võib kukkuda tabelisse tühja lahtrina. „2 korda = automatiseeri": see on teine kord, kui neid välju käsitsi kontrollime.
+
+**Step 1: Kirjuta värav**
+
+```js
+// --- kataloogivärav: iga aktiivne pakkumine kannab fit, excludes ja lead ET+EN ---
+const catalog = JSON.parse(readFileSync(join(root, 'site/data/service-catalog.json'), 'utf8'));
+for (const s of catalog.services.filter(x => x.status === 'active')) {
+  const tag = `service-catalog:${s.id}`;
+  for (const k of ['name', 'includes', 'fit', 'lead']) {
+    if (!s[k]?.et?.trim() || !s[k]?.en?.trim()) fail(tag, `${k} puudub voi on tuhi (ET+EN kohustuslik)`);
+  }
+  if (s.group === 'primary') {
+    if (!Array.isArray(s.excludes?.et) || !s.excludes.et.length) fail(tag, 'excludes.et puudub (primary pakett peab utlema, mida EI sisalda)');
+    if (!Array.isArray(s.excludes?.en) || !s.excludes.en.length) fail(tag, 'excludes.en puudub');
+    if ((s.excludes?.et?.length ?? 0) !== (s.excludes?.en?.length ?? 0)) fail(tag, 'excludes ET/EN pikkus erineb');
+  }
+}
+```
+
+**Step 2: Jooksuta — peab PASSIMA kohe** (kataloogis on väljad juba olemas):
+
+```
+node tests\claims.mjs
+```
+Oodatud: PASS. Kui kukub, on kataloogis päris auk — paranda kataloogi, mitte väravat.
+
+**Step 3: Negatiivtest (KOHUSTUSLIK).** Tühjenda ajutiselt ühe primary teenuse `excludes.et`, jooksuta, veendu et värav KUKUB, taasta.
+
+**Step 4: Commit**
+
+```
+git add tests/claims.mjs
+git commit -m "test(claims): kataloogivarav - aktiivne pakkumine peab kandma fit, excludes ja lead valju"
+```
+
+---
+
+## Task 6 (idee 10): `/prices` pinna kärpimine — 2 h
+
+**Files:** Modify `site/app/[lang]/prices/page.tsx`
+
+**PARANDUS:** avaleht on juba korras (3 paketti). Probleem on `/prices` lehel: 3 primary + 3 growth + 6 bespoke + 1 product = **13 konkureerivat pinda** ühel lehel. Kõik võitjad (Veebimets, Navik, Caotica, Webabi) näitavad kolme.
+
+**Step 1:** Hoia „Veebipaketid" sektsioon MUUTMATA (see on peatee).
+
+**Step 2:** „Nähtavus, bränd ja mõõtmine" (3 growth-kaarti) — teisenda kaartidelt üherealiseks loendiks sama `.table-scroll` tabelisse, mis juba hoiab bespoke-pakkumisi. Üks tabel, kaks `<tbody>` gruppi, üks `<caption>`. Nii kaob kolm `btn-fill` nuppu (4e värav paraneb) ja leht saab ühe selge hierarhia: **kolm kaarti → üks tabel → üks audit-plokk**.
+
+**Step 3:** Bespoke-tabelisse lisa `lead` veerg (kataloogis olemas, praegu kuvamata) — „Tarne" veerg pärast „Algushind".
+
+**Step 4:** Ehita, väravad, eriti 4e (nuppude arv langes) ja `no-hscroll@390` (tabel sai veeru juurde).
+
+```
+cd site; $env:NODE_ENV=''; npx next build; npx next start -p 3311
+node ..\tests\gates.mjs; node ..\tests\axe.mjs
+```
+
+**Step 5: Commit**
+
+```
+git add "site/app/[lang]/prices/page.tsx"
+git commit -m "refactor(prices): 13 konkureerivat pinda -> kolm kaarti, uks tabel, uks audit-plokk"
+```
+
+---
+
+## Task 7 (idee 9): „Mida see ei sisalda" kaardile — 2 h
+
+**Files:** Modify `site/components/ServiceCards.tsx`
+
+**PARANDUS:** `fit` on juba renderdatud (`<p className="muted">{offer.fit[lang]}</p>`). Puudu on ainult `excludes`.
+
+**Konkurentsitõend:** Caotica kaotab väikeostja, kes näeb SEB/Sorainen/Pärnu Sadama logosid ja järeldab „liiga suur minu jaoks". leisson.eu tootecase'id (AgroNutikas, ProUXAudit) annavad SAMA signaali. Vastumürk on öelda otse, kus pakett lõpeb.
+
+**Step 1:** `service-terms` `<dl>` järele:
+
+```tsx
+{offer.excludes && <div className="service-excludes">
+  <p className="eyebrow">{et ? 'Ei sisalda' : 'Not included'}</p>
+  <ul>{offer.excludes[lang].map(x => <li key={x}>{x}</li>)}</ul>
+</div>}
+```
+
+**Step 2:** `globals.css` — loend peab olema visuaalselt vaiksem kui „sisaldab":
+
+```css
+.service-excludes { margin-top: var(--orbit-space-3); }
+.service-excludes ul { margin: 0; padding-left: 1.1em; color: var(--orbit-color-text-muted); font-size: 14px; }
+```
+(Kontrolli tokeni täpset nime `packages/orbit-tokens` väljundist — ÄRA kirjuta hex-väärtust.)
+
+**Step 3:** Ehita + väravad. Kaardi kõrgus kasvab → kontrolli `grid-3` joondust 1024 px ja 390 px juures.
+
+**Step 4: Commit**
+
+```
+git add site/components/ServiceCards.tsx site/app/globals.css
+git commit -m "feat(prices): iga pakett utleb ka selle, mida ta EI sisalda"
+```
+
+---
+
+## Task 8 (idee 4): Võrdlustabel 290 / 590 / 1190 — 3 h
+
+**Files:** Create `site/components/PackageTable.tsx`; Modify `site/app/[lang]/prices/page.tsx`
+
+**Konkurentsitõend:** Webabi tugevaim element on hinnavahemike sisuline põhjendamine („mida saad 400 € vs 4000 € eest"); Marketing Sharksil sama blogis. Tabel täidab ühtlasi `claims.mjs` GEO-struktuurinõude (min 1 tabel) ja on AI-tsiteeritavuses mõõdetult tugev vorm.
+
+**Step 1:** Komponent renderdab AINULT `fixedOffers()` ja AINULT kataloogivälju. Read: Hind · Tarne · Parandusring · Tasumine · Sobib kui · Ei sisalda. Veerud = kolm paketti.
+
+**Step 2:** Muster kopeeri `/prices` bespoke-tabelist: `<div className="table-scroll" tabIndex={0}><table className="tbl"><caption className="eyebrow">…`. **Peab olema `.prose-orbit` otsene laps või `.doc-hold` sees** — muidu layout-reegel ei kehti.
+
+**Step 3:** Paiguta kohe „Veebipaketid" kaartide JÄRELE, sama sektsiooni sisse. Kaardid = skaneerimiseks, tabel = võrdlemiseks.
+
+**Step 4:** Mõõda Playwrightiga NELJAL laiusel (1512 / 1100 / 1024 / 390), nagu layout-mälu nõuab — mitte silma järgi.
+
+```
+node ..\tests\gates.mjs
+```
+Oodatud: `no-hscroll@390` PASS, `document.scrollWidth === viewport` igal laiusel.
+
+**Step 5: Commit**
+
+```
+git add site/components/PackageTable.tsx "site/app/[lang]/prices/page.tsx"
+git commit -m "feat(prices): kolme paketi vordlustabel kataloogist - hind, tarne, sisu, valistused"
+```
+
+---
+
+# VOOR 3 — suured tükid (19 h)
+
+## Task 9 (idee 5): Enne→pärast case — 6 h
+
+**Files:** Create `content/work/leisson-eu-parandused.mdx`; Modify `content/portfell.csv`
+
+**Konkurentsitõend:** Trinidadi ülekantav idee — „üks põhjalik, kuupäevastatud, autoriga case formaadis väljakutse → protsess → konkreetne number; ei vaja meeskonda ega eelarvet, ainult distsipliini kirjutada numbrid, mitte omadussõnad." Velvetilt: STRUKTUUR, mitte maht.
+
+**Sisu — kolm mõõdetud lugu repost ja CI-logidest (mitte väited):**
+
+1. **Loetav rea pikkus vs tühi laius.** Enne: `.prose` 68ch hoidis sisu 615 px peal 1180 px konteineris → 48 % laiust tühi, 5-veeruline tabel keris 615 px kastis. Pärast: `.doc` ruudustik `minmax(190px,230px) minmax(0,1fr)`, tekst jäi 615 px peale, tabel 910 / 942 / 707 px, horisontaalne kerimine 0 neljal laiusel. Allikas: `site/app/globals.css`, mõõtmine 12.09.2026.
+2. **GA4 kolm katset.** `afterInteractive` → mobiili Lighthouse 0,83. `lazyOnload` → 0,84. `worker`/Partytown → CI roheline, aga tootmises 0 võrgupäringut ja `window.dataLayer` defineerimata. Lahendus: käsitsi laadimine esimesel interaktsioonil või 15 s pärast → värav läbitud, tootmises kontrollitud. Allikas: `site/components/Analytics.tsx`, väljalase adcb5bb.
+3. **Värav, mis leidis toote vea.** `gates.mjs` 4e luges sisukorra ankrud CTA-kandidaatideks → „conflicting vocabulary". See on teine tootepoolne valepositiivne leid ProUXAuditile. Allikas: `tests/gates.mjs`.
+
+**Step 1:** Kopeeri `export const meta` struktuur `content/work/prouxaudit.mdx`-ist. **Iga `metrics` kirje NÕUAB `source.href`** — kasuta GitHubi commit-linke ja failiradu.
+
+**Step 2:** Kirjuta ET ja EN plokid. **`claims.mjs` reeglid, mis kukutavad:** `##` pealkiri ≤ 60 tm · ET-s en dash „–", mitte em dash „—" · ET-s „…" jutumärgid, mitte "…" · `status` ≤ 28 tm · ET/EN sõnade suhe 0,6–1,6 · iga ≥3-kohaline arv või number+ühik peab olema `metrics`-is või lauses koos „allikas:".
+
+**Step 3:** Lisa rida `content/portfell.csv`-sse. **Jäta `url`, `shot_url` ja `shot_source` TÜHJAKS** — muidu `tools/shots.mjs` kirjutab pildi igal main-push'il üle.
+
+**Step 4:**
+```
+node tests\claims.mjs; node tests\portfell.mjs
+```
+Oodatud: mõlemad PASS.
+
+**Step 5:** Lisa uus URL `.github/workflows/orbit-gates.yml` site-gates URL-ide hulka.
+
+**Step 6: Commit**
+
+```
+git add content/work/leisson-eu-parandused.mdx content/portfell.csv .github/workflows/orbit-gates.yml
+git commit -m "feat(work): enne-parast case kolmest moodetud parandusest - joone pikkus, GA4, varava valepositiiv"
+```
+
+---
+
+## Task 10 (idee 3a): Paketivalija, server-baas — 6 h
+
+**Files:** Create `site/components/PackagePicker.tsx`; Modify `site/app/[lang]/prices/page.tsx`
+
+**Konkurentsitõend:** Navik, Veebiagentuur ja Caotica teevad hinnakalkulaatorist peamise CTA. Veebiagentuuri oma on JS-sõltuv ja kannab lähtekoodis **8 sisseehitatud veateadet** „JavaScript files … didn't fully load"; Caotica „kalkulaator" ei ole üldse kalkulaator, vaid neli artiklit. Server-baas võidab mõlemad ilma ühegi baidi JS-ita.
+
+**Kolm küsimust (rohkem ei ole — YAGNI):**
+1. `a` — Kas leht on juba olemas? (`on` / `ei`)
+2. `b` — Mitu teenust on vaja selgitada? (`uks` / `mitu`)
+3. `c` — Millal peab valmis olema? (`nadal` / `kuu` / `pole-kiire`)
+
+**Tuletusreegel (puhas funktsioon, ilma if-puuta koodis):**
+
+```ts
+export function pick(a?: string, b?: string, c?: string) {
+  if (!a || !b || !c) return null;                       // vastamata → vaikeolek
+  if (a === 'on' && b === 'uks') return 'inquiry-repair'; // olemas leht, uks teenus → parandus 290
+  if (b === 'uks') return 'landing-page';                 // uks teenus → muugileht 590
+  return 'business-website';                              // mitu teenust → koduleht 1190
+}
+```
+
+**Step 1: Kirjuta test ENNE komponenti** — `tests/picker.mjs`:
+
+```js
+import { strict as assert } from 'node:assert';
+import { pick } from '../site/lib/picker.mjs';
+assert.equal(pick(), null, 'vastamata olek ei tohi paketti pakkuda');
+assert.equal(pick('on', 'uks', 'nadal'), 'inquiry-repair');
+assert.equal(pick('ei', 'uks', 'kuu'), 'landing-page');
+assert.equal(pick('ei', 'mitu', 'pole-kiire'), 'business-website');
+assert.equal(pick('on', 'mitu', 'nadal'), 'business-website');
+assert.equal(pick('on', 'uks'), null, 'osaline vastus ei tohi paketti pakkuda');
+assert.equal(pick('rampstekst', 'uks', 'kuu'), 'landing-page', 'tundmatu vaartus ei tohi visata');
+console.log('picker: OK');
+```
+
+**Step 2:** `node tests\picker.mjs` → **peab KUKKUMA** („Cannot find module"). See on TDD punane samm.
+
+**Step 3:** Kirjuta `site/lib/picker.mjs` (puhas, sõltuvusteta — sama fail käib nii testis kui komponendis).
+
+**Step 4:** `node tests\picker.mjs` → PASS.
+
+**Step 5:** `PackagePicker.tsx` — server-komponent, olek `searchParams` sees:
+
+```tsx
+<form method="GET" action={'/' + lang + '/prices'}>
+  {/* kolm <fieldset><legend> küsimust, <label><input type="radio" name="a" value="on" defaultChecked={a==='on'}/> */}
+  <button className="btn btn-ghost" type="submit">{et ? 'Näita sobivat paketti' : 'Show the matching package'}</button>
+</form>
+{result && <PackageResult offer={serviceById(result)!} lang={lang} />}
+```
+
+**Nõuded, mida MITTE rikkuda:**
+- `btn-ghost`, mitte `btn-fill` (4e värav).
+- Tulemus renderdab `priceLabel`, `lead`, `includes`, `fit` kataloogist — **mitte ükski string ei ole kirjutatud**.
+- Tulemuse CTA viib `/[lang]/contact?service=<id>` — `ContactForm` `initialService` prop on JUBA olemas.
+- `<form>` ankurdab tulemuse juurde: `action={'/' + lang + '/prices#picker-result'}`.
+- Tundmatu searchParam → vaikeolek, MITTE 500.
+
+**Step 6:** `prices/page.tsx` võtab `searchParams` propi vastu (Next 16: `Promise<{...}>`) ja annab edasi.
+
+**Step 7:** Ehita ja **VÕRDLE ROUTE-TABELIT Task 0 baasjoonega.** `/[lang]/prices` First Load JS **ei tohi kasvada** — server-komponent ei lisa JS-i. Kui kasvas, oled kogemata teinud kliendikomponendi.
+
+**Step 8:** Käsitsi testi JS-ita: Chrome DevTools → Settings → Debugger → Disable JavaScript → täida vorm → peab töötama.
+
+**Step 9:** `node ..\tests\gates.mjs; node ..\tests\axe.mjs` — PASS. Radio-gruppidel peab olema `<fieldset><legend>`, muidu axe kukub.
+
+**Step 10: Commit**
+
+```
+git add site/lib/picker.mjs tests/picker.mjs site/components/PackagePicker.tsx "site/app/[lang]/prices/page.tsx"
+git commit -m "feat(prices): paketivalija server-baas - kolm kusimust, olek URL-is, tootab ilma JS-ita"
+```
+
+---
+
+## Task 11 (idee 3b): Valija hüdreerimine + kimbueelarve värav — 4 h
+
+> **EELTINGIMUS:** Task 0 sammu 4 otsus oli „React'i kliendiruntime on juba igal lehel". Kui ei olnud — **JÄTA SEE TASK TEGEMATA**, valija jääb server-only'ks.
+
+**Files:** Modify `site/components/PackagePicker.tsx`; Create `tests/bundle-budget.mjs`; Modify `.github/workflows/orbit-gates.yml`
+
+**Step 1: Kirjuta kimbueelarve värav ENNE hüdreerimist.** See on „2 korda = automatiseeri" punkt: GA4 kukkus mobiili Lighthouse'i väraval **kolm korda järjest**, sest kimp kasvas vaikselt ja avastati käsitsi.
+
+`tests/bundle-budget.mjs`: loeb `site/.next/build-manifest.json` + route-tabeli, võrdleb `docs/plans/bundle-baseline.json`-iga, kukub kui mõni route ületab baasjoone + 5 KB.
+
+**Step 2:** Loo `docs/plans/bundle-baseline.json` Task 0 numbritest.
+
+**Step 3:** Jooksuta praeguse buildi vastu → PASS.
+
+**Step 4: Negatiivtest.** Tõsta baasjoont ajutiselt −5 KB võrra, jooksuta, veendu et KUKUB, taasta.
+
+**Step 5:** Lisa `.github/workflows/orbit-gates.yml` site-gates sammu, kohe pärast buildi.
+
+**Step 6:** Hüdreeri valija: `'use client'`, `useState` kolme vastuse jaoks, `onChange` → `pick()` sama fail, `history.replaceState` URL-i sünkroonis. **`<form method="GET">` jääb alles** — see on fallback, mitte dekoratsioon.
+
+**Step 7:** Ehita, jooksuta kimbuvärav.
+
+```
+cd site; $env:NODE_ENV=''; npx next build
+node ..\tests\bundle-budget.mjs
+```
+Oodatud: PASS (kasv < 5 KB). **Kui kukub → revert Task 11, Task 10 jääb.** See ei ole läbirääkimiste koht.
+
+**Step 8:** Lighthouse mobiil.
+
+```
+npx lighthouse http://localhost:3311/et/prices --preset=desktop
+npx lighthouse http://localhost:3311/et/prices --form-factor=mobile
+```
+Oodatud: desktop ≥ 0,90, mobiil perf ≥ 0,85. **Kukkumisel revert Task 11.**
+
+**Step 9:** Testi uuesti JS-ita (peab ikka töötama) JA JS-iga (peab reageerima ilma lehe laadimiseta).
+
+**Step 10:** GA4 sündmus `picker_completed` — kasuta OLEMASOLEVAT `trackEvent` mustrit `site/components/Analytics.tsx`-ist. **Ära lisa uut skripti ega `next/script` strategy't** — see muster on tootmises kolm korda ebaõnnestunud.
+
+**Step 11: Commit**
+
+```
+git add site/components/PackagePicker.tsx tests/bundle-budget.mjs docs/plans/bundle-baseline.json .github/workflows/orbit-gates.yml
+git commit -m "feat(prices): valija hudreerimine + CI kimbueelarve varav (baasjoon + 5 KB)"
+```
+
+---
+
+## Task 12 (idee 1): Mikroaudit hero'sse — 3 h
+
+**Files:** Create `site/components/AuditHandoff.tsx`; Modify `site/app/[lang]/page.tsx`
+
+**Konkurentsitõend:** 7/10 konkurenti lubab esimese sammuna midagi tasuta — „Telli tasuta digiturunduse audit" (Marketing Sharks), „Küsi tasuta strateegiat" (Webabi), „Konsultatsioon on tasuta ja ei kohusta millekski" (Websystems), „Saa tasuta hinnapakkumine" (Veebimets). **Mitte ükski ei tarni kohe** — kõik lõpevad vormiga ja ootamisega.
+
+**Step 1:** Komponent on `<form method="GET" action="https://prouxaudit.com/...">` — **link, mitte embed**. Kui prouxaudit.com on maas, on katki üks nupp, mitte avaleht.
+
+```tsx
+<form className="audit-handoff" method="GET" action="https://prouxaudit.com/" target="_blank" rel="noopener">
+  <label htmlFor="audit-url">{et ? 'Kontrolli oma praegune leht tasuta' : 'Check your current site for free'}</label>
+  <input id="audit-url" className="input" name="url" type="url" inputMode="url" placeholder="https://" required />
+  <input type="hidden" name="utm_source" value="leisson.eu" />
+  <input type="hidden" name="utm_medium" value="hero" />
+  <button className="btn btn-ghost" type="submit">{et ? 'Ava audit' : 'Run the audit'}</button>
+  <p className="dim">{et ? 'Audit on abivahend. Selle automaatne skoor ei tõenda müügitulemust ega kogu lehe ligipääsetavust.' : 'The audit is a supporting tool. Its automated score does not prove sales results or whole-site accessibility.'}</p>
+</form>
+```
+
+**Step 2:** Viimane lõik EI OLE valikuline — sama lause on juba `content/pages/prices.mdx`-is ja `home.mdx`-is. Ilma selleta läheb lubadus vastuollu lehe enda tekstiga.
+
+**Step 3:** **Kontrolli ProUXAuditi päris query-parameetri nime** enne kirjutamist (`?url=` vs midagi muud). Ära oleta.
+
+**Step 4:** Paiguta hero'sse, hinnaankru JÄRELE. `btn-ghost`. Hero peamine tegevus jääb kontaktiks.
+
+**Step 5:** GA4 `audit_handoff` olemasoleva `trackEvent` mustriga.
+
+**Step 6:** Ehita + **eriti 4e värav** — hero'l on nüüd `btn-fill` (paketid) + `btn-ghost` (kontakt) + `btn-ghost` (audit) + kolm hinnaankru linki.
+
+```
+node ..\tests\gates.mjs
+```
+**Kui 4e kukub, on süüdlane SEE commit** — sellepärast on ta voorus 3 viimane. Revert ja aruta, kas mikroaudit läheb hoopis `/prices` lehele.
+
+**Step 7:** `node ..\tests\axe.mjs` + `no-hscroll@390` — input + nupp peavad kitsal ekraanil murduma.
+
+**Step 8: Commit**
+
+```
+git add site/components/AuditHandoff.tsx "site/app/[lang]/page.tsx" site/app/globals.css
+git commit -m "feat(site): tasuta mikroaudit hero's - URL-vali ProUXAuditi, btn-ghost, skoori piirang kirjas"
+```
+
+---
+
+# VOOR 4 — käsitöö ja sisu (16 h)
+
+## Task 13 (idee 14): `apple-design` käsitööpass — 8 h
+
+**Files:** `packages/orbit-tokens/*`, `packages/orbit-ui/orbit-ui.css`, `site/app/globals.css`
+
+**REQUIRED SUB-SKILL:** `anthropic-skills:apple-design` JA `anthropic-skills:leisson-orbit-ds` — loe MÕLEMAD enne esimest rida.
+
+**Skoop (ei laiene):** hero, teenusekaardid, võrdlustabel, paketivalija. **Mitte** värvipalett, mitte fondivalik, mitte uus komponent.
+
+**Step 1:** Loe `leisson-orbit-ds` skill. **Tokenite ainus allikas on `packages/orbit-tokens`** — CSS-i ei kirjutata hex-väärtusi ega px-suurusi, mis ei ole tokenid.
+
+**Step 2:** Loe `apple-design` skill. Rakenda ainult seal, kus on mõõdetav puudus: optiline joondus, vertikaalne rütm, fookuse olekud, liikumine (`packages/orbit-ui/spring.ts` on olemas).
+
+**Step 3:** Enne muudatust tee ekraanipildid neljal laiusel (1512 / 1100 / 1024 / 390). Pärast samad. **Diff on tõend, mitte arvamus.**
+
+**Step 4:**
+```
+node packages\orbit-tokens\verify.mjs
+```
+Oodatud: PASS. Kui kukub, oled kirjutanud väärtuse mööda tokenikonveierist.
+
+**Step 5:** `node tests\gates.mjs` — sh **visuaalne snapshot värav**. See KUKUB teadlikult (disain muutus). Vaata diff üle, kinnita, uuenda baasjoon.
+
+**Step 6:** Lighthouse + axe — kontrast ja fookusrõngad peavad olema PASS (`apple-design` pehmemad toonid võivad kontrasti langetada).
+
+**Step 7: Commit**
+
+```
+git add packages/orbit-tokens packages/orbit-ui site/app/globals.css tests/__snapshots__
+git commit -m "style(orbit): kasitoopass - hero, teenusekaardid, vordlustabel, paketivalija"
+```
+
+---
+
+## Task 14 (idee 11): Hinnavõrdlusartikkel — 8 h
+
+**Files:** Create `content/insights/kodulehe-hind-eestis-2026.mdx`; Modify `tests/claims.mjs`, `.github/workflows/orbit-gates.yml`
+
+**Konkurentsitõend:** Veebimetsa „Palju maksab kodulehe tegemine 2026" sisaldab 17 Eesti tegija hinnavõrdlustabelit, nähtavat „Uuendatud: 13. september 2026" ja nimelist autorit — see on nende tugevaim orgaaniline vara. Marketing Sharksil ja Webabil sama muster. **leisson.eu-l ei ole lehte, mis sellele päringule vastaks.**
+
+**Andmed on olemas:** `project_eesti_agentuuride_benchmark` mälufail ja `docs/plans/2026-09-21-agentuuri-benchmark-design.md` lisa A.
+
+**Step 1: Allikavärav ENNE artiklit** (`tests/claims.mjs` laiendus, `content/insights` jaoks): iga kolmanda osapoole hinnanumber peab olema tabelirias koos allikalingi ja vaatluskuupäevaga. Negatiivtest kohustuslik.
+
+**Step 2:** Artikli struktuur — **GEO-tõendite järgi, mitte maitse järgi** (`project_geo_ai_visibility`):
+- Küsimusekujulised H2-d (tsiteeritud lehtedel 68,7 % vs 23,9 %)
+- **Nummerdatud** loendid, mitte täpploendid (78,6 % vs 28,6 %; täpploend ei erista)
+- Vastus esimeses 30 %-s (44 % väljavõetud tsitaatidest)
+- Nähtav „Uuendatud" kuupäev
+- Vähemalt üks tabel
+- ET + EN samas failis, mõlemal sama struktuur
+
+**Step 3:** Tabel = 10 agentuuri × (avalik hind · tarneaeg kirjas? · tsitaadid? · mõõdetud tulemused? · allikas + kuupäev). **Iga lahter on kontrollitav.** Ükski väide konkurendi kohta ei tohi olla hinnang — ainult see, mis on nende lehel kirjas.
+
+**Step 4:** leisson.eu enda hinnad tabelisse **ainult `pricing.ts` kaudu** — MDX ei tohi kanda hinnanumbrit. Kui MDX seda ei võimalda, tee eraldi komponent, mis tabeli renderdab.
+
+**Step 5:**
+```
+node tests\claims.mjs
+```
+Oodatud: PASS. Kukkumisel on põhjus alati sama: arv ilma allikata.
+
+**Step 6:** Lisa URL `.github/workflows/orbit-gates.yml` site-gates hulka ja sitemap'i.
+
+**Step 7:** `node ..\tests\gates.mjs` — 4f pealkirjastruktuur (üks H1, ilma tasemehüppeta) ja `no-hscroll@390` (10-realine tabel).
+
+**Step 8: Commit**
+
+```
+git add content/insights/kodulehe-hind-eestis-2026.mdx tests/claims.mjs .github/workflows/orbit-gates.yml
+git commit -m "feat(insights): kodulehe hind Eestis 2026 - 10 pakkuja avalikud hinnad allikatega"
+```
+
+---
+
+## Task 15: Väljalase
+
+**Step 1:** Kõik väravad rohelised lokaalselt.
+
+**Step 2:** `git push origin main` → oota CI roheliseks (`orbit-gates.yml`: verify:tokens → shots → portfell+claims → DS sünk → tsc → gates → axe → site-gates + Lighthouse).
+
+**Step 3:** Alles rohelise CI järel:
+
+```
+git push origin origin/main:release/production
+```
+
+**Step 4:** Tootmises kontrolli **käsitsi, mitte lokaalse buildi põhjal** (Partytowni õppetund — CI oli roheline, tootmine vaikne):
+- `www.leisson.eu/et` hero: hinnaankur, mikroaudit, asutaja plokk
+- `www.leisson.eu/et/prices` valija: täida ilma JS-ita ja JS-iga
+- Saada päris päring vormist → kas vastuskiri ja kinnitustekst tulevad
+- GA4: `audit_handoff` ja `picker_completed` jõuavad kohale
+
+---
+
+# VOOR 5 — saidiväline (21 h, koodi ei puuduta)
+
+## Task 16 (O1): Registriprofiili puhastus — 6 h
+
+1. Ariregistris „Passiivne ettevõte alates 2025" staatuse parandus.
+2. 2024 tegevusaruande neli kirjaviga — kasuta `anthropic-skills:eesti-keele-toimetaja`.
+3. **KMKR: EI registreeru.** Põhjendus disainidokumendi §5-s. Kontrolli enne mis tahes hinna-copy muudatust kehtiv määr ja piirmäär EMTA lehelt.
+
+**Väljund:** `docs/plans/registri-puhastus-2026-09.md` — mis muudeti, millal, mis jäi.
+
+## Task 17 (O2): Wikidata kirje — 3 h
+
+LEISSON OÜ + Gert Leisson. **WD:N kriteerium 2 lubab kirje ilma tähelepanuväärsuseta.** Allikad: ariregister, leisson.eu, GitHub. **et.wikipedia artiklit EI tehta** — tähelepanuväärsus ei ole täidetud ja kustutamisarutelu jääb indeksisse.
+Lisa Wikidata URI `JsonLd` `sameAs` hulka (ariregister ja GitHub on juba seal) — see on ainus koodimuudatus selles vooros.
+
+## Task 18 (O3): LinkedIn — 4 h
+
+Ettevõtteleht + Task 14 artikkel postitusena. LinkedIn on Semrushi mõõtmises #1 tsiteeritud domeen Google AI Mode'is.
+
+## Task 19 (O4): Erialameedia — 5 h
+
+Pitch = Task 14 artikkel. Kontaktid `project_revenue_strategy`-s: indrek.kald@aripaev.ee · aritehnoloogia@aritehnoloogia.ee · bestmarketing@best-marketing.ee · joonaspriit.sibul@geenius.ee · vihje@geenius.ee.
+**REQUIRED SUB-SKILL:** `anthropic-skills:leisson-kirja-toimetaja`.
+
+## Task 20 (O5): Kataloogid — 3 h
+
+disainikeskus.ee andmebaas (Trinidad ja Velvet on mõlemad seal) + Eesti ettevõtete kataloogid. **Clutch/G2/Trustpilot EI** — ei esine üheski AI-tsitaatide top-25 nimekirjas.
+
+---
+
+# Mõõtmine kuu pärast
+
+GA4: `inquiry_accepted` kuus ≥ 2× baasjoon JA `service_selected` täidetud ≥ 70 % päringutest.
+
+Kui esimene ei liigu, aga teine liigub — kvaliteet paranes, maht mitte → järgmine sprint on saidiväline, mitte saidisisene.
+Kui `audit_handoff` → `inquiry_accepted` suhe < 5 % — Task 12 revert ühe failiga.
+
+# Kokkuvõte
+
+| Voor | Taskid | h |
+|---|---|---|
+| 0 | baasjoon | 1 |
+| 1 | 1–4 | 9 |
+| 2 | 5–8 | 7 |
+| 3 | 9–12 | 19 |
+| 4 | 13–15 | 16 |
+| 5 | 16–20 | 21 |
+| | **kokku** | **73** |
+| | puhver | 7 |
