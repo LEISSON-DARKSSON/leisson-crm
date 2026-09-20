@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtempSync, readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
-import { migrateHanked, upsertHange, listHanked } from '../lib/hanked.mjs';
+import { migrateHanked, upsertHange, listHanked, HANKE_STATES } from '../lib/hanked.mjs';
 
 function testDb() {
   const dir = mkdtempSync(join(tmpdir(), 'hanked-'));
@@ -73,9 +73,11 @@ function testDb() {
   upsertHange(db, { ref: 's-01', title: 'Seisu test' });
   assert.throws(() => db.exec("UPDATE hanked SET state = 'banaan' WHERE ref = 's-01'"),
     /CHECK|constraint/i, 'nimekirjavaline seis peab andma CHECK-vea');
-  db.exec("UPDATE hanked SET state = 'esitatud' WHERE ref = 's-01'");
-  assert.equal(db.prepare('SELECT state FROM hanked WHERE ref = ?').get('s-01').state, 'esitatud',
-    'lubatud seis laheb baasi');
+  for (const seis of HANKE_STATES) {
+    db.exec("UPDATE hanked SET state = '" + seis + "' WHERE ref = 's-01'");
+    assert.equal(db.prepare('SELECT state FROM hanked WHERE ref = ?').get('s-01').state, seis,
+      'HANKE_STATES vaartus ' + seis + ' peab olema CHECK-i poolt lubatud');
+  }
   db.close();
   console.log('PASS hanked: seisuveerg on joustatud');
 }
@@ -140,6 +142,58 @@ function testDb() {
   assert.equal(c.prepare('SELECT COUNT(*) AS c FROM hanked').get().c, 5, 'kordusupsert ei tekita uusi ridu');
   c.close();
   console.log('PASS hanked: lausete vahemalu on baasipohine');
+}
+
+// U1: ainult tuhikutest koosnev vali on sama mis puuduv - RSS ja HTML annavad ' ' voi '\n  '.
+{
+  const db = testDb();
+  upsertHange(db, { ref: 'u1', title: 'Vana pealkiri', buyer: 'Vana ostja', deadline: '2026-12-01' });
+  upsertHange(db, { ref: 'u1', title: '   ', buyer: '  ', deadline: '\n  ' });
+  const rida = db.prepare('SELECT * FROM hanked WHERE ref = ?').get('u1');
+  assert.equal(rida.title, 'Vana pealkiri', 'tuhikutest pealkiri ei tohi vana ule kirjutada');
+  assert.equal(rida.buyer, 'Vana ostja', 'tuhikutest ostja ei tohi vana ule kirjutada');
+  assert.equal(rida.deadline, '2026-12-01', 'reavahetusest tahtaeg ei tohi vana ule kirjutada');
+  assert.throws(() => upsertHange(db, { ref: 'u1-uus', title: '   ' }),
+    /u1-uus ilma pealkirjata/, 'tuhikutest pealkirjaga uus hange peab andma eestikeelse vea');
+  assert.equal(db.prepare("SELECT COUNT(*) AS c FROM hanked WHERE ref = 'u1-uus'").get().c, 0,
+    'tuhikutest pealkirjaga kirje ei tohi baasi jouda');
+  db.close();
+  console.log('PASS hanked: tuhikutest vali ei havita andmeid');
+}
+
+// U2: numbriline viitenumber seotakse REAL-ina ('12345.0') ja lohuks uhe hanke kaheks reaks.
+{
+  const db = testDb();
+  assert.equal(upsertHange(db, { ref: 12345, title: 'Numbriline viide' }), 'uus',
+    'numbriline viitenumber loob rea');
+  assert.equal(upsertHange(db, { ref: '12345', title: 'Sama hange stringina' }), 'uuendatud',
+    'sama viitenumber stringina on sama hange');
+  const read = db.prepare('SELECT ref, title FROM hanked').all();
+  assert.equal(read.length, 1, 'numbriline ja stringiviide ei tohi anda kahte rida');
+  assert.equal(read[0].ref, '12345', 'viitenumber salvestub stringina, ilma 12345.0 kujuta');
+  assert.equal(read[0].title, 'Sama hange stringina', 'teine kutse uuendas sama rida');
+  assert.equal(upsertHange(db, { ref: 0, title: 'Null on paris viitenumber' }), 'uus',
+    'viitenumber 0 on lubatud');
+  assert.equal(db.prepare("SELECT COUNT(*) AS c FROM hanked WHERE ref = '0'").get().c, 1,
+    'viitenumber 0 salvestub kujul 0');
+  assert.equal(upsertHange(db, { ref: '  12345  ', title: 'Tuhikutega viide' }), 'uuendatud',
+    'tuhikutega viitenumber on sama hange');
+  db.close();
+  console.log('PASS hanked: viitenumber sunnitakse stringiks');
+}
+
+// U3: vahemalu peab ule elama close() + open() - taustajooks avab baasi tsukliliselt.
+{
+  const db = testDb();
+  upsertHange(db, { ref: 'u3', title: 'Enne sulgemist' });
+  db.close();
+  db.open();
+  assert.equal(upsertHange(db, { ref: 'u3', title: 'Parast avamist' }), 'uuendatud',
+    'vahemalu peab taastuma parast close() + open()');
+  assert.equal(db.prepare('SELECT title FROM hanked WHERE ref = ?').get('u3').title, 'Parast avamist',
+    'uuendus joudis parast taasavamist baasi');
+  db.close();
+  console.log('PASS hanked: vahemalu taastub parast baasi taasavamist');
 }
 
 // P8: varav on npm-ahelas - muidu ei jookse teda keegi.
