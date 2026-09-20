@@ -110,4 +110,38 @@ const send=async e=>{
  assert.equal(competing.status,'waiting','another approved campaign cannot burst-send while first is claimed');
  release();assert.equal((await pending).status,'accepted');db.close();
 }
-console.log('PASS frozen campaign: exact recipients and signed copy, explicit approval, single claim, reply/suppression/change gates, uncertain SMTP no retry');
+{
+ // Kaks pooleliolevat kampaaniat sama saajaga lukustaksid sweep'i igaveseks
+ // (vt lib/campaign.mjs kommentaari) — prepareCampaign peab sellise
+ // kattumise kohe tagasi lükkama, mitte vaikimisi looma.
+ const db=makeDb();
+ const prepared=prepareCampaign(db,['a'],options);
+ assert.throws(()=>prepareCampaign(db,['a','b'],options),/pooleliolevas kampaanias ootel/,'prepared campaign blocks a duplicate recipient');
+ approveCampaign(db,prepared.campaign.id,prepared.campaign.snapshot_hash,{now});
+ // Sama manifest (ainult 'a') tagastab endiselt olemasoleva kampaania (olemasolev
+ // idempotentsuse käitumine) — uus kattumiskontroll rakendub PÄRISOSALISE kattumise korral:
+ assert.throws(()=>prepareCampaign(db,['a','b'],options),/pooleliolevas kampaanias ootel/,'approved campaign still blocks a partial-overlap duplicate');
+ assert.equal(prepareCampaign(db,['b'],options).items.length,1,'a non-overlapping recipient is unaffected');
+ db.close();
+}
+{
+ // Ummiku regressioon: kui saaja langeb saatmisväravast välja (staatus
+ // muutus mujalt, mitte selle kampaania kaudu), ei tohi see rida jääda
+ // 'pending' esikohale ega takistada JÄRGMIST kinnitatud kampaaniat kunagi
+ // käivitumast. Enne parandust valis nextApprovedCampaign sama ummikus
+ // kampaania lõputult uuesti.
+ const db=makeDb();
+ const first=prepareCampaign(db,['a'],options),second=prepareCampaign(db,['b'],options);
+ approveCampaign(db,first.campaign.id,first.campaign.snapshot_hash,{now});
+ approveCampaign(db,second.campaign.id,second.campaign.snapshot_hash,{now});
+ assert.equal(nextApprovedCampaign(db),first.campaign.id,'earliest-approved campaign is picked first');
+ db.prepare("UPDATE companies SET status='kiri' WHERE id='a'").run();
+ const blocked=await runCampaignOnce(db,first.campaign.id,{...options,limits,send});
+ assert.equal(blocked.status,'blocked');
+ assert.equal(campaignView(db,first.campaign.id).items[0].status,'blocked','stuck item is terminated, not left pending forever');
+ assert.equal(nextApprovedCampaign(db),second.campaign.id,'queue advances to the next campaign instead of deadlocking');
+ const sent=await runCampaignOnce(db,second.campaign.id,{...options,limits,send});
+ assert.equal(sent.status,'accepted','a later campaign is no longer starved by an earlier stuck one');
+ db.close();
+}
+console.log('PASS frozen campaign: exact recipients and signed copy, explicit approval, single claim, reply/suppression/change gates, uncertain SMTP no retry, no duplicate-recipient deadlock');
