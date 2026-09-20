@@ -969,3 +969,35 @@ Värske checkout Windowsis andis **44 `.mdx` faili CRLF-lõpudega** ja `tests/cl
 Parandus: `*.mdx text eol=lf` ja `*.md text eol=lf`. Committed blob'id olid juba LF, seega normaliseerimine ei tekitanud ühtegi sisulist muudatust — `git diff` on pärast tühi.
 
 **Õppetund plaani jaoks:** väravad, mis jooksevad ainult CI-s (Linux), ei kaitse Windowsi arendaja vastu. `tools/local-gates.mjs` on nüüd see, mis seda vahet katab.
+
+---
+
+# PARANDUSED 4 (Voor 2 käigus, 2026-09-21)
+
+## P4.1 — Task 8 (võrdlustabel) LÕIGATAKSE. Põhjus: Task 7 võttis selle töö ära.
+
+Plaanis oli eraldi `PackageTable.tsx`: read Hind · Tarne · Parandusring · Tasumine · Sobib kui · Ei sisalda, veerud = kolm paketti.
+
+**Pärast Task 7 kannab teenusekaart juba kõiki neid välju** (`priceLabel`, `lead`, parandusring, `paymentLabel`, `fit`, `excludes`) ja kaardid on `grid-3` sees juba kõrvuti. Eraldi tabel kordaks sama sisu kolmandat korda samal lehel.
+
+See läheks otse vastuollu Task 6-ga, mille kogu mõte oli **13 konkureerivat pinda → kolm**. Ei ole järjekindel lõigata kuus pinda ära ja lisada seitsmes.
+
+Kaks argumenti, mis tabeli poolt räägiksid, on juba kaetud:
+- **GEO-struktuur** (`claims.mjs` nõuab ≥ 1 tabelit): `/prices` näitab mõõdetult „1 tabelit" — Task 6 ühendatud tabel.
+- **Webabi/Marketing Sharksi õppetund** („mida saad 400 € vs 4000 € eest"): see oli *hinnavahemike sisuline põhjendamine*, mitte tabelivorm. Selle kannab **idee 11 hinnavõrdlusartikkel** (Voor 4), kus võrdlus on 10 pakkuja vahel — päris uus info, mitte oma kataloogi ümbertõstmine.
+
+**Vabanenud 3 h → puhver 9 h → 12 h.**
+
+Kui hiljem tuleb tõend, et ostja ei suuda kaartide vahel valida (nt ProUXAuditi audit või päris päring, mis seda ütleb), on õige vastus **Task 10 paketivalija**, mitte tabel. Valija vastab küsimusele „milline neist on minu oma", tabel vastab „mis vahe neil on" — ja kaardid vastavad teisele juba.
+
+## Voor 2 lõppseis
+
+| Task | Seis | Mõõdetud |
+|---|---|---|
+| 5 · kataloogivärav | ✅ `655be01` | 15 aktiivset pakkumist; negatiivtest andis 3 viga, taastamisel roheline |
+| 6 · `/prices` kärpimine | ✅ `fb32dde` | pealkirju 17 → 13; `/en/prices` CTA 2 + nav 7 = 9 (muutumatu); no-hscroll@390 läbitud |
+| 7 · „ei sisalda" kaardil | ✅ `fb32dde` | `excludes` oli kataloogis olemas, kuvamata |
+| 8 · võrdlustabel | ❌ lõigatud | vt P4.1 |
+| + | Task 4 lõpetatud: päris foto | `gert.webp` 384×384, 11 kB; `<img>` mitte `next/image` → −15 747 B |
+
+**Voor 2 kulu: ~5 h planeeritud 7-st.**
