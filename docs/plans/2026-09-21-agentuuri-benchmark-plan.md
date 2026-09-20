@@ -897,3 +897,36 @@ node tests\gates.mjs --no-snapshot --url http://localhost:3311/et http://localho
 node tests\proux-cta.mjs --url http://localhost:3311/en http://localhost:3311/et
 node tests\axe.mjs --url http://localhost:3311/et http://localhost:3311/et/prices
 ```
+
+---
+
+# AUTOMATISEERIMINE 1 — `tools/local-gates.mjs` (Voor 1 käigus, 2026-09-21)
+
+**Käivitaja:** kolm korda järjest kulus aega sellele, et meelde tuletada, millised väravad lokaalselt üldse jooksevad.
+
+| Kord | Viga | Kaotatud |
+|---|---|---|
+| 1 | `tests/gates.mjs` ilma `--no-snapshot` liputa → 4 „viga", mis on fondirenderduse vahe | ~20 min uurimist + valehäire kasutajale |
+| 2 | `tests/axe.mjs` → `MODULE_NOT_FOUND`, sest `@axe-core/playwright` on ainult CI-s | üks jooks |
+| 3 | `next start` jäi vanalt buildilt käima → EADDRINUSE; halvemal juhul oleks server vaikselt vana sisu serveerinud ja värav oleks kontrollinud valet lehte | üks jooks + peaaegu vale tõend |
+
+**Lahendus:** `node tools/local-gates.mjs` teeb kogu ahela ühe käsuga:
+
+```
+verify:tokens → portfell → claims → kaibemaks → toetused
+→ tsc → next build → kimbueelarve (docs/plans/bundle-baseline.json vastu)
+→ port vabaks → next start → oota kuni vastab
+→ gates.mjs --no-snapshot (7 URL-i) → proux-cta.mjs (5 EN URL-i)
+→ server kinni → kokkuvõte
+```
+
+- `NODE_ENV=''` on sisse ehitatud igasse alamprotsessi — Gerti globaalse `production` lõks ei saa enam vallanduda.
+- Port tapetakse **enne ja pärast** — kolmas viga ei saa korduda.
+- `--fast` jätab buildi ja brauseri vahele (ainult staatilised väravad, ~5 s).
+- Kokkuvõte ütleb lõpus välja, mida CI lisaks jooksutab (snapshot, axe, Lighthouse, site-sync, skills-validate) — nii ei teki illusiooni, et roheline lokaal tähendab rohelist CI-d.
+
+**Esimene jooks: 10/10 roheline.**
+
+*Märkus: repo juures ei ole `package.json`-i (ainult `site/` ja `crm/` omad), seega npm-skripti ei saa juurde lisada — käsk on `node tools/local-gates.mjs`.*
+
+**Plaani mõju:** iga järgmise taski väravasamm asendub ühe reaga `node tools/local-gates.mjs`. Task 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 sammud „ehita + väravad" viitavad sellele.
