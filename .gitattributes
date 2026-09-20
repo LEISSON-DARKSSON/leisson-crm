@@ -4,3 +4,9 @@
 *.csv text eol=lf
 *.mjs text eol=lf
 *.json text eol=lf
+# 21.09.2026: .mdx puudus siit ja see on SAMA bug'i teine pool. tests/claims.mjs tabeliparser
+# loeb veerge `|`-järgi; CRLF-iga saab viimane veerg varjatud \r sufiksi ja veergude arv ei
+# klapi. Peakataloogi working copy'l olid LF-lõpud ja CI on Linux, seega viga ei paistnud kunagi
+# välja — alles värske worktree checkout Windowsis tõi selle nähtavale (14 viga claims.mjs-is).
+*.mdx text eol=lf
+*.md text eol=lf
