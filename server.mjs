@@ -1,6 +1,6 @@
 import {randomUUID} from 'node:crypto';
 import {migrateOutbound,previewOutbound,dispatchOutbound} from './lib/outbound.mjs';
-import {migrateCampaigns,prepareCampaign,campaignView,approveCampaign,stopCampaign,campaignEvidence} from './lib/campaign.mjs';
+import {migrateCampaigns,prepareCampaign,campaignView,approveCampaign,stopCampaign,campaignEvidence,queuedCompanyIds} from './lib/campaign.mjs';
 import {reconcileSalesReplies} from './lib/sales-safety.mjs';
 import {revenueSummary} from './lib/salesdb.mjs';
 import {activeServices,CATALOG_VERSION} from '../packages/service-catalog/index.mjs';
@@ -128,7 +128,11 @@ const routes = {
   },
   'GET /api/campaigns': async(req,res)=>{
     const rows=db.prepare('SELECT id,status,snapshot_hash,created,approved_at,stopped_at FROM sales_campaigns ORDER BY created DESC LIMIT 30').all();
-    json(res,200,{campaigns:rows});
+    // Kes on PRAEGU pending mõnes kinnitamata/kinnitatud kampaanias — UI
+    // peidab need valikuekraanilt, et samat saajat ei saaks kahte eri
+    // kampaaniasse korraga panna (vt lib/campaign.mjs prepareCampaign'i
+    // kommentaar ummiku kohta).
+    json(res,200,{campaigns:rows,queuedCompanyIds:queuedCompanyIds(db).map(r=>r.company_id)});
   },
   'POST /api/campaign/prepare': async(req,res)=>{
     try{

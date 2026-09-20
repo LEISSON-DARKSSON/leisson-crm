@@ -67,7 +67,7 @@ Kinnitamine ei saada kirju. Kampaania töötaja ja ajastaja on eraldi välja lü
 <p id="message" role="status" aria-live="polite"></p>
 <script type="module">
 const $=id=>document.getElementById(id);
-let csrf='',active=null,companies=[],selected=new Set(),groupFilter=null,queue=[],queueIndex=-1;
+let csrf='',active=null,companies=[],selected=new Set(),groupFilter=null,queue=[],queueIndex=-1,queuedHidden=0;
 async function post(path,data){const r=await fetch(path,{method:'POST',headers:{'content-type':'application/json','x-crm-csrf':csrf},body:JSON.stringify(data)});
  const d=await r.json();if(!r.ok)throw Error(d.error||'Päring ebaõnnestus');return d}
 function notice(s,error=false){$('message').textContent=s;$('message').className=error?'error':''}
@@ -103,7 +103,8 @@ function updateSelCount(){
 }
 function renderCandidates(){
  const list=visibleCandidates();
- $('eligibleCount').textContent='· '+companies.length+' ootel valmis ('+list.length+' kuvatud)';
+ $('eligibleCount').textContent='· '+companies.length+' ootel valmis ('+list.length+' kuvatud)'+
+  (queuedHidden?' · '+queuedHidden+' peidetud, sest juba mõnes pooleliolevas kampaanias':'');
  const box=$('candidates');box.replaceChildren();
  for(const c of list){
   const row=document.createElement('label');row.className='cand'+(selected.has(c.id)?' checked':'');
@@ -140,10 +141,18 @@ function show(view){
  $('review').scrollIntoView({behavior:'smooth'});
 }
 async function refresh(){const s=await (await fetch('/api/state')).json();csrf=s.csrfToken;
- companies=s.companies.filter(x=>x.status==='ootel'&&x.email&&x.subject&&x.body);
+ const list=await (await fetch('/api/campaigns')).json();
+ // Saajad, kes on juba pending mõnes kinnitamata/kinnitatud kampaanias, ei
+ // tohi valikusse ilmuda üldse — kaks kampaaniat sama saajaga lukustaksid
+ // sweep'i (vt lib/campaign.mjs). Server tõrjub selle ka prepare-ajal, aga
+ // siin ei anta seda valikut ettegi.
+ const queuedIds=new Set(list.queuedCompanyIds||[]);
+ const eligible=s.companies.filter(x=>x.status==='ootel'&&x.email&&x.subject&&x.body);
+ companies=eligible.filter(x=>!queuedIds.has(x.id));
+ queuedHidden=eligible.length-companies.length;
  for(const id of [...selected])if(!companies.some(c=>c.id===id))selected.delete(id);
  renderChips();renderCandidates();
- const h=$('history');h.replaceChildren();const list=await (await fetch('/api/campaigns')).json();
+ const h=$('history');h.replaceChildren();
  for(const item of list.campaigns){const b=document.createElement('button');b.type='button';b.textContent=item.created+' · '+item.status+' · '+item.id;
   b.onclick=async()=>{try{queue=[];queueIndex=-1;show(await post('/api/campaign/view',{id:item.id}))}catch(e){notice(e.message,true)}};h.append(b)}
 }

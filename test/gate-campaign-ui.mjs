@@ -2,9 +2,12 @@
 // Serves fixtures + a stub campaign store, never opens the real CRM SQLite or mailbox.
 // Verifies: group-chip filtering, the 20-item selection cap warns instead of erroring, the
 // "prepare all visible" action chunks >20 candidates into several ≤20 campaigns, the queue lets
-// Gert step through them, and — the one thing that must never regress — every campaign still
-// requires its own explicit "Kinnitan..." checkbox tick before Approve is enabled, and nothing
-// but the campaign endpoints is ever called (no accidental /api/send from the UI).
+// Gert step through them, a recipient already pending in another unapproved/approved campaign
+// is hidden from the candidate list entirely (not just rejected server-side after the fact —
+// see lib/campaign.mjs 20.09.2026 deadlock writeup), and — the one thing that must never
+// regress — every campaign still requires its own explicit "Kinnitan..." checkbox tick before
+// Approve is enabled, and nothing but the campaign endpoints is ever called (no accidental
+// /api/send from the UI).
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -25,19 +28,28 @@ function makeCampaign(companyIds){
  if(!companyIds.length||companyIds.length>20||new Set(companyIds).size!==companyIds.length)
   return {error:'Vali 1–20 eri ettevõtet'};
  const id='c'+(++counter);
- const items=companyIds.map((cid,position)=>({position,status:'pending',snapshot:{
+ const items=companyIds.map((cid,position)=>({position,status:'pending',companyId:cid,snapshot:{
   to:byId[cid].email,sender:'gert@leisson.eu',subject:byId[cid].subject,
   text:'Tere! ...\n\nGert Leisson · gert@leisson.eu',html:'<p>Tere!</p>'}}));
  const campaign={id,status:'prepared',snapshot_hash:'hash-'+id,created:'2026-09-20T12:00:00Z'};
  campaigns.set(id,{campaign,items});
  return {campaign,items};
 }
+// Kes on PRAEGU pending mõnes kinnitamata/kinnitatud kampaanias — sama
+// arvutus, mida lib/campaign.mjs queuedCompanyIds(db) teeb päris baasis.
+function currentlyQueuedIds(){
+ const ids=new Set();
+ for(const {campaign,items} of campaigns.values())
+  if(campaign.status==='prepared'||campaign.status==='approved')
+   for(const it of items) if(it.status==='pending') ids.add(it.companyId);
+ return [...ids];
+}
 const json=(res,data)=>{res.writeHead(200,{'content-type':'application/json'});res.end(JSON.stringify(data));};
 const files={'/campaigns.html':'campaigns.html','/app.css':'app.css'};
 async function readBody(req){let raw='';for await(const chunk of req)raw+=chunk;return raw?JSON.parse(raw):{}}
 const server=createServer(async(req,res)=>{
  if(req.url==='/api/state')return json(res,{csrfToken:'fixture-csrf',companies});
- if(req.url==='/api/campaigns')return json(res,{campaigns:[...campaigns.values()].map(v=>({id:v.campaign.id,created:v.campaign.created,status:v.campaign.status}))});
+ if(req.url==='/api/campaigns')return json(res,{campaigns:[...campaigns.values()].map(v=>({id:v.campaign.id,created:v.campaign.created,status:v.campaign.status})),queuedCompanyIds:currentlyQueuedIds()});
  if(req.method==='POST'){
   writes.push(req.url);
   const body=await readBody(req);
@@ -113,10 +125,21 @@ try {
  assert.equal(await page.locator('#approve').isDisabled(),true,'second campaign needs its own explicit confirmation too');
  assert.equal(await page.locator('#nextQueue').isHidden(),true,'no further campaign after the last one');
 
+ // Ummiku regressioon (vt lib/campaign.mjs 20.09.2026): kõik 25 Prioriteet A
+ // firmat on nüüd pending mõnes kinnitamata/kinnitatud kampaanias (üks
+ // kinnitatud, teine endiselt kinnitamata) — värske laadimine ei tohi neid
+ // enam valikusse pakkuda üldse, muidu saaks Gert sama saaja teise
+ // kampaaniasse panna ja lukustada sweep'i.
+ await page.reload();
+ await page.locator('#candidates .cand').first().waitFor();
+ assert.equal(await page.locator('#candidates .cand').count(),3,'all 25 already-queued recipients are hidden, only b0/c0/p0 remain selectable');
+ assert.equal(await page.locator('#candidates').getByText('Firma A',{exact:false}).count(),0,'no queued Firma A* row leaks into the candidate list');
+ assert(((await page.locator('#eligibleCount').textContent())||'').includes('25 peidetud'),'the hidden count is surfaced, not silent');
+
  const allowed=new Set(['/api/campaign/prepare','/api/campaign/view','/api/campaign/approve','/api/campaign/evidence','/api/campaign/stop']);
  assert(writes.every(w=>allowed.has(w)),'only campaign endpoints were ever called: '+JSON.stringify(writes));
  assert(!writes.includes('/api/send'),'the mass-confirmation UI never calls the raw send endpoint');
  assert.deepEqual(errors,[]);
- console.log('PASS campaign-ui: group filter, 20-cap warning, auto-batching into a queue, per-campaign confirmation gate preserved.');
+ console.log('PASS campaign-ui: group filter, 20-cap warning, auto-batching into a queue, already-queued recipients hidden on reload, per-campaign confirmation gate preserved.');
  await context.close();
 } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
