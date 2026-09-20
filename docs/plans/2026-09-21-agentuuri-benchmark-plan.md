@@ -856,3 +856,44 @@ Build hoiatab: `Next.js ignored package-lock.json in C:\Users\gert because it is
 | 5 | 16–20 | 21 |
 | | **kokku** | **71** |
 | | puhver | 9 |
+
+---
+
+# PARANDUSED 3 (Task 2 käigus, 2026-09-21)
+
+## P3.1 — Snapshot-värav EI OLE blokeerija. See on CI-värav disaini järgi.
+
+Lokaalne `node tests/gates.mjs` annab 4 viga `ds/orbit-ds.html` peal (390-dark 5,09 % · 390-light 5,04 % · 1280-dark 2,67 % · 1280-light 2,41 %). Kontrollitud puhta puu peal — **samad protsendid, minu tööga seost ei ole.**
+
+Põhjus on `.github/workflows/orbit-gates.yml` real 93 juba kirjas: *„main push = `--update` ja commitib; PR = võrdleb main'i baasjoonega. Nii on snapshot päris regressioonivärav, mitte **fondirenderduse loterii**."* Baasjoonpildid on CI Linuxi renderdaja omad. Windowsis lokaalselt jooksutatuna ta alati lahkneb.
+
+**Reegel edaspidi:** `tests/gates.mjs` jookseb lokaalselt ALATI `--no-snapshot` lipuga. Snapshot-diffi loetakse CI-st, mitte Gerti masinast. **Task 13 (apple-design pass) samm 5 muutub:** diff vaadatakse üle PR-i CI-jooksust, lokaalne pildivõrdlus ei ole tõend.
+
+## P3.2 — CTA-värav ei ole `gates.mjs` 4e. See on `tests/proux-cta.mjs`.
+
+`gates.mjs` 4e **eemaldati 13.09.2026** ja reegel elab nüüd `tests/proux-cta.mjs`-is — ProUXAuditi mootori sõna-sõnaline port, valideeritud raporti rpt_wbvmLfQ vastu.
+
+**Mõõdetud läved (`proux-cta.mjs` read 86, 109–111):**
+
+```
+rec_competing   : ctaVerbs > 3  VÕI  ctaTexts >= 4  VÕI  (actionVerbs >= 3 või uniqueLabels >= 4)
+rec_choice_load : EI (combined <= 10 JA ctaTexts <= 3)      combined = ctaTexts + navItems
+kandidaadid     : button, a, [role=button], input[type=submit|button]  ← IGA <a> loeb
+```
+
+**Avalehe hetkeseis (mõõdetud):** `/en` 5 CTA-d + 7 nav = 12 · `/et` 5 CTA-d + 8 nav = 13. Mõlemad juba üle `choice_load` läve, aga väravas diagnostilised, mitte vead.
+
+**Sellepärast muutus Task 2:** plaanis oli hinnaankur kolme lingina pakettide juurde. See oleks lisanud EN-lehele kolm `<a>` → ctaTexts 8 → `rec_competing` vallandub. **Hinnaankur on nüüd PUHAS TEKST** — paketi nimi, hind ja tarneaeg nähtaval, ilma ühegi uue lingita. Konkurentsitõend (Veebimets, Navik: hind ja tähtaeg kõrvuti) on täidetud, CTA-arv ei liikunud.
+
+**Reegel ülejäänud sprindile:** iga uus `<a>` või `<button>` avalehel või `/prices`-il tuleb enne lisamist `proux-cta.mjs`-iga läbi mõõta. See puudutab otseselt **Task 8** (võrdlustabel — kasuta tekstilahtreid, mitte lingitud paketinimesid), **Task 10** (valija — üks nupp, mitte üks nupp paketi kohta) ja **Task 12** (mikroaudit — see on neljas element hero's).
+
+## P3.3 — Lokaalne väravakäsurida (asendab §„Väravate käsurida")
+
+```
+node packages\orbit-tokens\verify.mjs
+node tests\portfell.mjs ; node tests\claims.mjs ; node tests\kaibemaks.mjs ; node tests\toetused.mjs
+cd site ; $env:NODE_ENV='' ; npx tsc --noEmit ; npx next build ; npx next start -p 3311
+node tests\gates.mjs --no-snapshot --url http://localhost:3311/et http://localhost:3311/en http://localhost:3311/et/prices
+node tests\proux-cta.mjs --url http://localhost:3311/en http://localhost:3311/et
+node tests\axe.mjs --url http://localhost:3311/et http://localhost:3311/et/prices
+```
