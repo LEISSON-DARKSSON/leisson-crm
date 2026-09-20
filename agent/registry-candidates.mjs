@@ -30,9 +30,19 @@
 // Seepärast eraldatakse .ee-domeeniga ettevõtted eraldi ja neid näidatakse
 // vaikimisi. --koik näitab ka grupidomeene.
 //
+// ⚠ 20.09.2026: varem oli --maakond vaikimisi 'Pärnu' ja kirjade avalause põhines
+// väidetud füüsilisel marsruudil ("Olen 14.-25. septembrini Pärnus"). See marsruut
+// oli 14.-25.09 välitöö jaoks tõsi, aga aegub 25.09 ja ei laiene — kiri, mis seda
+// enam ei väida (vt leisson-kirja-toimetaja skilli parandust), ei vaja enam
+// füüsilise läheduse õigustust kandidaatide valikuks. --maakond=all eemaldab
+// maakonnapiirangu täielikult (kogu registrist, mitte ainult Pärnu/Lääne
+// maakonnast) — vt data/registry/valistatud.json ja seed-korpus, mis ikkagi
+// välistavad juba läbi vaadatud/olemasolevad ettevõtted, ükskõik kus nad on.
+//
 // Kasutus:
 //   npm run registry:kandidaadid
 //   node agent/registry-candidates.mjs --maakond=Harju --min-kaive=500000 --top=40
+//   node agent/registry-candidates.mjs --maakond=all --min-kaive=300000 --top=50
 import { writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { ROOT } from '../lib/env.mjs';
@@ -77,11 +87,14 @@ if (existsSync(valistatudPath)) {
   }
 }
 
+const koikMaakonnad = maakond.toLowerCase() === 'all';
+
 const kandidaadid = [];
 let maakonnas = 0; let emailiga = 0; let mitteMikro = 0; let valjaJaetud = 0;
 
 for (const r of index.byCode.values()) {
-  if (!r.ehak || !r.ehak.includes(`${maakond} maakond`)) continue;
+  if (!r.ehak) continue;
+  if (!koikMaakonnad && !r.ehak.includes(`${maakond} maakond`)) continue;
   maakonnas += 1;
   const kood = String(r.kood);
   if (olemas.has(kood)) continue;
@@ -122,10 +135,12 @@ const kodused = kandidaadid.filter((k) => k.eesti_domeen);
 const grupid = kandidaadid.filter((k) => !k.eesti_domeen);
 const naita = process.argv.includes('--koik') ? kandidaadid : kodused;
 
-const valja = join(REGISTRY_DIR, `kandidaadid-${maakond.toLowerCase()}.json`);
+const maakondSilt = koikMaakonnad ? 'kõik maakonnad' : maakond;
+const failinimi = koikMaakonnad ? 'koik' : maakond.toLowerCase();
+const valja = join(REGISTRY_DIR, `kandidaadid-${failinimi}.json`);
 writeFileSync(valja, JSON.stringify({
   koostatud: new Date().toISOString(),
-  maakond, min_kaive: minKaive,
+  maakond: maakondSilt, min_kaive: minKaive,
   selgitus: 'Kandidaadid mõõtmiseks, MITTE valmis saatmisnimekiri. Veebileht tuleb leida ja mõõta enne kirja.',
   kokku: kandidaadid.length,
   eesti_domeeniga: kandidaadid.filter((k) => k.eesti_domeen).length,
@@ -133,7 +148,7 @@ writeFileSync(valja, JSON.stringify({
 }, null, 2) + '\n', 'utf8');
 
 const eur = (n) => new Intl.NumberFormat('et-EE').format(n) + ' €';
-console.log(`${maakond} maakonnas aktiivseid: ${maakonnas}`);
+console.log(`${koikMaakonnad ? 'Kõigis maakondades' : `${maakond} maakonnas`} aktiivseid: ${maakonnas}`);
 console.log(`  neist käsitsi juba uuritud ja välja jäetud (valistatud.json): ${valjaJaetud}`);
 console.log(`  neist registri e-postiga ja meil veel puudu: ${emailiga}`);
 console.log(`  neist tõendatult MITTE mikroettevõtjad: ${mitteMikro}`);
@@ -146,5 +161,5 @@ for (const k of naita.slice(0, top)) {
   console.log(`  ${String(k.kaive).padStart(9)} € · ${String(k.tootajad).padStart(4)} tt · ${k.nimi}${d}`);
   console.log(`      ${k.emtak_nimi || 'EMTAK puudub'} · ${k.ehak} · ${k.email}`);
 }
-console.log(`\nKirjutatud: data/registry/kandidaadid-${maakond.toLowerCase()}.json`);
+console.log(`\nKirjutatud: data/registry/kandidaadid-${failinimi}.json`);
 console.log('Järgmine samm: leia ja MÕÕDA veebileht (leisson-prospect-audit), alles siis npm run seed:add.');
