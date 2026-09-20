@@ -16,6 +16,12 @@
 //      samuti käivet >= 200 000 € (vt mälu project_toetuste_vaited)
 //   5. EI OLE juba meie seed-korpuses (võrdlus registrikoodi järgi — täpselt
 //      see, mille agent/registry-backfill.mjs 20.09 võimalikuks tegi)
+//   6. EI OLE data/registry/valistatud.json nimekirjas — käsitsi juba uuritud
+//      ja teadlikult välja jäetud ettevõtted (rahvusvaheline kontsern, coop-kett,
+//      surnud/parkitud domeen, distinktset kodulehte ei leitud, e-post puudub).
+//      Ilma selleta tuli 20.09.2026 sama 386-kandidaadi väljundisse tagasi ~30
+//      ettevõtet, mis 12.-20.09 välitöö käigus juba käsitsi läbi vaadatud olid —
+//      peaaegu läks korduvmõõtmisele. Uus valistus lisatakse valistatud.json-i.
 //
 // ⚠ VEEBIOTSUSE KOHT. Meie metoodika filter on "veebiotsus tehakse Pärnus".
 // Registri e-posti domeen paljastab selle: scanfil.com, ruukki.com,
@@ -58,14 +64,28 @@ for (const f of SEED_FILES) {
   }
 }
 
+// Käsitsi uuritud ja teadlikult välja jäetud (rahvusvaheline kontsern, coop-kett,
+// surnud/parkitud domeen, distinktset kodulehte ei leitud, e-post puudub jms) —
+// vt data/registry/valistatud.json. See fail teeb 12.-20.09.2026 välitöö käigus
+// mälusse kogunenud otsused koodis püsivaks, et sama ettevõte ei tuleks iga
+// järgmise registry:kandidaadid käivitusega uuesti kandidaadiks tagasi.
+const valistatudPath = join(REGISTRY_DIR, 'valistatud.json');
+const valistatud = new Map();
+if (existsSync(valistatudPath)) {
+  for (const v of JSON.parse(readFileSync(valistatudPath, 'utf8')).valistatud || []) {
+    valistatud.set(String(v.kood), v.pohjus);
+  }
+}
+
 const kandidaadid = [];
-let maakonnas = 0; let emailiga = 0; let mitteMikro = 0;
+let maakonnas = 0; let emailiga = 0; let mitteMikro = 0; let valjaJaetud = 0;
 
 for (const r of index.byCode.values()) {
   if (!r.ehak || !r.ehak.includes(`${maakond} maakond`)) continue;
   maakonnas += 1;
   const kood = String(r.kood);
   if (olemas.has(kood)) continue;
+  if (valistatud.has(kood)) { valjaJaetud += 1; continue; }
 
   const con = contacts.get(kood);
   const email = con && con.email.length ? con.email[0] : null;
@@ -114,6 +134,7 @@ writeFileSync(valja, JSON.stringify({
 
 const eur = (n) => new Intl.NumberFormat('et-EE').format(n) + ' €';
 console.log(`${maakond} maakonnas aktiivseid: ${maakonnas}`);
+console.log(`  neist käsitsi juba uuritud ja välja jäetud (valistatud.json): ${valjaJaetud}`);
 console.log(`  neist registri e-postiga ja meil veel puudu: ${emailiga}`);
 console.log(`  neist tõendatult MITTE mikroettevõtjad: ${mitteMikro}`);
 console.log(`  neist käive >= ${eur(minKaive)}: ${kandidaadid.length}`);

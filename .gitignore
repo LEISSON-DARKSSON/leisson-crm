@@ -1,7 +1,10 @@
 .env
 .env.*
 !.env.example
-data/
+data/*
+!data/registry/
+data/registry/*
+!data/registry/valistatud.json
 node_modules/
 *.log
 aruanded/_*.md
