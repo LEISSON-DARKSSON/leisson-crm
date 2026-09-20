@@ -1044,3 +1044,44 @@ Viga ise: eraldaja `·` oli `white-space: nowrap` spani **sees** ja kahe kirje v
 | 12 · mikroaudit | ✅ `9354f05` | link, mitte väli (P5.1); GA4 tõestatud |
 
 **Kliendi-JS: 633 054 B, eelarve 633 645 B — järel 591 B.** Voor 4 (`apple-design` pass + hinnaartikkel) on mõlemad CSS ja sisu, mitte JS, aga kui midagi kliendipoolset lisandub, tuleb baasjoon teadlikult tõsta ja commitis põhjendada.
+
+---
+
+# CI-KONTROLLPUNKT (PR #11, 21.09.2026) — mida push päriselt leidis
+
+Haru lükati `origin`-isse ja avati **mustandi-PR #11**, et CI kogu asja üle vaataks. `orbit-gates` käivitub ainult `pull_request` ja `push: [main, release/production]` peale — feature-haru push üksi CI-d ei käivita.
+
+**See oli õige otsus: CI leidis kuus asja, mida lokaalne ahel ei katnud.**
+
+| # | Leid | Juurpõhjus |
+|---|---|---|
+| 1 | `site/data/service-catalog.json` ≠ `packages/service-catalog/catalog.json` | **Minu viga:** telefon läks Task 1-s koopiasse, mitte kanoonilisse allikasse. Järgmine sync oleks selle üle kirjutanud. |
+| 2 | `site/content/portfell.csv` triiv | sama |
+| 3 | `site/content/work/leisson-eu-parandused.mdx` puudus | sama |
+| 4 | Case-leht keris 390 px juures (394 > 390) | Allikasildid olid täispikad failirajad, mis ei murdu. Lühendatud basename'ideks; täpne rada jääb `href`-i. |
+| 5 | Hero hinnarida keris **360 px** juures | `nowrap` ei lasknud pikal ingliskeelsel paketinimel murduda. `gates.mjs` mõõdab 390, `revenue-browser.mjs` 360. |
+| 6 | `/et/insights/…` `<title>` 67 tm (max 60), `og:image` puudus | **Eelnev viga, mitte minu.** See route ehitas `openGraph`-objekti käsitsi `og()` abilise asemel. Ükski värav ei katnud insights-lehti. |
+
+## Juurpõhjus nr 1–3: `npx next build` ei käivita `prebuild`-i
+
+`site/package.json`: `"prebuild": "node sync-orbit.mjs"`, mis kopeerib kanoonilised allikad (`packages/service-catalog/catalog.json`, `content/**`) `site/` alla. **`npx next build` ei käivita npm-i elutsükli skripte** — runner kasutas `npx`-i, seega koopiad ei sünkroonunud kunagi ja triivi püüdis alles CI.
+
+Runner kasutab nüüd `npm run build`.
+
+## Lokaalne ahel laienes 11 → 16 väravani
+
+Lisatud: `site-sync`, `revenue-contract`, `navigation`, `revenue-browser`, `analytics`. Neist **`revenue-browser` püüdis kohe vea nr 5** — ta mõõdab 360 px, mida ükski varasem lokaalne värav ei teinud.
+
+URL-ide nimekiri laienes 7 → 9 (uus case-leht ja üks insights-leht) nii runneris kui `orbit-gates.yml`-is. **Reegel: uus leht läheb mõlemasse nimekirja korraga.**
+
+## Lõppseis PR #11-s
+
+| Töö | Seis |
+|---|---|
+| `gates` (sh visuaalne snapshot) | ✅ |
+| `site-gates` (build, kimbueelarve, gates, proux-cta, **axe-core**, CRM-väravad, navigation, revenue, analytics, **Lighthouse desktop + mobiil**) | ✅ |
+| `crm-offline` | ❌ **eelnev viga `main`-il** |
+
+`crm-offline` kukub assertiga „earliest-approved campaign is picked first". Sama viga on `main`-i viimases jooksus (run 35531576177, commit 7ad42cd „feat(campaign): eemalda pooleliolevast kampaaniast saaja…") — **enne kui see haru olemas oli**. Minu haru ei puuduta `crm/` kaustast ühtegi faili.
+
+**Tähendus väljalaskele:** `main` on praegu punane. Voor 4 lõpus ei saa `release/production`-isse minna enne, kui see CRM-test on parandatud — see on eraldi töö `crm/` pool, mitte selle sprindi sees.
