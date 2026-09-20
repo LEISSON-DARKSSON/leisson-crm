@@ -44,7 +44,8 @@
     "registry:financials": "node agent/registry-financials.mjs",
     "registry:backfill": "node agent/registry-backfill.mjs",
     "registry:gate": "node test/gate-registry.mjs",
-    "registry:update": "npm run registry:sync && npm run registry:enrich && npm run registry:financials && npm run registry:backfill -- --kirjuta"
+    "registry:update": "npm run registry:sync && npm run registry:enrich && npm run registry:financials && npm run registry:backfill -- --kirjuta",
+    "registry:kandidaadid": "node agent/registry-candidates.mjs"
   },
   "dependencies": {
     "imapflow": "^1.0.171",
