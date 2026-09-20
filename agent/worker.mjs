@@ -8,14 +8,37 @@ import { fileURLToPath } from 'node:url';
 import { migrateAgent,enqueue,claimNext,finishJob,recordRun,runtimePause,pauseRuntime,resumeRuntime,RUNTIME_VERSION } from '../lib/agentdb.mjs';
 import {prepareInput,promptFor,schemaFor,applyOutput} from './runtime.mjs';
 import {runCodex,MODEL_BY_JOB,EFFORT} from './codex-runner.mjs';
+import {runClaude,MODEL_BY_JOB as CLAUDE_MODEL_BY_JOB,EFFORT as CLAUDE_EFFORT,PROVIDER_ID as CLAUDE_PROVIDER_ID} from './claude-runner.mjs';
+import {rawEnv} from '../lib/env.mjs';
 const ROOT=join(dirname(fileURLToPath(import.meta.url)),'..');
+// Parallel, flag-selected model provider (20.09.2026). Default stays 'codex' so
+// unset AGENT_MODEL_PROVIDER preserves exact prior behaviour (agent/runtime.test.mjs
+// asserts provider==='codex-chatgpt' when the caller passes no overrides at all).
+const PROVIDERS={
+ codex:{runner:runCodex,provider:'codex-chatgpt',model:MODEL_BY_JOB,effort:EFFORT},
+ claude:{runner:runClaude,provider:CLAUDE_PROVIDER_ID,model:CLAUDE_MODEL_BY_JOB,effort:CLAUDE_EFFORT},
+};
+export function selectProvider(env=process.env) {
+ // .env fallback mirrors lib/env.mjs's own AGENT_DAILY_USD/AGENT_MAX_DRAFTS pattern
+ // (process env wins, then .env file, then default) - this is the single place every
+ // caller funnels through (manual win\*.cmd, conductor.mjs's spawned --drain, the
+ // Task Scheduler run), so setting AGENT_MODEL_PROVIDER in .env alone is enough to
+ // switch every automated path, with no per-caller env wiring needed. Never logs or
+ // surfaces any other .env content - reads exactly this one key.
+ let fileValue;
+ try{fileValue=rawEnv().AGENT_MODEL_PROVIDER;}catch{fileValue=undefined;}
+ const key=env.AGENT_MODEL_PROVIDER||fileValue||'codex';
+ const sel=PROVIDERS[key];
+ if(!sel)throw new Error('unknown_model_provider:'+key);
+ return sel;
+}
 function arg(name,fallback=null) {
  const i=process.argv.findIndex(x=>x==='--'+name||x.startsWith('--'+name+'='));
  if(i<0)return fallback;
  const a=process.argv[i];
  return a.includes('=')?a.slice(a.indexOf('=')+1):(process.argv[i+1]&&!process.argv[i+1].startsWith('--')?process.argv[i+1]:true);
 }
-export async function performJob(db,job,{runner=runCodex}={}) {
+export async function performJob(db,job,{runner=runCodex,provider='codex-chatgpt',model=MODEL_BY_JOB,effort=EFFORT}={}) {
  const t=Date.now();let result,error=null;
  try {
   const input=prepareInput(db,job);
@@ -29,8 +52,8 @@ export async function performJob(db,job,{runner=runCodex}={}) {
   if(pause)pauseRuntime(db,error);
   try{finishJob(db,job.id,pause?'paused':'needs_human',error,job.lease_owner);}catch{error='job_lease_lost';}
  } finally {
-  recordRun(db,{job_id:job.id,type:job.type,model:MODEL_BY_JOB[job.type],provider:'codex-chatgpt',
-   effort:EFFORT,runtime_version:RUNTIME_VERSION,exit_code:error?1:0,total_cost_usd:null,
+  recordRun(db,{job_id:job.id,type:job.type,model:model[job.type],provider,
+   effort,runtime_version:RUNTIME_VERSION,exit_code:error?1:0,total_cost_usd:result?.total_cost_usd??null,
    input_tokens:result?.usage?.input_tokens,cached_input_tokens:result?.usage?.cached_input_tokens,
    output_tokens:result?.usage?.output_tokens,duration_ms:Date.now()-t,session_id:result?.session_id,
    ok:!error,error_code:error,stderr_tail:null});
@@ -43,10 +66,11 @@ async function main() {
  const readOnly=Boolean(arg('status')||arg('dry'));
  const db=new DatabaseSync(path,{readOnly});
  db.exec('PRAGMA busy_timeout=5000');
+ const sel=selectProvider();
  try {
   if(readOnly) {
    const jobs=db.prepare('SELECT status,COUNT(*) n FROM agent_jobs GROUP BY status').all();
-   console.log(JSON.stringify({readOnly:true,provider:'codex-chatgpt',jobs},null,2));return;
+   console.log(JSON.stringify({readOnly:true,provider:sel.provider,jobs},null,2));return;
   }
   migrateAgent(db);
   if(arg('reset'))throw new Error('Bulk reset removed: use explicit reviewed message selection.');
@@ -66,10 +90,10 @@ async function main() {
   }
   if(runtimePause(db)){console.log('Runtime paused: '+runtimePause(db));return;}
   const cap=Math.max(1,Math.min(100,Number(process.env.AGENT_MAX_RUNS_DAILY)||24));
-  const today=db.prepare("SELECT COUNT(*) n FROM agent_runs WHERE provider='codex-chatgpt' AND substr(ts,1,10)=?").get(new Date().toISOString().slice(0,10)).n;
+  const today=db.prepare("SELECT COUNT(*) n FROM agent_runs WHERE provider=? AND substr(ts,1,10)=?").get(sel.provider,new Date().toISOString().slice(0,10)).n;
   for(let i=0;i<(arg('drain')?6:1)&&today+i<cap;i++) {
     const job=claimNext(db);if(!job){console.log('No queued jobs.');break;}
-    const r=await performJob(db,job);
+    const r=await performJob(db,job,{runner:sel.runner,provider:sel.provider,model:sel.model,effort:sel.effort});
     console.log(JSON.stringify({job:job.id,type:job.type,...r}));
     if(runtimePause(db))break;
   }
