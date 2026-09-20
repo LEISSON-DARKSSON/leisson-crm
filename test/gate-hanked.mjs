@@ -885,6 +885,73 @@ ${kirjed.join('\n')}
   console.log('PASS hanked: muutmisteade ei kirjuta uuemat vanaga ule');
 }
 
+// K3b (S3b): puuduv voi parseerimatu pubDate. Esimene parandus luges puuduva kuupaeva
+// tuhjaks stringiks -> iga paris kuupaevaga VANEM teade voitis uuema, millel kuupaeva
+// polnud. RHR-i pubDate on paris elus valja kukkunud, nii et see ei ole teoreetiline.
+{
+  const ilmaKuupaevata = '<item><title>313000 - Veebilehe uuendus (muudetud)</title>' +
+    '<description>Teenused; Lihthange; Muu; Tähtaeg: 01.12.2026 10:00</description>' +
+    '<dc:creator>Test Vald</dc:creator></item>';
+  const vanemKuupaevaga = rssKirje({
+    title: '313000 - Veebilehe uuendus',
+    desc: 'Teenused; Lihthange; Muu; Tähtaeg: 01.10.2026 10:00',
+    pub: 'Sun, 24 Aug 2026 06:00:00 GMT',
+  });
+
+  const a = parseRss(rssFeed(ilmaKuupaevata, vanemKuupaevaga));
+  assert.equal(a.length, 1, 'kuupaevata dubli annab ikka uhe kirje');
+  assert.equal(a[0].deadline, '2026-12-01',
+    'kuupaevata UUSIM teade (feedis eespool) peab voitma kuupaevaga vanema');
+  assert.equal(a[0].title, 'Veebilehe uuendus (muudetud)', 'uuema teate pealkiri jaab alles');
+
+  // Sama lugu parseerimatu pubDate-ga: isoPaev annab null, mitte kuupaeva.
+  const praht = rssKirje({
+    title: '313001 - Kasutajaliidese uuendus (muudetud)',
+    desc: 'Teenused; Lihthange; Muu; Tähtaeg: 01.12.2026 10:00',
+    pub: 'eile',
+  });
+  const vanem2 = rssKirje({
+    title: '313001 - Kasutajaliidese uuendus',
+    desc: 'Teenused; Lihthange; Muu; Tähtaeg: 01.10.2026 10:00',
+    pub: 'Sun, 24 Aug 2026 06:00:00 GMT',
+  });
+  const b = parseRss(rssFeed(praht, vanem2));
+  assert.equal(b[0].deadline, '2026-12-01',
+    'parseerimatu pubDate ei tohi uuemat teadet vanema alla matta');
+
+  // Kui MOLEMAL puudub, jaab kehtima feedi jarjestus - nagu kommentaar lubab.
+  const kumbki1 = '<item><title>313002 - Veebilehe hooldus A</title>' +
+    '<description>Teenused; Lihthange; Muu; Tähtaeg: 01.12.2026 10:00</description></item>';
+  const kumbki2 = '<item><title>313002 - Veebilehe hooldus B</title>' +
+    '<description>Teenused; Lihthange; Muu; Tähtaeg: 02.12.2026 10:00</description></item>';
+  const c = parseRss(rssFeed(kumbki1, kumbki2));
+  assert.equal(c.length, 1, 'kuupaevata paar annab uhe kirje');
+  assert.equal(c[0].title, 'Veebilehe hooldus A', 'kuupaevade puudumisel voidab feedi jarjestus');
+  console.log('PASS hanked: kuupaevata teade ei kao vanema alla');
+}
+
+// K3c: surrogaadid olemidekoodris. &#xD800; on paaritu UTF-16 pool, mitte mark -
+// String.fromCodePoint annaks U+FFFD otse pealkirja ja sealt baasi.
+{
+  const kirje = rssKirje({
+    title: '313003 - Veebilehe &#xD800; uuendus',
+    desc: 'Teenused; Lihthange; Muu; Tähtaeg: 01.12.2026 10:00',
+  });
+  const r = parseRss(rssFeed(kirje));
+  assert.equal(r.length, 1, 'surrogaadiolem ei tohi kirjet maha votta');
+  assert.ok(!r[0].title.includes('\ufffd'), 'asendusmark ei tohi pealkirja jouda');
+  assert.ok(r[0].title.includes('&#xD800;'), 'kahtlane olem jaab dekodeerimata alles');
+
+  // Paris olemid ja paris koodipunktid peavad endiselt tootama.
+  const ok = rssKirje({
+    title: '313004 - Veebilehe &quot;Kodu&quot; &#8211; uuendus &#x2013; II etapp',
+    desc: 'Teenused; Lihthange; Muu; Tähtaeg: 01.12.2026 10:00',
+  });
+  assert.equal(parseRss(rssFeed(ok))[0].title,
+    'Veebilehe "Kodu" \u2013 uuendus \u2013 II etapp', 'paris olemid dekodeeritakse endiselt');
+  console.log('PASS hanked: surrogaadiolem ei riku pealkirja');
+}
+
 // K4 (S4): nature vottis semikoolonita kirjelduse TERVIKUNA ('Ainult uks osa').
 {
   const read = parseRss(rssFeed(
