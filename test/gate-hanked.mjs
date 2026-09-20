@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { mkdtempSync, readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { migrateHanked, upsertHange, listHanked, setState, setNote, markExpired, HANKE_STATES,
-  segmentOf, parseRss } from '../lib/hanked.mjs';
+  segmentOf, parseRss, FIT } from '../lib/hanked.mjs';
 
 function testDb() {
   const dir = mkdtempSync(join(tmpdir(), 'hanked-'));
@@ -748,4 +748,182 @@ const RSS_FIKSTUUR = `<?xml version="1.0" encoding="UTF-8"?>
     'ISO-kujuline moodunud tahtaeg aegub endiselt');
   db.close();
   console.log('PASS hanked: paljas aastaarv ei aegu vaikselt');
+}
+
+// ---------------------------------------------------------------------------
+// KORDUSULEVAATUS: S1-S5. Paarisvalvur riigihanked/rhr_tools/rhr_watch.py andis
+// samal feedil 6 leidu, meie 3 - vahe oli ainult selles, et tema otsib FIT-i
+// pealkiri+kirjeldus pealt.
+// ---------------------------------------------------------------------------
+
+const rssKirje = ({
+  title, desc = '', pub = 'Mon, 01 Sep 2026 05:00:00 GMT',
+  link = 'https://riigihanked.riik.ee/rhr-web/#/procurement/10000099/notices',
+  creator = 'Test Vald',
+}) => `<item><title>${title}</title><link>${link}</link>` +
+  `<description>${desc}</description><pubDate>${pub}</pubDate><dc:creator>${creator}</dc:creator></item>`;
+
+const rssFeed = (...kirjed) => `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/"><channel>
+${kirjed.join('\n')}
+</channel></rss>`;
+
+// K1 (S1): FIT peab vaatama ka kirjeldust. 310983 "OsKus uhtse infosusteemi ja
+// analuusikeskkonna loomine" ei sisalda pealkirjas UHTEGI FIT-i sona, aga kirjelduses
+// on "veebirakenduste ... loomiseks voi edasiarenduseks ... sh prototuupimine".
+{
+  const oskusKirjeldus = 'Teenused; Avatud hankemenetlus; ' +
+    'veebirakenduste loomiseks või edasiarenduseks, sh prototüüpimine; Tähtaeg: 24.09.2026 11:00';
+
+  // a) pealkiri ilma FIT-sonata + kirjeldus FIT-sonaga = niss
+  assert.equal(segmentOf('OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine', oskusKirjeldus),
+    'nišš', 'FIT peab tabama ka kirjelduse kaudu');
+
+  // b) EXCL JAAB AINULT PEALKIRJALE - pealkirjas ehitus tahendab, et see ei ole meie too
+  assert.equal(segmentOf('Koolimaja ehituse infosüsteemi loomine', oskusKirjeldus), null,
+    'pealkirja EXCL peab voitma ka siis, kui kirjeldus sobib');
+
+  // c) SMALLWEB JAAB AINULT PEALKIRJALE - muidu oleks iga suur infosusteem "vaike veebileht"
+  assert.equal(segmentOf('Ühtse analüüsikeskkonna loomine', 'Teenused; tellija veebilehe haldus ja arendus'),
+    'nišš', 'kirjelduses olev veebileht ei tohi suurt susteemi vaikeseks kodulehaks teha');
+
+  // EXCL kirjelduses EI tohi head hanget tappa (moodetud: laiendamine ei muuda tulemust,
+  // aga lisab riski - iga teine IT-hange mainib kirjelduses hoonet voi projekteerimist).
+  assert.equal(segmentOf('Veebilehe arendus', 'Teenused; hoone ehitus ja sisekujundus'),
+    'väike veebileht', 'kirjelduse EXCL ei tohi pealkirja jargi sobivat hanget valja visata');
+
+  // Uheargumendiline kutse peab edasi tootama (olemasolevad kutsujad ja testid).
+  assert.equal(segmentOf('Tehisaru vestlusroboti arendus'), 'nišš', 'uks argument peab edasi toimima');
+  assert.equal(segmentOf('Bussipeatuste hooldus'), null, 'uks argument: FIT-i mittetabav on ikka null');
+  assert.equal(segmentOf('Ühtse infosüsteemi loomine', null), null,
+    'NULL-kirjeldus ei tohi tekitada vale tabamust');
+
+  // Sama tee parseRss-i kaudu: kutsuja PEAB kirjelduse kaasa andma.
+  const read = parseRss(rssFeed(rssKirje({
+    title: '310983 - OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine',
+    desc: oskusKirjeldus,
+    link: 'https://riigihanked.riik.ee/rhr-web/#/procurement/10310983/notices',
+  })));
+  assert.equal(read.length, 1, 'parseRss peab kirjelduse segmentOf-ile kaasa andma');
+  assert.equal(read[0].ref, '310983', 'oige viitenumber');
+  assert.equal(read[0].segment, 'nišš', 'kirjelduse kaudu leitud hange on niss');
+  assert.equal(read[0].deadline, '2026-09-24', 'tahtaeg tuleb ikka ISO-kujul');
+  console.log('PASS hanked: FIT vaatab ka kirjeldust, EXCL ja SMALLWEB ainult pealkirja');
+}
+
+// K2 (S2): neli ingliskeelset FIT-haru olid vaikselt kaduma laanud (41 vs 45 haru).
+// Tanasel feedil annavad nad 0 lisatabamust, aga seletamatu kitsendus toestatud
+// reegli suhtes on triiv - ingliskeelne pealkiri RHR-is ei ole haruldus.
+{
+  for (const [tekst, miks] of [
+    ['Web development services for the ministry', '\\bweb\\b'],
+    ['User experience research for public services', 'user experience'],
+    ['Design system implementation', 'design system'],
+    ['Accessibility audit of the portal', 'accessibility'],
+  ]) {
+    assert.ok(FIT.test(tekst), 'taastatud FIT-haru peab tabama (' + miks + '): ' + tekst);
+  }
+  // Sonapiir peab pusima - "webinar" ei ole "web".
+  assert.ok(!FIT.test('Webinaride korraldamise teenus'), '\\bweb\\b ei tohi tabada sona sees');
+  // Tapitahetaluvus peab ALLES jaama - meie oma laiendus Pythoni mustri peale.
+  for (const tekst of ['Disainisüsteemi loomine', 'Disainisusteemi loomine',
+    'Ligipääsetavuse audit', 'Prototüüpimise teenus', 'Prototuupimise teenus',
+    'Brändiraamat', 'Brandiraamat', 'Kujundustöö', 'Kujundustoo']) {
+    assert.ok(FIT.test(tekst), 'tapitahetaluvus peab sailima: ' + tekst);
+  }
+  console.log('PASS hanked: neli ingliskeelset FIT-haru on tagasi, tapitahetaluvus alles');
+}
+
+// K3 (S3): muutmisteade. RHR avaldab sama ref-i uuesti just siis, kui midagi muutus
+// (tahtaeg, pealkiri), ja feed on UUEMAST VANEMANI. Enne parandust andis parseRss
+// molemad read ja upsertHange tootles neid jarjekorras -> VANEM teade voitis.
+{
+  const uuem = rssKirje({
+    title: '310983 - OsKus ühtse infosüsteemi loomine (muudetud)',
+    desc: 'Teenused; Avatud hankemenetlus; veebirakenduste arendus ja prototüüpimine; Tähtaeg: 24.09.2026 11:00',
+    pub: 'Mon, 25 Aug 2026 06:00:00 GMT',
+  });
+  const vanem = rssKirje({
+    title: '310983 - OsKus ühtse infosüsteemi loomine',
+    desc: 'Teenused; Avatud hankemenetlus; veebirakenduste arendus ja prototüüpimine; Tähtaeg: 10.09.2026 11:00',
+    pub: 'Sun, 24 Aug 2026 06:00:00 GMT',
+  });
+
+  const a = parseRss(rssFeed(uuem, vanem));
+  assert.equal(a.length, 1, 'sama viitenumber peab andma TAPSELT uhe kirje');
+  assert.equal(a[0].deadline, '2026-09-24', 'uuem tahtaeg peab voitma (uuem eespool)');
+  assert.equal(a[0].published, '2026-08-25', 'uuema teate ilmumisaeg jaab alles');
+  assert.equal(a[0].title, 'OsKus ühtse infosüsteemi loomine (muudetud)', 'uuem pealkiri voidab');
+
+  // Ka vastupidises jarjekorras peab voitma UUEM, mitte "viimane feedis".
+  const b = parseRss(rssFeed(vanem, uuem));
+  assert.equal(b.length, 1, 'vastupidine jarjekord annab ikka uhe kirje');
+  assert.equal(b[0].deadline, '2026-09-24', 'uuem voidab ka siis, kui ta on feedis tagapool');
+
+  // Vordse pubDate korral voidab feedis eespool olev (RHR-i oma jarjestus).
+  const sama1 = rssKirje({ title: '311111 - Veebilehe arendus A', pub: 'Mon, 25 Aug 2026 06:00:00 GMT',
+    desc: 'Teenused; Lihthange; Muu; Tähtaeg: 01.11.2026 10:00' });
+  const sama2 = rssKirje({ title: '311111 - Veebilehe arendus B', pub: 'Mon, 25 Aug 2026 06:00:00 GMT',
+    desc: 'Teenused; Lihthange; Muu; Tähtaeg: 02.11.2026 10:00' });
+  const c = parseRss(rssFeed(sama1, sama2));
+  assert.equal(c.length, 1, 'vordne pubDate annab uhe kirje');
+  assert.equal(c[0].title, 'Veebilehe arendus A', 'vordse korral voidab feedis eespool olev');
+
+  // Jarjestus peab jaama feedi omaks, mitte umber jarjestuma.
+  const muu = rssKirje({ title: '312222 - Kasutajaliidese uuendus', pub: 'Tue, 26 Aug 2026 06:00:00 GMT',
+    desc: 'Teenused; Lihthange; Muu; Tähtaeg: 03.11.2026 10:00' });
+  const d = parseRss(rssFeed(uuem, muu, vanem));
+  assert.deepEqual(d.map((r) => r.ref), ['310983', '312222'],
+    'dubli eemaldamine ei tohi ulejaanud jarjestust muuta');
+
+  // Ja LOPUKS see, mis paris elus katki oli: baasi peab joudma uuem tahtaeg.
+  const db = testDb();
+  for (const h of parseRss(rssFeed(uuem, vanem))) upsertHange(db, h);
+  assert.equal(db.prepare('SELECT deadline FROM hanked WHERE ref = ?').get('310983').deadline,
+    '2026-09-24', 'baasi peab jouma UUEM tahtaeg, mitte vanem');
+  db.close();
+  console.log('PASS hanked: muutmisteade ei kirjuta uuemat vanaga ule');
+}
+
+// K4 (S4): nature vottis semikoolonita kirjelduse TERVIKUNA ('Ainult uks osa').
+{
+  const read = parseRss(rssFeed(
+    rssKirje({ title: '320001 - Veebilehe arendus', desc: 'Ainult uks osa ilma semikooloniteta' }),
+    rssKirje({ title: '320002 - Kasutajaliidese arendus', desc: 'Teenused; Lihthange; Muu' }),
+    rssKirje({ title: '320003 - Mobiilirakenduse arendus', desc: 'ehitustööd; Lihthange; Muu' }),
+    rssKirje({ title: '320004 - Veebilehe arendus', desc: 'Sotsiaalteenused; Lihthange; Muu' }),
+  ));
+  const kaart = Object.fromEntries(read.map((r) => [r.ref, r]));
+  assert.equal(kaart['320001'].nature, null, 'tundmatu liik peab andma NULL-i, mitte kogu kirjeldust');
+  assert.equal(kaart['320001'].menetlus, null, 'semikoolonita kirjeldus ei anna menetlust');
+  assert.ok(kaart['320001'], 'tundmatu liik EI tohi kirjet valja visata');
+  assert.equal(kaart['320002'].nature, 'Teenused', 'teadaolev liik jaab alles');
+  assert.equal(kaart['320003'], undefined, 'valjajatmine peab tootama ka vaikeste tahtedega');
+  assert.equal(kaart['320004'].nature, 'Sotsiaalteenused', 'sotsiaalteenused laheb labi');
+  console.log('PASS hanked: nature on piiratud teadaoleva loeteluga');
+}
+
+// K5 (S5): eraldaja pealkirjas on NOUTUD - see on teadlik otsus, mitte unustus.
+// Ilma selleta loeks "2026. aasta veebilehe hange" aastaarvu viitenumbriks.
+{
+  assert.equal(parseRss(rssFeed(rssKirje({
+    title: '314159 Veebilehe arendus', desc: 'Teenused; Lihthange; Muu',
+  }))).length, 0, 'ilma eraldajata pealkiri ei anna kirjet');
+  const read = parseRss(rssFeed(rssKirje({
+    title: '314159 - Veebilehe arendus', desc: 'Teenused; Lihthange; Muu',
+  })));
+  assert.equal(read.length, 1, 'eraldajaga pealkiri annab kirje');
+  assert.equal(read[0].ref, '314159', 'viitenumber tuleb pealkirja algusest');
+  assert.equal(parseRss(rssFeed(rssKirje({
+    title: '2026. aasta veebilehe hange', desc: 'Teenused; Lihthange; Muu',
+  }))).length, 0, 'aastaarv ilma eraldajata ei tohi viitenumbriks saada');
+
+  // Paarisfail peab olema koodis NIMETATUD - ta on gitignore'is ja kasitsi hoitav,
+  // seega ainus koht, kus jargmine lugeja sellest teada saab, on see kommentaar.
+  const lahtekood = readFileSync(new URL('../lib/hanked.mjs', import.meta.url), 'utf8');
+  assert.ok(lahtekood.includes('rhr_watch.py'),
+    'FIT-i juures peab olema viide paarisfailile rhr_watch.py');
+  assert.ok(/CDATA/.test(lahtekood) && /topelt/i.test(lahtekood),
+    'tagi() juures peab olema selgitus, miks olemeid dekodeeritakse ka CDATA sees');
+  console.log('PASS hanked: eraldaja on noutud ja otsused on koodis kirjas');
 }
