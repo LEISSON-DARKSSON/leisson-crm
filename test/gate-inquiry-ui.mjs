@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
-import { CATALOG, activeServices } from '../../packages/service-catalog/index.mjs';
+import { CATALOG, activeServices } from '@leisson/shared/service-catalog';
+import { pathToFileURL } from 'node:url';
+import { sharedFile } from '../lib/shared-path.mjs';
 const {chromium}=createRequire(import.meta.url)('playwright');
 const source='a'.repeat(64), writes=[];
 const company={id:'fixture',name:'Fixture Company',email:'owner@example.test',priority:'A',status:'ootel',sales_state:'research',
@@ -43,7 +45,7 @@ const server=createServer(async(req,res)=>{
     res.writeHead(400);return res.end('Unexpected mutation');
   }
   try {
-    const file=req.url==='/orbit.css' ? new URL('../../packages/orbit-tokens/dist/orbit.css',import.meta.url)
+    const file=req.url==='/orbit.css' ? pathToFileURL(sharedFile('orbit-tokens/dist/orbit.css'))
       : files[req.url] ? new URL('../public/'+files[req.url],import.meta.url) : null;
     if(!file)throw new Error('missing');
     res.writeHead(200,{'content-type':req.url?.endsWith('.js')?'application/javascript':req.url?.endsWith('.css')?'text/css':'text/html'});

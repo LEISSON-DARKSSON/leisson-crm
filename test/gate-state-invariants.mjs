@@ -6,7 +6,7 @@ import {migrateOutbound,previewOutbound,dispatchOutbound,consumeDispatchAuthoriz
 import {migrateMailRecords,saveMailRecord} from '../lib/mail-records.mjs';
 import {reconcileSalesReplies,replyDecision,latestHumanReply} from '../lib/sales-safety.mjs';
 import {extraRoutes} from '../lib/routes2.mjs';
-import {parseContact,contactMail} from '../../site/lib/contact-data.mjs';
+import {parseContact,contactMail} from '@leisson/shared/contact-data';
 import {requireCurrentMessage,resolveMessageSelection} from '../lib/mail-identity.mjs';
 
 const now=new Date('2026-09-15T12:00:00Z');

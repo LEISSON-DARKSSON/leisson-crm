@@ -321,7 +321,7 @@ export function parseArgs(argv = []) {
   return out;
 }
 
-export const docsJuur = () => process.env.HANKED_DOCS_DIR || join(ROOT, '..', 'riigihanked');
+export const docsJuur = () => process.env.HANKED_DOCS_DIR || join(ROOT, 'riigihanked');
 
 // --- main ------------------------------------------------------------------
 

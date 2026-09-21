@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { createHash } from 'node:crypto';
-import { parseContact, contactMail } from '../../site/lib/contact-data.mjs';
+import { parseContact, contactMail } from '@leisson/shared/contact-data';
 import { parseWebInquiry, importWebInquiry, listWebInquiries } from '../lib/web-inquiry.mjs';
-import { CATALOG_VERSION } from '../../packages/service-catalog/index.mjs';
+import { CATALOG_VERSION } from '@leisson/shared/service-catalog';
 
 const hash = text => createHash('sha256').update(text).digest('hex');
 const id = '4f4b44b5-0479-45db-8bf5-10331451ddee';

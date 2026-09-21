@@ -1,0 +1,46 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+env:
+  GIT_AUTH: https://x-access-token:${{ secrets.SHARED_READ_TOKEN }}@github.com/
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - name: Let npm fetch the private shared package
+        run: |
+          git config --global url."$GIT_AUTH".insteadOf "https://github.com/"
+          git config --global --add url."$GIT_AUTH".insteadOf "ssh://git@github.com/"
+      - run: npm ci --no-audit --no-fund
+      # pdftotext is a REQUIRED dependency of the document-reader gate, not a convenience:
+      # its absence once produced silent NULL requirements and a wrong verdict (hank 315437, 21.09.2026).
+      - name: Install pdftotext (poppler)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends poppler-utils
+      # --range: in CI every dependency exists, so a SKIPPED gate means silent coverage loss -> red.
+      - name: Deterministic fixture gates (no mailbox, model or SMTP)
+        run: npm run varav:range
+      - name: Validate project skills
+        run: python3 tools/validate-skills.py
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - name: Let npm fetch the private shared package
+        run: |
+          git config --global url."$GIT_AUTH".insteadOf "https://github.com/"
+          git config --global --add url."$GIT_AUTH".insteadOf "ssh://git@github.com/"
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Browser gates (VALJAJATED list, isolated HTTP fixtures)
+        run: npm run varav:brauser

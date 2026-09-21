@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { CATALOG, CATALOG_VERSION, SERVICES, SELLER, serviceById, serviceSnapshot } from '../../packages/service-catalog/index.mjs';
+import { CATALOG, CATALOG_VERSION, SERVICES, SELLER, serviceById, serviceSnapshot } from '@leisson/shared/service-catalog';
 import { TEENUSED, KAIBEMAKS, teenus, jargmineAste, masinloetavPuudu } from '../lib/hinnakiri.mjs';
 
 const ids = SERVICES.flatMap(s => [s.id, ...s.aliases]);

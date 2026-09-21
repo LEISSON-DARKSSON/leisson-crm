@@ -22,7 +22,7 @@ import { splitNotices, parseAward } from '../lib/eforms.mjs';
 import { segmentOf, FIT, EXCL, SMALLWEB } from '../lib/hanked.mjs';
 
 export const JUUR = join(dirname(fileURLToPath(import.meta.url)), '..');
-export const REPO = join(JUUR, '..');
+export const REPO = JUUR;
 
 export const FIKSTUUR = 'test/fixtures/eforms-2026-08-naidis.xml';
 export const OOTUS_EFORMS = 'test/fixtures/eforms-2026-08-ootus.json';

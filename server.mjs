@@ -3,7 +3,8 @@ import {migrateOutbound,previewOutbound,dispatchOutbound} from './lib/outbound.m
 import {migrateCampaigns,prepareCampaign,campaignView,approveCampaign,stopCampaign,campaignEvidence,queuedCompanyIds,pruneAlreadySentItems} from './lib/campaign.mjs';
 import {reconcileSalesReplies} from './lib/sales-safety.mjs';
 import {revenueSummary} from './lib/salesdb.mjs';
-import {activeServices,CATALOG_VERSION} from '../packages/service-catalog/index.mjs';
+import {activeServices,CATALOG_VERSION} from '@leisson/shared/service-catalog';
+import {sharedFile} from './lib/shared-path.mjs';
 import {listProUXAuditLeads} from './lib/prouxaudit-import.mjs';
 import {listWebInquiries} from './lib/web-inquiry.mjs';
 import {loadRevenueWorkbench} from './lib/revenue-workbench.mjs';
@@ -54,7 +55,7 @@ const MIME = {
   '.png': 'image/png',
 };
 
-const TOKENS_CSS = join(ROOT, '..', 'packages', 'orbit-tokens', 'dist', 'orbit.css');
+const TOKENS_CSS = sharedFile('orbit-tokens/dist/orbit.css');
 
 function json(res, code, data) {
   const body = JSON.stringify(data);
@@ -385,7 +386,7 @@ const server = createServer(async (req, res) => {
     if (url.pathname === '/orbit.css') {
       if (!existsSync(TOKENS_CSS)) {
         res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
-        return res.end('orbit.css puudub — jooksuta packages/orbit-tokens: node build.mjs');
+        return res.end('orbit.css puudub — jooksuta leisson-shared: node orbit-tokens/build.mjs');
       }
       res.writeHead(200, { 'content-type': 'text/css; charset=utf-8' });
       return res.end(await readFile(TOKENS_CSS));

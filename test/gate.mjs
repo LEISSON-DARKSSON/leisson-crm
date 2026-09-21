@@ -12,12 +12,12 @@ import { existsSync, writeFileSync, unlinkSync, mkdtempSync, rmSync } from 'node
 import { ROOT } from '../lib/env.mjs';
 import { vabaPort } from './vaba-port.mjs';
 
-const require = createRequire(join(ROOT, '..', 'package.json'));
+const require = createRequire(join(ROOT, 'package.json'));
 let chromium;
 try {
   ({ chromium } = require('playwright'));
 } catch {
-  console.error('Playwright puudub repo juures (../node_modules/playwright). UI-väravat ei saa kontrollida.');
+  console.error('Playwright puudub node_modules/playwright (npm install). UI-väravat ei saa kontrollida.');
   process.exit(1);
 }
 

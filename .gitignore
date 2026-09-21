@@ -16,3 +16,14 @@ win/tmp/
 aruanded/
 signature/
 tmp.txt
+
+# Private procurement material stays on the machine; only the parity oracles are code.
+riigihanked/*
+!riigihanked/rhr_tools/
+riigihanked/rhr_tools/*
+!riigihanked/rhr_tools/*.py
+!riigihanked/rhr_tools/fetch.sh
+
+# Temporary commit message file (sub-agents overwrite it).
+.commitmsg
+.commitmsg-*

@@ -68,11 +68,16 @@
     "registry:gate": "node test/gate-registry.mjs",
     "registry:update": "npm run registry:sync && npm run registry:enrich && npm run registry:financials && npm run registry:backfill -- --kirjuta",
     "registry:kandidaadid": "node agent/registry-candidates.mjs",
-    "varav:brauser": "node tools/varav.mjs --brauserid"
+    "varav:brauser": "node tools/varav.mjs --brauserid",
+    "dev:link": "node tools/dev-link.mjs"
   },
   "dependencies": {
+    "@leisson/shared": "git+https://github.com/LEISSON-DARKSSON/leisson-shared.git#v1.0.0",
     "imapflow": "^1.0.171",
     "mailparser": "^3.7.2",
     "nodemailer": "^6.9.16"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
   }
 }

@@ -203,13 +203,13 @@ check('valja jaetud varavad joukavad brauserijooksu, mitte unustusse', () => {
 
 check('CI kutsub brauserivaravaid jooksja kaudu, mitte nimekirja pidi', () => {
   const { readFileSync, existsSync } = getFs();
-  const tee = join(JUUR, '..', '.github', 'workflows', 'orbit-gates.yml');
-  if (!existsSync(tee)) { console.log('   (orbit-gates.yml puudub - vahele)'); return; }
+  const tee = join(JUUR, '.github', 'workflows', 'ci.yml');
+  if (!existsSync(tee)) { console.log('   (ci.yml puudub - vahele)'); return; }
   const yml = readFileSync(tee, 'utf8');
   assert.match(yml, /varav:brauser/, 'CI peab kutsuma npm run varav:brauser');
   for (const f of VALJAJATED.keys()) {
     assert.ok(!yml.includes('crm/test/' + f),
-      `orbit-gates.yml loetleb ${f} kasitsi - just nii jai gate-hanked-vaade.mjs kunagi jooksmata`);
+      `ci.yml loetleb ${f} kasitsi - just nii jai gate-hanked-vaade.mjs kunagi jooksmata`);
   }
 });
 

@@ -6,7 +6,7 @@ import json
 import re
 
 root = Path(__file__).resolve().parents[1]
-skills = sorted([*(root / ".agents" / "skills").glob("*/SKILL.md"), *(root / "crm" / ".agents" / "skills").glob("*/SKILL.md")])
+skills = sorted((root / ".agents" / "skills").glob("*/SKILL.md"))
 assert skills, "No project skills found"
 for skill in skills:
     text = skill.read_text(encoding="utf-8")

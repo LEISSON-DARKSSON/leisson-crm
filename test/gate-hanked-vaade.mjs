@@ -20,6 +20,7 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { HANKE_STATES, LOPUSEISUD } from '../lib/hanked.mjs';
+import { sharedFile } from '../lib/shared-path.mjs';
 const { chromium } = createRequire(import.meta.url)('playwright');
 
 const KURI = '<img src=x onerror="window.__xss=1">';
@@ -228,7 +229,7 @@ const server = createServer(async (req, res) => {
   let sisu = null;
   // orbit.css ei ela public/-is, vaid tokenite dist-is (vt server.mjs) - ilma
   // temata on leht ilma Orbit muutujateta ja ekraanipilt valetaks.
-  if (req.url === '/orbit.css') sisu = await readFile(new URL('../../packages/orbit-tokens/dist/orbit.css', import.meta.url)).catch(() => null);
+  if (req.url === '/orbit.css') sisu = await readFile(sharedFile('orbit-tokens/dist/orbit.css')).catch(() => null);
   else if (nimi) sisu = await readFile(new URL('../public/' + nimi, import.meta.url)).catch(() => null);
   if (sisu === null) { res.writeHead(404); return res.end(); }
   const tyyp = req.url.endsWith('.css') ? 'text/css' : req.url.endsWith('.js') ? 'text/javascript' : 'text/html';

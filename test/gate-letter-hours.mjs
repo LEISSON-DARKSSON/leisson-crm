@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { SERVICES } from '../../packages/service-catalog/index.mjs';
+import { SERVICES } from '@leisson/shared/service-catalog';
 import { loadAllSeedCompanies } from '../lib/seed-dedupe.mjs';
 import { open } from '../lib/db.mjs';
 import { ROOT } from '../lib/env.mjs';
 
 // See varav kaitseb 20.09.2026 leitud vea kordumise eest: kirja kehas vabalt
 // tekstina kirjutatud "kuni N tundi" laknes teenuse tegelikust
-// packages/service-catalog tunnimaarast lahku (nt AS SA.MET kirjas seisis
+// service-catalog (leisson-shared) tunnimaarast lahku (nt AS SA.MET kirjas seisis
 // "1450 € (kuni 10 tundi)", kuigi ux-audit-evidence/1450€ teenuse tegelik
 // maht on 30 tundi -- lugejale naib pakkumine seetottu ~145 EUR/h, kuigi
 // tegelik tunnihind on kataloogi 50 EUR/h). Auditist selgus 14 vigast kirja

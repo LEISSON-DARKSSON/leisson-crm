@@ -31,11 +31,11 @@ const MUSTER = /^gate-.+\.mjs$/;
 // ilma põhjuseta väljajätt on sama vaikne katvuse kadu, mida see fail parandab.
 export const VALJAJATED = new Map([
   ['gate-campaign-ui.mjs',
-    'Brauserivärav: nõuab playwrighti + Chromiumi, mida offline-ahelas ei ole. Jookseb CI töös site-gates (.github/workflows/orbit-gates.yml).'],
+    'Brauserivärav: nõuab playwrighti + Chromiumi, mida offline-ahelas ei ole. Jookseb CI töös browser (.github/workflows/ci.yml).'],
   ['gate-inquiry-ui.mjs',
-    'Brauserivärav: nõuab playwrighti + Chromiumi, mida offline-ahelas ei ole. Jookseb CI töös site-gates (.github/workflows/orbit-gates.yml).'],
+    'Brauserivärav: nõuab playwrighti + Chromiumi, mida offline-ahelas ei ole. Jookseb CI töös browser (.github/workflows/ci.yml).'],
   ['gate-hanked-vaade.mjs',
-    'Brauserivärav: nõuab playwrighti + Chromiumi, mida offline-ahelas ei ole. Puhas loogika on kaetud test/gate-hanked-ui.mjs-is, mis jookseb ahelas. Jookseb CI töös site-gates (.github/workflows/orbit-gates.yml).'],
+    'Brauserivärav: nõuab playwrighti + Chromiumi, mida offline-ahelas ei ole. Puhas loogika on kaetud test/gate-hanked-ui.mjs-is, mis jookseb ahelas. Jookseb CI töös browser (.github/workflows/ci.yml).'],
 ]);
 
 // Jooksud, mis kuuluvad ahelasse, aga ei vasta mustrile gate-*.
@@ -65,8 +65,8 @@ export function leiaVaravad(juur = JUUR) {
 /**
  * Teadlikult valja jaetud varavad ehtses kujus {silt, argumendid}.
  * Need on brauserivaravad: nad EI kuulu offline-ahelasse, aga nad peavad kuskil
- * jooksma. Varem loetles CI neid kasitsi (.github/workflows/orbit-gates.yml,
- * too site-gates) ja uus brauserivarav (gate-hanked-vaade.mjs) jai sinna lisamata:
+ * jooksma. Varem loetles CI neid kasitsi (.github/workflows/ci.yml,
+ * too browser) ja uus brauserivarav (gate-hanked-vaade.mjs) jai sinna lisamata:
  * varav oli olemas, VALJAJATED lubas, et CI jooksutab teda, ja keegi ei jooksutanud.
  * Tapselt see bugiklass, mille parast see jooksja uldse tehti - nuud on ka teine
  * ots avastatud, mitte kasitsi hoitav.
@@ -130,7 +130,7 @@ function main(argv) {
   const muster = (lipud.find((a) => a.startsWith('--ainult=')) || '').slice('--ainult='.length);
   const range = lipud.includes('--range') || lipud.includes('--strict');
   // --brauserid poorab valiku umber: jooksutab TAPSELT need varavad, mis
-  // offline-ahelast valja jaeti. CI too site-gates kutsub seda, nii et uus
+  // offline-ahelast valja jaeti. CI too browser kutsub seda, nii et uus
   // brauserivarav satub jooksu ilma, et keegi peaks YAML-i muutma.
   const brauserid = lipud.includes('--brauserid');
 
