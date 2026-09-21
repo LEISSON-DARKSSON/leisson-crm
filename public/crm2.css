@@ -336,9 +336,14 @@ ul.doclist li .btn { margin-left: auto; }
 .draft-why > summary:hover { opacity: 1; }
 .draft-why > .why { margin-top: 4px; }
 
-/* --- riigihanked (ülesanne 9) ---
-   Käskude riba: ülesanne 10 paneb siia nupud, praegu on siin üks rida teksti. */
-.runbar { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+/* --- riigihanked (ülesanded 9 ja 10) ---
+   Käskude riba: iga käsk on oma plokk (nupp + staatusrida), et jooksva käsu
+   seis oleks NUPU JUURES, mitte anonüümses reas riba lõpus. */
+.runbar { display: flex; gap: .75rem 1.25rem; flex-wrap: wrap; align-items: flex-start; }
+.runbar .cmd { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
+.runbar .cmd.busy .run-row { color: var(--orbit-color-ink); }
+.runbar .run-row.warn { color: var(--orbit-color-signal); }
+.runbar button[disabled] { opacity: .55; cursor: not-allowed; }
 .run-row { font-size: .85rem; color: var(--orbit-color-ink-3);
   font-family: var(--orbit-font-data); font-variant-numeric: tabular-nums; }
 
@@ -350,8 +355,12 @@ table.tbl.hanked td.taht b { display: block; color: var(--orbit-color-ink); }
 table.tbl.hanked td.taht .kp { display: block; font-size: 11px; color: var(--orbit-color-ink-3); }
 table.tbl.hanked td.taht.kiire b { color: var(--orbit-color-signal); }
 table.tbl.hanked td.taht.muted b { color: var(--orbit-color-ink-3); }
+table.tbl.hanked td.skoor { white-space: nowrap; }
 table.tbl.hanked td.skoor.top { color: var(--orbit-color-ink); font-weight: 600; }
 table.tbl.hanked td.skoor.jata { color: var(--orbit-color-ink-3); }
+/* ALLTÖÖVÕTT ei ole "hea" ega "halb" skoor, vaid teine müügivestlus — seega
+   oma märk, mitte punktiskaala värv. */
+table.tbl.hanked td.skoor.allt { color: var(--orbit-color-signal); font-weight: 600; }
 table.tbl.hanked tr.kiire { background: var(--orbit-color-paper); }
 table.tbl.hanked tr[aria-current="true"] { outline: 1px solid var(--orbit-color-signal); outline-offset: -1px; }
 table.tbl.hanked tr.tyhi td { color: var(--orbit-color-ink-3); }
@@ -364,3 +373,13 @@ table.tbl.hanked tr.tyhi td { color: var(--orbit-color-ink-3); }
 
 /* Tühi detailpaneel ei tohi jätta lehele tühja kasti. */
 .hanked-detail:empty { display: none; }
+.hanked-detail .detail-head { display: flex; gap: .75rem; align-items: baseline; flex-wrap: wrap; }
+.hanked-detail .detail-head h2 { margin: 0; }
+.hanked-detail .detail-head .tag.allt,
+.hanked-detail .detail-head .tag.top { color: var(--orbit-color-signal); }
+.hanked-detail .detail-plokk { margin-top: 1rem; }
+.hanked-detail .detail-plokk h3 { margin: 0 0 .35rem; font-size: 13px; text-transform: uppercase;
+  letter-spacing: .04em; color: var(--orbit-color-ink-3); }
+.hanked-detail .why-list { margin: 0; padding-left: 1.1rem; }
+.hanked-detail .why-list li { font-family: var(--orbit-font-data); font-size: 13px; overflow-wrap: anywhere; }
+.hanked-detail textarea.input { width: 100%; resize: vertical; }

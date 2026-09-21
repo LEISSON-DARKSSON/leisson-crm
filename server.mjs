@@ -20,7 +20,7 @@ import { migrateAgent } from './lib/agentdb.mjs';
 import * as mail from './lib/mail.mjs';
 import { LOOBUMISRIDA, lisaLoobumisrida } from './lib/sendgate.mjs';
 import { initSales, salesState, extraRoutes, docPage } from './lib/routes2.mjs';
-import { migrateHanked } from './lib/hanked.mjs';
+import { migrateHanked, kiireidLoend } from './lib/hanked.mjs';
 import { cleanupOrphans } from './lib/hanked-runs.mjs';
 
 const cfg = loadEnv();
@@ -118,6 +118,11 @@ function state() {
     lastSync: meta.last_sync || null,
     days: meta.days ? JSON.parse(meta.days) : [],
     counts,
+    // Sakimark: kiireloomuliste hangete arv. UKS COUNT, mitte kogu nimekiri -
+    // load() jookseb iga 60 s. Reegel elab lib/hanked.mjs-is SAMA lausena, mida
+    // klient (public/hanked-loogika.js onKiire) kasutab; test/gate-hanked.mjs
+    // jooksutab molemad samade ridade peal ja noiab sama arvu.
+    hankedKiireid: kiireidLoend(db),
     pipelineValue: companies
       .filter((c) => c.sales_state === 'qualified')
       .reduce((a, c) => a + (c.price || 0), 0),

@@ -427,5 +427,41 @@ const marsruudid = (db) => extraRoutes(db, {}, { json: () => {}, readBody: async
   console.log('PASS hanked API: kaivitatud jooks on nimekirjas sama id-ga');
 }
 
+// --- N: verdikt tuleb API-st kaasa ------------------------------------------
+// Tabel naitas ainult arvu ja ALLTOOVOTT oli nahtamatu (teda EI SAA punktidest
+// tagasi arvutada). Verdikt on nuud baasis - ta peab ka ule juhtme tulema.
+{
+  const db = testDb();
+  upsertHange(db, { ref: 'w1', title: 'Veebileht', segment: 'nišš' });
+  db.prepare('UPDATE hanked SET score = 40, verdict = ? WHERE ref = ?').run('ALLTÖÖVÕTT', 'w1');
+
+  const nimekiri = await kutsu(db, 'GET /api/hanked');
+  assert.equal(nimekiri.keha.hanked[0].verdict, 'ALLTÖÖVÕTT', 'nimekiri peab verdikti kaasa andma');
+  const detail = await kutsu(db, 'POST /api/hanked/detail', { keha: { ref: 'w1' } });
+  assert.equal(detail.keha.hange.verdict, 'ALLTÖÖVÕTT', 'detail peab verdikti kaasa andma');
+  assert.equal(detail.keha.hange.score, 40, 'punktid jaavad verdikti korvale alles');
+  db.close();
+  console.log('PASS hanked API: verdikt tuleb nimekirja ja detaili vastusesse');
+}
+
+// --- O: sakimark tuleb /api/state vastusest ----------------------------------
+// Mark ilmus varem alles parast esimest sakiklikki, sest teda arvutas ainult
+// vaade. load() jookseb iga 60 s ja ta EI TOHI selleks kogu hangete nimekirja
+// parida - vastuses on UKS COUNT.
+{
+  const src = readFileSync(join(ROOT, 'server.mjs'), 'utf8');
+  const kood = src.split('\n').filter((r) => !/^\s*\/\//.test(r)).join('\n');
+  const i = kood.indexOf('function state()');
+  const j = kood.indexOf('const routes = {');
+  assert.ok(i > 0 && j > i, 'state() peab server.mjs-is olema');
+  const keha = kood.slice(i, j);
+  assert.match(keha, /hankedKiireid:\s*kiireidLoend\(db\)/,
+    'state() peab andma kiireloomuliste loenduri (uks COUNT, mitte kogu nimekiri)');
+  assert.doesNotMatch(keha, /listHanked\(/, 'load() ei tohi kogu hangete nimekirja kaasa vedada');
+  assert.match(kood, /import \{[^}]*kiireidLoend[^}]*\} from '\.\/lib\/hanked\.mjs'/,
+    'loendur tuleb lib/hanked.mjs-ist, mitte server.mjs-i oma SQL-ist');
+  console.log('PASS hanked API: sakimark tuleb /api/state loendurist');
+}
+
 console.log('');
 console.log('Värav gate-hanked-api: kõik plokid rohelised.');

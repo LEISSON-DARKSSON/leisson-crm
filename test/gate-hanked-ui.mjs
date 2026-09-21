@@ -260,3 +260,185 @@ const T = (iso) => new Date(iso);
 
   console.log('PASS hanked UI: tühi olek, veateade ja ligipääsetavuse nõuded on kaetud');
 }
+
+/* ------------------------------------------- 10. VERDIKT tuleb baasist, mitte punktidest */
+{
+  // ALLTOOVOTT EI OLE punktidest tagasi arvutatav (vt lib/hanked.mjs score):
+  // 40-punktine alltoovotu-hange naeks punktide jargi valja nagu 'KAALU'. Seega
+  // kannab baas verdikti ise ja vaade naitab TEDA, mitte oma oletust.
+  const nyyd = T('2026-09-21T17:00:00Z');
+
+  const allt = L.riviks({ ref: 'V-1', state: 'uus', score: 40, verdict: 'ALLTÖÖVÕTT' }, nyyd);
+  assert.equal(allt.verdict, 'ALLTÖÖVÕTT', 'verdikt peab reale jõudma');
+  assert.equal(allt.otsus.verdict, 'ALLTÖÖVÕTT');
+  assert.equal(allt.otsus.klass, 'allt', 'alltöövõtul on OMA klass, mitte punktide oma');
+  assert.notEqual(allt.otsus.klass, L.skooriKlass(40),
+    'kui verdikti klass tuleb punktidest, on ALLTÖÖVÕTT nähtamatu');
+  assert.ok(allt.otsus.tekst.includes('ALLTÖÖVÕTT'), 'otsusveerg peab verdikti välja ütlema');
+  assert.ok(allt.otsus.tekst.includes('40'), 'punktid jäävad verdikti kõrvale nähtavaks');
+
+  for (const [v, k] of [['PAKU', 'top'], ['KAALU', 'kaalu'], ['JÄTA', 'jata'], ['ALLTÖÖVÕTT', 'allt']]) {
+    assert.equal(L.verdiktiKlass(v), k, 'verdikti klass: ' + v);
+  }
+  // Tundmatu verdikt (server lisas uue) EI TOHI ara kaduda - naidatakse toorelt.
+  const uus = L.riviks({ ref: 'V-2', state: 'uus', score: 70, verdict: 'OOTAME' }, nyyd);
+  assert.equal(L.verdiktiKlass('OOTAME'), '', 'tundmatu verdikt ei saa klassi');
+  assert.ok(uus.otsus.tekst.includes('OOTAME'), 'tundmatu verdikt jääb nähtavaks');
+  assert.equal(uus.otsus.klass, L.skooriKlass(70), 'tundmatu verdikt kukub tagasi punktiklassile');
+
+  // Verdiktita rida (kasitsi import, ulesande 6 eForms-tee, vana baas) naitab arvu.
+  const ilma = L.riviks({ ref: 'V-3', state: 'uus', score: 72 }, nyyd);
+  assert.equal(ilma.verdict, null, 'verdiktita rida ei tohi verdikti välja mõelda');
+  assert.equal(ilma.otsus.tekst, '72', 'verdiktita real on ainult punktid');
+  assert.equal(ilma.otsus.klass, 'top');
+  const tyhi = L.riviks({ ref: 'V-4', state: 'uus' }, nyyd);
+  assert.equal(tyhi.otsus.tekst, '—', 'ilma punktide ja verdiktita jääb kriips');
+  assert.ok(!tyhi.otsus.tekst.includes('undefined'));
+
+  console.log('PASS hanked UI: verdikt tuleb baasist ja ALLTÖÖVÕTT on eristatav');
+}
+
+/* --------------------------------------------- 11. käsunupu seis PUHTA andmena */
+{
+  // Nupu loogika (keelatud / kaib / peata / mida staatusrida naitab) on puhas
+  // funktsioon, mitte DOM: nii on ta siin paris vaidetega kaetud ja brauserivarav
+  // toestab ainult, et see joudis ka ekraanile.
+  const t = { script: 'agent/hanked-sync.mjs', label: 'Sünkroon', valmis: true };
+
+  const vaba = L.nupuSeis('sync', t, []);
+  assert.equal(vaba.keelatud, false, 'vaba käsk on vajutatav');
+  assert.equal(vaba.tekst, 'Sünkroon');
+  assert.equal(vaba.pohjus, null);
+  assert.equal(vaba.peata, false, 'ilma jooksuta ei ole midagi peatada');
+  assert.equal(vaba.seis, null);
+  assert.equal(vaba.lopp, null, 'ilma ühegi jooksuta ei ole lõpprida');
+
+  // valmis:false = skripti EI OLE kettal (agent/hanked-history.mjs, hanked-docs.mjs).
+  // Nupp peab olema keelatud JA seletatud, mitte spawnima puuduvat faili.
+  const puudub = L.nupuSeis('history', { script: 'agent/hanked-history.mjs', label: 'Lae ajalugu', valmis: false }, []);
+  assert.equal(puudub.keelatud, true, 'valmimata käsu nupp peab olema keelatud');
+  assert.ok(/ei ole veel valmis/.test(puudub.pohjus), 'keeld peab olema seletatud: ' + puudub.pohjus);
+  assert.ok(puudub.pohjus.includes('agent/hanked-history.mjs'), 'põhjus nimetab puuduva skripti');
+
+  // Kaib: nupp keelatud, tekst muutub, "Peata" AINULT oma jooksu peal.
+  const oma = { id: 7, cmd: 'sync', state: 'käib', progress: '12 uut · 3 uuendatud', oma: true, logTail: null };
+  const voeras = { ...oma, id: 8, oma: false };
+  const k1 = L.nupuSeis('sync', t, [oma]);
+  assert.equal(k1.keelatud, true, 'käiva jooksu ajal on nupp keelatud');
+  assert.equal(k1.tekst, 'Sünkroon …');
+  assert.ok(/käib juba/.test(k1.pohjus));
+  assert.equal(k1.peata, true, 'oma jooksu saab peatada');
+  assert.equal(k1.seis, '12 uut · 3 uuendatud', 'progress läheb otse staatusreale');
+  const k2 = L.nupuSeis('sync', t, [voeras]);
+  assert.equal(k2.peata, false, 'võõra serveri-instantsi jooksu EI SAA tappa — nuppu ei tohi lubada');
+  assert.equal(L.nupuSeis('sync', t, [{ ...oma, oma: undefined }]).peata, false,
+    'teadmata omanik loetakse võõraks');
+
+  // progress on NULL varavajooksul (gate ei truki JSON-progressiridu). Siis tuleb
+  // naidata logi viimast SISUKAT rida, mitte igavest "kaivitub".
+  const gate = { id: 9, cmd: 'gate', state: 'käib', progress: null, oma: true,
+    logTail: 'PASS hanked: skoor ja põhjendus\nPASS hanked: sünk on idempotentne\n' };
+  assert.equal(L.nupuSeis('gate', { label: 'Värav', valmis: true }, [gate]).seis,
+    'PASS hanked: sünk on idempotentne', 'progressita jooks näitab logi viimast rida');
+  assert.equal(L.nupuSeis('gate', { label: 'Värav', valmis: true },
+    [{ ...gate, logTail: '{"progress":"laen RSS-i"}\n' }]).seis, 'käivitub',
+    'JSON-rida ei ole inimesele mõeldud rida');
+  assert.equal(L.nupuSeis('gate', { label: 'Värav', valmis: true }, [{ ...gate, logTail: null }]).seis,
+    'käivitub', 'ilma logita on aus vastus "käivitub"');
+  assert.equal(L.nupuSeis('gate', { label: 'Värav', valmis: true }, [{ ...gate, logTail: '   \n\n' }]).seis,
+    'käivitub', 'tühjad read ei ole sisukas rida');
+
+  // Lopprida: viimane LOPPENUD jooks, mitte suvaline rida.
+  const jooksud = [
+    { id: 12, cmd: 'sync', state: 'käib', progress: null, oma: true },
+    { id: 11, cmd: 'sync', state: 'viga', rows: 0, finished: '2026-09-21T10:00:00Z', error: 'RSS-i ei saanud: RHR vastas 502' },
+    { id: 10, cmd: 'sync', state: 'tehtud', rows: 6, finished: '2026-09-21T09:00:00Z', error: null },
+  ];
+  const s = L.nupuSeis('sync', t, jooksud);
+  assert.equal(s.kaib.id, 12);
+  assert.equal(s.lopp.id, 11, 'lõpprida tuleb viimasest lõppenud jooksust');
+  assert.equal(s.lopp.viga, true, 'veaga jooks on punane');
+  assert.ok(s.lopp.tulemus.includes('RHR vastas 502'), 'lõpprida ütleb päris vea: ' + s.lopp.tulemus);
+  const tehtud = L.nupuSeis('sync', t, jooksud.slice(2));
+  assert.equal(tehtud.lopp.viga, false);
+  assert.equal(tehtud.lopp.rows, 6, 'ridade arv jääb nähtavaks');
+  assert.ok(/korras/.test(tehtud.lopp.tulemus));
+  // Teise kasu jooks ei tohi siia segada.
+  assert.equal(L.nupuSeis('gate', { label: 'Värav', valmis: true }, jooksud).kaib, null,
+    'teise käsu jooks ei tohi seda nuppu kinni panna');
+
+  console.log('PASS hanked UI: nupu seis, keeld, "Peata" ainult oma jooksul ja progressita staatusrida');
+}
+
+/* ------------------------------------------- 12. pollimise leping ja 409 keha */
+{
+  // poll() EI TOHI kutsuda renderHanked()-i: see teeks iga kahe sekundi tagant
+  // uue /api/hanked paringu (kogu nimekiri) ja kustutaks detailpaneeli.
+  const i = views.indexOf('async function poll(');
+  assert.ok(i > 0, 'pollimisahel peab olema oma funktsioon');
+  let sygavus = 0;
+  let lopp = views.indexOf('{', i);
+  for (let j = lopp; j < views.length; j++) {
+    if (views[j] === '{') sygavus++;
+    else if (views[j] === '}') { sygavus--; if (!sygavus) { lopp = j; break; } }
+  }
+  const keha = views.slice(i, lopp);
+  assert.match(keha, /\/api\/hanked\/runs/, 'poll peab küsima AINULT jooksude otspunkti');
+  assert.doesNotMatch(keha, /api\('\/api\/hanked'/, 'poll ei tohi kogu nimekirja uuesti laadida');
+  for (const rida of keha.split('\n')) {
+    if (!/renderHanked\(/.test(rida)) continue;
+    assert.match(rida, /lopetas/,
+      'renderHanked tohib pollimises käia AINULT jooksu lõppemise peal: ' + rida.trim());
+  }
+  // ...ja ta peab seal ka OLEMA: ilma selleta jääb tabel jooksu järel vanaks
+  // (sünk lisas kuus hanget ja neid ei ole kusagil näha).
+  const taislaadimised = keha.split('\n').filter((rida) => /renderHanked\(/.test(rida));
+  assert.equal(taislaadimised.length, 1,
+    'poll peab jooksu lõppemise peal tegema TÄPSELT ühe täislaadimise, on ' + taislaadimised.length);
+  assert.match(keha, /lopetas/, 'lõppenud jooks peab tooma uued read (üks renderHanked)');
+  assert.match(keha, /catch/, 'pollimine ilma veakäsitluseta on igavene spinner');
+
+  // Uks ahel, mitte mitu: clearTimeout uksi ei aita, kui kaks poll()-i on lennus.
+  assert.match(views, /function alustaPoll\b/, 'pollimise käivitamine peab käima ühest kohast');
+  assert.match(views, /function peataPoll\b/, 'pollimise peatamine peab käima ühest kohast');
+  assert.match(views, /pollKaib/, 'ahelal peab olema lipp, et teine käivitus ei laoks pollimisi kohakuti');
+  assert.match(keha, /pollPolv/, 'lennus olev päring ei tohi surnud ahelat ellu äratada');
+
+  // Vaatelt lahkumine peatab pollimise - muidu koputab leht serverit taustal.
+  const r = views.slice(views.indexOf('window.CRMViews'));
+  assert.match(r, /peataPoll\(\)/, 'vaate vahetus peab pollimise peatama');
+  assert.match(r, /v !== 'hanked'/, 'peatumine peab käima siis, kui avatakse MUU vaade');
+
+  // 409 keha ({error, runId}) peab api()-st labi tulema - muidu ei saa vaade
+  // oelda, KUMB jooks juba kaib.
+  assert.match(app, /err\.status\s*=\s*r\.status/, 'api() peab vea staatuse edasi andma');
+  assert.match(app, /err\.keha\s*=\s*data/, 'api() peab vea KEHA edasi andma (409 runId)');
+  assert.doesNotMatch(app, /throw new Error\(data\.error \|\| \('HTTP ' \+ r\.status\)\)/,
+    'vana api() viskas ainult sõnumi ja runId kadus');
+  assert.match(views, /runId/, 'vaade peab 409 runId-d kasutama');
+
+  console.log('PASS hanked UI: pollimine on üks ahel, lõpeb vaatelt lahkudes ja 409 keha jõuab kliendini');
+}
+
+/* --------------------------------------- 13. detailpaneel ja märk load()-ist */
+{
+  assert.match(views, /'\/api\/hanked\/detail'/, 'detailpaneel peab küsima detaili otspunkti');
+  assert.match(views, /'\/api\/hanked\/note'/, 'märkus peab salvestuma');
+  assert.match(views, /addEventListener\('blur'/, 'märkus salvestub fookuse kaotusel');
+  assert.match(views, /riigihanked\.riik\.ee\/rhr-web\/#\/procurement\//, 'RHR-i link puudub');
+  assert.match(views, /rhr_id/, 'link peab tulema rhr_id väljast');
+  assert.match(views, /Sarnased lepingud/, 'ülesande 13 plokile peab olema koht jäetud');
+  assert.doesNotMatch(views, /sarnased\.map|d\.sarnased/, 'ülesande 13 sisu ei ehitata ette');
+  // Detaili EI TOHI kusida iga pollimise peale - vastus laheb vahemallu.
+  assert.match(views, /hankedData\.detail/, 'detail peab olema mudelis, mitte iga joonistuse peale päritav');
+
+  // MARK: number peab olema sakil ENNE esimest sakiklikki. load() ei tohi selleks
+  // uut rasket paringut teha - loendur tuleb /api/state vastuses.
+  assert.match(app, /hankedKiireid/, 'app.js peab märgi lugema /api/state vastusest');
+  assert.match(app, /function mark\(/, 'märgi kirjutamine peab olema ÜHES kohas');
+  assert.match(app, /mark\('hankedBadge'/, 'renderStats peab märgi kirjutama');
+  assert.doesNotMatch(app, /api\('\/api\/hanked'\)/, 'load() ei tohi hangete nimekirja pärida');
+  assert.match(views, /CRM\.mark\(/, 'views.js peab kasutama SAMA märgikirjutajat, mitte oma koopiat');
+
+  console.log('PASS hanked UI: detailpaneeli leping ja sakimärk tulevad load()-ist');
+}

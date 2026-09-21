@@ -226,14 +226,16 @@
       ...(d.digest?[block('Viimane kokkuvõte · '+dt(d.digestTs),el('pre',{class:'mailbody',text:d.digest}),null,'laic')]:[])
     );
   }
-  /* ================= RIIGIHANKED (ülesanne 9) =================
+  /* ================= RIIGIHANKED (ülesanded 9 ja 10) =================
      Puhas loogika — tähtajani jäänud päevad, seisufilter, kiireloomuliste
-     loendur ja rea vormindus — elab public/hanked-loogika.js-is ja on
-     test/gate-hanked-ui.mjs-is päris väidetega kaetud. Siin on ainult DOM.
+     loendur, rea vormindus, otsuseveerg ja käsunupu seis — elab
+     public/hanked-loogika.js-is ja on test/gate-hanked-ui.mjs-is päris
+     väidetega kaetud. Siin on ainult DOM ja võrk.
 
-     RHR on VÄLINE allikas: pealkiri, hankija nimi ja märkus tulevad sealt
-     toorelt. Kogu tekst läheb lehele el()-i kaudu, mis kirjutab textContent-i.
-     HTML-i otsekirjutamist selles projektis ei ole ja test/gate-hanked-ui.mjs
+     RHR on VÄLINE allikas: pealkiri, hankija nimi, skoori põhjendusread ja
+     märkus tulevad sealt toorelt. Kogu tekst läheb lehele el()-i kaudu, mis
+     kirjutab textContent-i (märkus läheb textarea .value-sse). HTML-i
+     otsekirjutamist selles projektis ei ole ja test/gate-hanked-ui.mjs
      hoiab, et teda ei tekiks. */
   const L = window.HankedLoogika;
 
@@ -243,16 +245,28 @@
   const SEISU_SILT = { voidetud: 'võidetud', jatsin: 'jätsin' };
   const silt = (s) => SEISU_SILT[s] || s;
 
-  const VEERUD = ['Tähtaeg', 'Viitenr', 'Hankija', 'Nimetus', 'Maksumus', 'Menetlus', 'Skoor', 'Seis', 'Dok'];
+  const VEERUD = ['Tähtaeg', 'Viitenr', 'Hankija', 'Nimetus', 'Maksumus', 'Menetlus', 'Otsus', 'Seis', 'Dok'];
+
+  // RHR-i hankeleht. Viimane osa on rhr_id — SEE ON ERI VÄLI kui viitenumber
+  // (ref), mida kasutaja tabelis näeb. Ilma rhr_id-ta linki EI MÕELDA VÄLJA:
+  // vale link viiks võõra hanke juurde ja seda ei märkaks keegi.
+  const RHR_URL = 'https://riigihanked.riik.ee/rhr-web/#/procurement/';
 
   let hankedData = {
     hanked: [], tasks: {}, runs: [], states: [], lopuseisud: [],
     filter: { seis: 'aktiivsed' }, valitud: null,
+    // Detail on VAHEMÄLUS. Ilma selleta küsiks iga joonistus uue POST-i ja
+    // pollimine teeks seda iga kahe sekundi tagant.
+    detail: null,
+    // Käsu enda veateade (nt 409 „käib juba") elab SELLE käsu juures, mitte
+    // anonüümses toastis, mis kaob kolme sekundiga.
+    kasuViga: {},
+    pollViga: null,
   };
 
-  // Päring ja joonistamine on LAHUS. Seisumuutus ja ülesande 10 pollimine
-  // joonistavad ilma uue täislaadimiseta; ainult sakk ja „Proovi uuesti"
-  // toovad andmed uuesti.
+  // Päring ja joonistamine on LAHUS. Seisumuutus, pollimine ja detailpaneel
+  // joonistavad ilma uue täislaadimiseta; ainult sakk, „Proovi uuesti" ja
+  // LÕPPENUD JOOKS toovad andmed uuesti.
   async function renderHanked() {
     const host = $('#hankedBody');
     if (!host) return;
@@ -268,16 +282,20 @@
       lopuseisud: Array.isArray(d.lopuseisud) ? d.lopuseisud : [],
     };
     joonistaHanked();
+    // Vaade avati ajal, mil jooks juba käib (nt käsurealt või teisest aknast
+    // käivitatud sünk): siis peab riba ise elama minema, mitte jääma seisma.
+    if (hankedData.runs.some((r) => r.state === 'käib')) alustaPoll();
   }
 
   // Vigane vastus ei tohi jätta valget lehte. Võrgukatkestusel viskab fetch
   // INGLISKEELSE TypeError-i ('Failed to fetch') — serveri enda vead on juba
   // eestikeelsed (lib/routes2.mjs vastaVeaga). Nupp jätab vaate kasutatavaks.
+  const veaSonum = (e) => (e instanceof TypeError ? 'server ei vasta' : e.message);
+
   function hankedViga(e) {
-    const sonum = e instanceof TypeError ? 'server ei vasta' : e.message;
     return el('div', { class: 'head' }, [
       el('h1', { text: 'Riigihanked' }),
-      el('p', { class: 'warn', text: 'Hangete nimekirja ei saanud: ' + sonum }),
+      el('p', { class: 'warn', text: 'Hangete nimekirja ei saanud: ' + veaSonum(e) }),
       el('p', { class: 'why', text: 'Ülejäänud CRM töötab edasi. Kui server on kinni, käivita ta uuesti.' }),
       el('button', { class: 'btn ghost', type: 'button', text: 'Proovi uuesti', onclick: () => renderHanked() }),
     ]);
@@ -310,27 +328,189 @@
     joonistaDetail();
   }
 
-  // ÜLESANNE 10 paneb #hankedRunbar sisse käivitusnupud (POST /api/hanked/run),
-  // progressi ja „Peata". Praegu on riba informatiivne: millal andmed viimati
-  // tulid ja kas sünkimist on üldse kordagi jooksutatud.
+  /* ---------------- käsuriba: nupud, progress ja „Peata" ---------------- */
+
   function andmeRiba() {
-    const kaib = hankedData.runs.find((r) => r.state === 'käib');
-    const viimane = hankedData.runs.find((r) => r.cmd === 'sync' && r.state !== 'käib');
-    const rida = kaib
-      ? (kaib.cmd + ' käib praegu' + (kaib.progress ? ' · ' + kaib.progress : ''))
-      : viimane
-        ? 'Viimane sünk ' + dt(viimane.finished) + ' · ' + (viimane.rows ?? 0) + ' rida · '
-          + (viimane.state === 'tehtud' ? 'korras' : (viimane.error || viimane.state))
-        // Kaks eri "jooksusid ei ole": tuhi baas tahendab, et sunkimist ei ole
-        // kordagi tehtud; hangetega baas ilma jooksudeta tahendab, et sunk kais
-        // KASUREALT (voi enne seda serverit) ja logis teda ei ole.
-        : hankedData.hanked.length
-          ? 'Selle serveri kaudu ei ole sünki jooksutatud — read on tulnud käsurealt või varasemast jooksust.'
-          : 'Sünkimist ei ole veel kordagi jooksutatud.';
-    return block('Andmed', el('div', { class: 'runbar', id: 'hankedRunbar' },
-      el('span', { class: 'run-row', text: rida })),
-    'Käsud jooksevad CRM-i serveri all. Käivitusnupud lisab järgmine samm.');
+    return block('Andmed',
+      el('div', {
+        class: 'runbar', id: 'hankedRunbar',
+        // Jooksva käsu seis peab jõudma ka ekraanilugejani, mitte ainult silma.
+        'aria-live': 'polite', 'aria-busy': kaibMidagi() ? 'true' : 'false',
+      }, ribaSisu()),
+      'Käsud jooksevad CRM-i serveri all. Öine Task Scheduleri jooks kirjutab samasse tabelisse.');
   }
+
+  const kaibMidagi = () => hankedData.runs.some((r) => r.state === 'käib');
+
+  // Pollimine uuendab AINULT seda riba. Täisjoonistus iga kahe sekundi tagant
+  // kustutaks detailpaneeli koos poolikult kirjutatud märkusega ja viskaks
+  // fookuse ära — jooksu ajal juhtuks see kümneid kordi.
+  function uuendaRiba() {
+    const host = $('#hankedRunbar');
+    if (!host) return;
+    host.replaceChildren(...ribaSisu());
+    host.setAttribute('aria-busy', kaibMidagi() ? 'true' : 'false');
+  }
+
+  function ribaSisu() {
+    const kasud = Object.entries(hankedData.tasks).map(([cmd, t]) => kasuPlokk(cmd, t));
+    if (!kasud.length) kasud.push(el('span', { class: 'run-row', text: 'Server ei andnud ühtegi käsku.' }));
+    if (hankedData.pollViga) kasud.push(el('span', { class: 'run-row warn', text: hankedData.pollViga }));
+    if (!kaibMidagi() && !hankedData.runs.length && hankedData.hanked.length) {
+      // Kaks eri „jooksusid ei ole": tühi baas tähendab, et sünkimist ei ole
+      // kordagi tehtud; hangetega baas ilma jooksudeta tähendab, et sünk käis
+      // KÄSUREALT (või enne seda serverit) ja logis teda ei ole.
+      kasud.push(el('span', { class: 'run-row',
+        text: 'Selle serveri kaudu ei ole sünki jooksutatud — read on tulnud käsurealt või varasemast jooksust.' }));
+    }
+    return kasud;
+  }
+
+  function kasuPlokk(cmd, t) {
+    const n = L.nupuSeis(cmd, t, hankedData.runs);
+    const viga = hankedData.kasuViga[cmd];
+    return el('div', { class: 'cmd' + (n.kaib ? ' busy' : ''), 'data-cmd': cmd }, [
+      el('button', {
+        class: 'btn' + (n.keelatud ? ' ghost' : ''), type: 'button', text: n.tekst,
+        // Keelatud nupp on KEELATUD JA SELETATUD: agent/hanked-history.mjs ja
+        // agent/hanked-docs.mjs ei ole veel olemas ja klikk annaks 400.
+        disabled: n.keelatud ? 'disabled' : null,
+        'aria-disabled': n.keelatud ? 'true' : null,
+        title: n.pohjus,
+        onclick: () => kaivita(cmd),
+      }),
+      // „Peata" AINULT oma jooksul: võõra serveri-instantsi pid võib vahepeal
+      // ringlusse minna ja server keeldub teda tapmast (lib/hanked-runs.mjs).
+      n.peata ? el('button', {
+        class: 'btn ghost sm', type: 'button', text: 'Peata',
+        'aria-label': 'Peata ' + n.label, onclick: () => peata(n.kaib.id),
+      }) : null,
+      n.kaib ? el('span', { class: 'run-row', text: n.seis }) : null,
+      n.kaib && !n.peata
+        ? el('span', { class: 'run-row', text: 'Jooks kuulub eelmisele serverile — peatada ei saa' })
+        : null,
+      viga ? el('span', { class: 'run-row warn', text: viga }) : null,
+      !n.kaib && n.lopp
+        ? el('span', { class: 'run-row' + (n.lopp.viga ? ' warn' : ''),
+          text: dt(n.lopp.finished) + ' · ' + n.lopp.rows + ' rida · ' + n.lopp.tulemus })
+        : null,
+    ].filter(Boolean));
+  }
+
+  async function kaivita(cmd) {
+    delete hankedData.kasuViga[cmd];
+    let r;
+    try {
+      r = await api('/api/hanked/run', { cmd });
+    } catch (e) {
+      // 409 EI OLE anonüümne toast. Server ütleb { error, runId } — „käib juba"
+      // kuulub selle käsu juurde ja runId ütleb, KUMB jooks käib. Sama jooksu
+      // seisu tasub edasi jälgida, seega ahel läheb ikka käima.
+      const runId = e.keha && e.keha.runId;
+      hankedData.kasuViga[cmd] = veaSonum(e) + (runId == null ? '' : ' (jooks #' + runId + ')');
+      if (e.status === 409) { uuendaRiba(); return alustaPoll(); }
+      toast(veaSonum(e), true);
+      return uuendaRiba();
+    }
+    // Nupp läheb kohe „…" peale, mitte alles kahe sekundi pärast. Rida on
+    // OSALINE (server annab id, cmd ja seisu) — järgmine pollimine toob täiskuju.
+    hankedData.runs = [{ id: r.id, cmd, state: 'käib', progress: null, logTail: null, oma: true },
+      ...hankedData.runs];
+    uuendaRiba();
+    alustaPoll();
+  }
+
+  async function peata(id) {
+    try {
+      const r = await api('/api/hanked/stop', { id });
+      // stopRun vastab struktuurselt: „see jooks ei käi enam" ei ole erind.
+      if (!r.ok) toast(r.error || 'Jooksu ei peatatud', true);
+      else if (r.error) toast(r.error);
+    } catch (e) { return toast(veaSonum(e), true); }
+    await uuendaJooksud();
+  }
+
+  async function uuendaJooksud() {
+    try {
+      const { runs } = await api('/api/hanked/runs');
+      hankedData.runs = Array.isArray(runs) ? runs : [];
+      hankedData.pollViga = null;
+    } catch (e) {
+      hankedData.pollViga = 'Jooksude seisu ei saanud: ' + veaSonum(e);
+    }
+    uuendaRiba();
+  }
+
+  /* ---------------- pollimine: ÜKS ahel, mis lõpeb ----------------
+     Kolm viga, mida see osa väldib:
+       1. mitu ahelat korraga. clearTimeout üksi ei aita, kui kaks poll()-i on
+          juba lennus — seega on lipp (pollKaib) ja PÕLVKOND (pollPolv): peatatud
+          ahela lennus olev päring ei ärata teda enam ellu;
+       2. vaikne surm. Veakäsitluseta ahel sureb esimese katkestuse peale ja nupp
+          jääb igaveseks „…" peale. Viga on nähtav ja pärast kolme katset
+          LOOBUTAKSE — siis on server kinni, mitte hetke ummikus;
+       3. taustal koputamine. Vaatelt lahkumine peatab ahela (vt CRMViews.render). */
+  const POLL_MS = 2000;
+  const POLL_KATSEID = 3;
+  let pollKaib = false;
+  let pollPolv = 0;
+  let pollTimer = null;
+  let pollVigu = 0;
+
+  function alustaPoll() {
+    if (pollKaib) return;
+    pollKaib = true;
+    pollVigu = 0;
+    hankedData.pollViga = null;
+    const polv = ++pollPolv;
+    pollTimer = setTimeout(() => poll(polv), POLL_MS);
+  }
+
+  function peataPoll() {
+    pollKaib = false;
+    pollPolv++;
+    clearTimeout(pollTimer);
+    pollTimer = null;
+  }
+
+  async function poll(polv) {
+    if (polv !== pollPolv) return;
+    let runs;
+    try {
+      ({ runs } = await api('/api/hanked/runs'));
+    } catch (e) {
+      if (polv !== pollPolv) return;
+      pollVigu++;
+      const loobus = pollVigu >= POLL_KATSEID;
+      hankedData.pollViga = 'Jooksude seisu ei saanud: ' + veaSonum(e)
+        + (loobus ? ' — lõpetasin jälgimise, ava vaade uuesti' : ' (katse ' + pollVigu + '/' + POLL_KATSEID + ')');
+      if (loobus) peataPoll();
+      else pollTimer = setTimeout(() => poll(polv), POLL_MS);
+      return uuendaRiba();
+    }
+    if (polv !== pollPolv) return;
+    pollVigu = 0;
+    hankedData.pollViga = null;
+    const enne = hankedData.runs;
+    hankedData.runs = Array.isArray(runs) ? runs : [];
+    // Käsu enda veateade („Sünkroon käib juba (jooks #3)") kuulub SELLE jooksu
+    // juurde. Kui jooks on läbi, ei ole teade enam tõsi ja ta ei tohi ribale
+    // seisma jääda — mõõdetud päris serveri peal.
+    for (const cmd of Object.keys(hankedData.kasuViga)) {
+      if (!hankedData.runs.some((r) => r.cmd === cmd && r.state === 'käib')) delete hankedData.kasuViga[cmd];
+    }
+    // LÕPPENUD JOOKS TOOB UUED READ. Ainult `runs` uuendamine jätaks tabeli
+    // vanaks — sünk lisas just kuus hanget ja kasutaja ei näeks neid. Seega
+    // TÄPSELT ÜKS täislaadimine, lõppemise peale, mitte iga pollimise peale.
+    const lopetas = hankedData.runs.some((r) => r.state !== 'käib'
+      && enne.some((v) => v.id === r.id && v.state === 'käib'));
+    if (kaibMidagi()) pollTimer = setTimeout(() => poll(polv), POLL_MS);
+    else { pollKaib = false; pollTimer = null; }
+    if (lopetas) await renderHanked();
+    else uuendaRiba();
+  }
+
+  /* ---------------- nimekiri ---------------- */
 
   // Filtririba EI hoia oma seisunimekirja: „aktiivsed" tuleb serveri
   // lopuseisud-väljast ja iga seisu kiip serveri states-väljast.
@@ -382,14 +562,16 @@
       el('td', { class: 'nimetus', text: r.title }),
       el('td', { class: 'n', text: r.est == null ? '—' : eur(r.est) }),
       el('td', { text: r.menetlus }),
-      // Number, mitte otsusesõna: ALLTÖÖVÕTT-verdikti EI SAA punktidest tagasi
-      // arvutada (vt lib/hanked.mjs score) ja vale sõna oleks halvem kui arv.
-      el('td', { class: 'n skoor ' + r.skooriKlass, title: 'Lõpliku otsuse annab detailvaade', text: r.score == null ? '—' : String(r.score) }),
+      // Verdikt tuleb BAASIST (lib/hanked.mjs score), mitte punktidest: ALLTÖÖVÕTT
+      // on seal ülimuslik ja teda EI SAA arvust tagasi arvutada. Punktid jäävad
+      // kõrvale, sest nende vahe on järjestamisel nähtav.
+      el('td', { class: 'n skoor ' + r.otsus.klass,
+        title: 'Otsus tuleb skoorimootorist; põhjendusread on detailvaates', text: r.otsus.tekst }),
       el('td', {}, seisuValik(h, r)),
       el('td', { class: 'n', text: String(r.docs) }),
     );
     tr.addEventListener('click', (ev) => {
-      if (!(ev.target.closest && ev.target.closest('select,button,option'))) valiHange(r.ref);
+      if (!(ev.target.closest && ev.target.closest('select,button,option,textarea,a'))) valiHange(r.ref);
     });
     return tr;
   }
@@ -408,8 +590,7 @@
   /* Seisumuutus puudutab ÜHTE rida. Täisjoonistus (renderHanked) laeks kogu
      nimekirja uuesti ja kaotaks kerimiskoha, valiku ja fookuse — seda tehakse
      siin kolmekümne rea kaupa järjest, seega on see päris kadu, mitte teooria.
-     Seega: paranda mudelit, siis seda rida. Kui rida enam filtrisse ei kuulu,
-     kaob AINULT tema; kui tabel jääb tühjaks, tuleb asemele seletav rida. */
+     Seega: paranda mudelit, siis seda rida. */
   async function muudaSeis(h, s) {
     const vana = h.state;
     const uus = s.value;
@@ -419,9 +600,27 @@
       await api('/api/hanked/state', { ref: h.ref, state: uus });
     } catch (e) {
       s.value = vana;
-      return toast('Seisu ei muudetud: ' + e.message, true);
+      return toast('Seisu ei muudetud: ' + veaSonum(e), true);
     } finally { s.disabled = false; }
+    seisMuutus(h, uus);
+  }
 
+  // Detailpaneeli seisunupud käivad SAMA teed: baas, siis kohalik mudel, siis
+  // ainult see üks rida. Kaks eri teed sama muutuse jaoks triiviksid lahku.
+  async function seisNupust(ref, uus) {
+    const h = hankedData.hanked.find((x) => x.ref === ref);
+    if (!h || h.state === uus) return;
+    try {
+      await api('/api/hanked/state', { ref, state: uus });
+    } catch (e) { return toast('Seisu ei muudetud: ' + veaSonum(e), true); }
+    seisMuutus(h, uus);
+    if (hankedData.detail && hankedData.detail.hange) hankedData.detail.hange.state = uus;
+    joonistaDetail();
+  }
+
+  /* Kui rida enam filtrisse ei kuulu, kaob AINULT tema; kui tabel jääb tühjaks,
+     tuleb asemele seletav rida. */
+  function seisMuutus(h, uus) {
     h.state = uus;
     toast(h.ref + ' → ' + silt(uus));
     uuendaMark(L.kiireloomulised(hankedData.hanked, new Date()).length);
@@ -430,6 +629,8 @@
     const rows = $('#hankedRows');
     const tr = rows && [...rows.children].find((x) => x.dataset && x.dataset.ref === h.ref);
     if (!tr) return;
+    const s = tr.querySelector('select');
+    if (s && s.value !== uus) s.value = uus;
     if (!L.filtreeri([h], hankedData.filter, hankedData.lopuseisud).length) {
       tr.remove();
       if (!rows.children.length) rows.append(tyhiRida());
@@ -446,41 +647,162 @@
   }
 
   // Märk loeb ainult kiireloomulisi (seis 'uus', tähtajani 0…7 päeva) ja kaob
-  // täielikult, kui neid ei ole — null kastis oleks vale signaal.
+  // täielikult, kui neid ei ole. Kirjutaja on app.js-is ÜKS (window.CRM.mark) —
+  // sama funktsioon paneb numbri sakile ka load()-i peale, serveri loenduri
+  // (/api/state → hankedKiireid) pealt.
   function uuendaMark(n) {
-    const b = document.querySelector('#hankedBadge');
-    if (!b) return;
-    b.textContent = String(n);
-    b.hidden = n === 0;
-    b.setAttribute('aria-label', n + ' kiireloomulist hanget');
+    window.CRM.mark('hankedBadge', n, 'kiireloomulist hanget');
   }
 
-  function valiHange(ref) {
+  /* ---------------- detailpaneel ---------------- */
+
+  async function valiHange(ref) {
     hankedData.valitud = ref;
     for (const tr of document.querySelectorAll('#hankedRows tr[data-ref]')) {
       if (tr.dataset.ref === ref) tr.setAttribute('aria-current', 'true');
       else tr.removeAttribute('aria-current');
     }
+    if (hankedData.detail && hankedData.detail.ref === ref && hankedData.detail.hange) {
+      return joonistaDetail();
+    }
+    hankedData.detail = { ref, laeb: true };
+    joonistaDetail();
+    let d;
+    try {
+      d = await api('/api/hanked/detail', { ref });
+    } catch (e) {
+      if (hankedData.valitud !== ref) return;   // kasutaja valis vahepeal teise
+      hankedData.detail = { ref, viga: veaSonum(e) };
+      return joonistaDetail();
+    }
+    if (hankedData.valitud !== ref) return;
+    hankedData.detail = {
+      ref, hange: d.hange || {}, why: Array.isArray(d.why) ? d.why : [],
+      mustand: null,   // poolikult kirjutatud märkus, mida täisjoonistus ei tohi süüa
+    };
     joonistaDetail();
   }
 
-  // ÜLESANNE 10 ehitab siia päris detailpaneeli (POST /api/hanked/detail:
-  // skoori põhjendusread, CPV, link RHR-i, märkuse väli, seisunupud, failid).
-  // Praegu näitab konteiner valitud viidet, et valik oleks nähtav ja
-  // klaviatuuriga kontrollitav — tühi konteiner peidetakse CSS-is.
   function joonistaDetail() {
     const host = $('#hankedDetail');
     if (!host) return;
-    if (!hankedData.valitud) return host.replaceChildren();
+    const d = hankedData.detail;
+    if (!hankedData.valitud || !d) return host.replaceChildren();
+    if (d.viga) {
+      return host.replaceChildren(
+        el('h2', { text: 'Hange ' + d.ref }),
+        el('p', { class: 'warn', text: 'Detaile ei saanud: ' + d.viga }),
+        el('button', { class: 'btn ghost', type: 'button', text: 'Proovi uuesti',
+          onclick: () => { hankedData.detail = null; valiHange(d.ref); } }),
+      );
+    }
+    if (d.laeb || !d.hange) {
+      return host.replaceChildren(el('h2', { text: 'Hange ' + d.ref }),
+        el('p', { class: 'why', text: 'Laen detaile…' }));
+    }
+    const h = d.hange;
+    const r = L.riviks(h, new Date());
     host.replaceChildren(
-      el('h2', { text: 'Valitud hange' }),
-      el('p', { class: 'why', text: hankedData.valitud + ' — detailvaade tuleb järgmise sammuga.' }),
+      el('div', { class: 'detail-head' }, [
+        el('h2', { text: h.ref + ' · ' + r.title }),
+        el('span', { class: 'tag ' + r.otsus.klass, text: r.otsus.tekst }),
+      ]),
+      el('div', { class: 'kv2' }, [
+        el('span', { class: 'k', text: 'Hankija' }), el('span', { class: 'v', text: r.buyer }),
+        el('span', { class: 'k', text: 'Tähtaeg' }), el('span', { class: 'v', text: r.kuupaev + ' · ' + r.tahtaeg.text }),
+        el('span', { class: 'k', text: 'Maksumus' }), el('span', { class: 'v', text: r.est == null ? 'teadmata' : eur(r.est) }),
+        el('span', { class: 'k', text: 'Menetlus' }), el('span', { class: 'v', text: r.menetlus }),
+        el('span', { class: 'k', text: 'CPV' }), el('span', { class: 'v', text: L.tekst(h.cpv, 'puudub') }),
+        el('span', { class: 'k', text: 'Segment' }), el('span', { class: 'v', text: L.tekst(h.segment, 'määramata') }),
+        el('span', { class: 'k', text: 'RHR' }), el('span', { class: 'v' }, rhrLink(h)),
+      ]),
+      pohjendused(d.why),
+      seisuNupud(h),
+      markuseValja(h, d),
+      // ÜLESANNE 13 täidab selle ploki (sama CPV varasemad lepingud). Tühja
+      // massiivi siia praegu ei ehitata: „lepinguid ei ole" ja „me ei ole neid
+      // veel kordagi küsinud" on kaks eri vastust.
+      el('section', { class: 'detail-plokk', id: 'hankedSarnased' }, [
+        el('h3', { text: 'Sarnased lepingud' }),
+        el('p', { class: 'why', text: 'Sama CPV varasemad lepingud tulevad ülesandega 13 — neid ei ole veel kordagi päritud.' }),
+      ]),
     );
+  }
+
+  // Link RHR-i käib rhr_id pealt (parseRss loeb ta kirje lingist). Kui teda ei
+  // ole — käsitsi import, eForms-tee, vana rida — siis linki EI MÕELDA VÄLJA.
+  function rhrLink(h) {
+    const id = L.tekst(h.rhr_id, null);
+    if (!id) return el('span', { class: 'why', text: 'RHR-i viide puudub — see rida ei ole RSS-i lingi kaudu tulnud.' });
+    return el('a', {
+      class: 'linkbtn', href: RHR_URL + encodeURIComponent(id) + '/general-info',
+      target: '_blank', rel: 'noopener noreferrer', text: 'Ava hange RHR-is (' + id + ')',
+    });
+  }
+
+  // Skoori põhjendusread tulevad score_why-st ehk skoorimootorist, aga nad
+  // kannavad RHR-i teksti (segment, maksumus, menetlus) — seega läheb iga rida
+  // lehele el()-i kaudu tekstina.
+  function pohjendused(why) {
+    return el('section', { class: 'detail-plokk' }, [
+      el('h3', { text: 'Skoori põhjendus' }),
+      why.length
+        ? el('ul', { class: 'why-list' }, why.map((x) => el('li', { text: x })))
+        : el('p', { class: 'why', text: 'Seda rida ei ole veel skooritud — sünk arvutab põhjenduse järgmisel jooksul.' }),
+    ]);
+  }
+
+  function seisuNupud(h) {
+    const nupud = (hankedData.states.length ? hankedData.states : [h.state]).map((st) => el('button', {
+      class: 'chip', type: 'button', 'data-seis-nupp': st,
+      'aria-pressed': h.state === st ? 'true' : 'false',
+      text: silt(st),
+      onclick: () => seisNupust(h.ref, st),
+    }));
+    return el('section', { class: 'detail-plokk' }, [
+      el('h3', { text: 'Seis' }),
+      el('div', { class: 'chips', role: 'group', 'aria-label': 'Hanke seis' }, nupud),
+    ]);
+  }
+
+  function markuseValja(h, d) {
+    const ta = el('textarea', {
+      class: 'input', rows: '3', 'aria-label': 'Märkus hanke ' + h.ref + ' kohta',
+      placeholder: 'Märkus jääb sinu omaks — sünkimine ei kirjuta seda kunagi üle',
+    });
+    // .value, mitte textContent: võõras tekst ei tohi muutuda ega HTML-iks minna.
+    ta.value = d.mustand != null ? d.mustand : (h.note || '');
+    // Poolik märkus elab mudelis üle täisjoonistuse (lõppenud jooks joonistab
+    // vaate uuesti ja võtaks muidu pooliku lause kaasa).
+    ta.addEventListener('input', () => { d.mustand = ta.value; });
+    ta.addEventListener('blur', async () => {
+      const uus = ta.value;
+      if (uus === (h.note || '')) { d.mustand = null; return; }
+      try {
+        await api('/api/hanked/note', { ref: h.ref, note: uus });
+      } catch (e) { return toast('Märkust ei salvestatud: ' + veaSonum(e), true); }
+      h.note = uus.trim() ? uus : null;
+      d.mustand = null;
+      const rida = hankedData.hanked.find((x) => x.ref === h.ref);
+      if (rida) rida.note = h.note;
+      toast(h.ref + ' · märkus salvestatud');
+    });
+    return el('section', { class: 'detail-plokk' }, [
+      el('h3', { text: 'Märkus' }),
+      ta,
+      el('p', { class: 'why', text: 'Salvestub siis, kui väljalt lahkud.' }),
+    ]);
   }
 
   /* ================= router ================= */
   const R = { stats: renderStats, services: renderServices, billing: renderBilling, agents: renderAgents, hanked: renderHanked };
   window.CRMViews = {
-    render(v) { if (R[v]) { try { R[v](); } catch (e) { toast('Vaade ' + v + ': ' + e.message, true); } } },
+    render(v) {
+      // Pollimine peab lõppema, kui kasutaja lahkub vaatelt: muidu koputab leht
+      // serverit iga kahe sekundi tagant taustal, kuigi riba ei ole näha.
+      // renderHanked paneb ahela vajadusel ise uuesti käima.
+      if (v !== 'hanked') peataPoll();
+      if (R[v]) { try { R[v](); } catch (e) { toast('Vaade ' + v + ': ' + e.message, true); } }
+    },
   };
 })();

@@ -195,14 +195,17 @@ export function syncFromXml(db, xml, { today = new Date().toISOString().slice(0,
     // ja RSS-i kirje pealt skoorides utleks score_why "maksumus teadmata" rea kohta,
     // mille maksumus on inimesel ekraanil nahtav.
     const loeRida = db.prepare('SELECT * FROM hanked WHERE ref = ?');
-    const kirjutaSkoor = db.prepare('UPDATE hanked SET score = ?, score_why = ? WHERE ref = ?');
+    // VERDIKT lakeb samas UPDATE-is. score() annab ta juba valja ja ta EI OLE
+    // punktidest tagasi arvutatav (ALLTOOVOTT on ulimuslik) - kui ta siin ara
+    // visata, ei saa vaade teda kunagi naidata.
+    const kirjutaSkoor = db.prepare('UPDATE hanked SET score = ?, score_why = ?, verdict = ? WHERE ref = ?');
 
     for (const h of read) {
       if (upsertHange(db, h) === 'uus') uus++; else uuendatud++;
       const rida = loeRida.get(String(h.ref).trim());
       const s = score(rida, { today });
       // score_why on JSON-massiiv, sest ulesande 13 hangeDetail teeb JSON.parse-i.
-      kirjutaSkoor.run(s.points, JSON.stringify(s.why), rida.ref);
+      kirjutaSkoor.run(s.points, JSON.stringify(s.why), s.verdict, rida.ref);
     }
 
     // SKOOR JAI AEGUNUKS RIDADEL, MIS FEEDIST VALJA KUKUVAD. Skoori arvutati ainult
@@ -214,7 +217,10 @@ export function syncFromXml(db, xml, { today = new Date().toISOString().slice(0,
     // (vaatan, valmistun, ...) jaab puutumata: tema jarjekord on juba tema otsus.
     for (const rida of db.prepare("SELECT * FROM hanked WHERE state = 'uus'").all()) {
       const s = score(rida, { today });
-      kirjutaSkoor.run(s.points, JSON.stringify(s.why), rida.ref);
+      // Verdikt kaib SAMA teed mis punktid. Kui ta siit valja jatta, kannaks
+      // feedist valja libisenud rida vana verdikti (voi mitte uhtegi) ja vaade
+      // naitaks kahe eri reegli jargi arvutatud otsuseid korvuti.
+      kirjutaSkoor.run(s.points, JSON.stringify(s.why), s.verdict, rida.ref);
     }
 
     // markExpired ei ava ise tehingut (uks UPDATE), seega pesastumist ei teki -

@@ -111,6 +111,77 @@
     return score >= 60 ? 'top' : score >= 35 ? 'kaalu' : 'jata';
   }
 
+  /* OTSUSEVEERG. Skoori KLASS üksi ei kõlba: lib/hanked.mjs score() annab ka
+   * verdikti ja ALLTÖÖVÕTT on seal ÜLIMUSLIK — 40-punktine alltöövõtu-hange
+   * ei ole "KAALU". Seepärast kannab baas verdikti nüüd ise (veerg `verdict`)
+   * ja siin näidatakse TEDA, mitte punktidest tehtud oletust.
+   *
+   * Verdiktita rida (käsitsi import, ülesande 6 eForms-tee, vana baas) langeb
+   * tagasi punktiklassile; TUNDMATU verdikt (server lisas uue) jääb toorelt
+   * nähtavaks, sest vaikne kadu on halvem kui tundmatu sõna. */
+  const VERDIKTI_KLASS = { 'PAKU': 'top', 'KAALU': 'kaalu', 'JÄTA': 'jata', 'ALLTÖÖVÕTT': 'allt' };
+  function verdiktiKlass(v) {
+    return (typeof v === 'string' && VERDIKTI_KLASS[v.trim().toUpperCase()]) || '';
+  }
+  function otsus(verdict, score) {
+    const v = typeof verdict === 'string' ? verdict.trim() : '';
+    const arv = typeof score === 'number' && Number.isFinite(score) ? String(score) : '—';
+    if (!v) return { verdict: null, tekst: arv, klass: skooriKlass(score) };
+    return { verdict: v, tekst: v + ' · ' + arv, klass: verdiktiKlass(v) || skooriKlass(score) };
+  }
+
+  /* KÄSUNUPU SEIS (ülesanne 10) PUHTA andmena: mida nupp ütleb, kas ta on
+   * keelatud ja MIKS, mida staatusrida näitab ja kas „Peata" saab üldse midagi
+   * teha. See on loogika, mitte DOM — seega on ta siin ja test/gate-hanked-ui.mjs
+   * katab ta päris väidetega; views.js ainult joonistab tulemuse.
+   *
+   * Kolm asja, mis siin valesti lähevad ja mida vaade ise ei näeks:
+   *   valmis:false — agent/hanked-history.mjs ja agent/hanked-docs.mjs EI OLE
+   *     veel olemas. Nupp peab olema keelatud ja seletatud, mitte spawnima
+   *     puuduvat faili ja saama vastuseks 400;
+   *   oma:false    — jooks kuulub EELMISELE serveri-instantsile. Tema pid võib
+   *     vahepeal ringlusse minna, seega server keeldub teda tapmast (vt
+   *     lib/hanked-runs.mjs stopRun). Nupp ei tohi lubada seda, mida ta ei saa;
+   *   progress:null — väravajooks ei trüki JSON-progressiridu. Igavene
+   *     „käivitub" oleks vale: näitame logi viimast SISUKAT rida. */
+  function logiRida(saba) {
+    if (typeof saba !== 'string') return null;
+    const read = saba.split('\n').map((r) => r.trim())
+      .filter((r) => r && r[0] !== '{');           // JSON-rida on masinale, mitte inimesele
+    return read.length ? read[read.length - 1].slice(0, 160) : null;
+  }
+  function jooksuSeis(r) {
+    if (r && typeof r.progress === 'string' && r.progress.trim()) return r.progress.trim();
+    return logiRida(r && r.logTail) || 'käivitub';
+  }
+  function lopuRida(r) {
+    const viga = r.state !== 'tehtud';
+    return {
+      id: r.id, state: r.state, finished: r.finished || null,
+      rows: Number.isFinite(Number(r.rows)) ? Number(r.rows) : 0,
+      viga,
+      tulemus: viga ? tekst(r.error, r.state) : 'korras',
+    };
+  }
+  function nupuSeis(cmd, t, runs) {
+    const label = tekst(t && t.label, cmd);
+    const valmis = !(t && t.valmis === false);
+    const read = Array.isArray(runs) ? runs : [];
+    const kaib = read.find((r) => r && r.cmd === cmd && r.state === 'käib') || null;
+    const viimane = read.find((r) => r && r.cmd === cmd && r.state !== 'käib') || null;
+    return {
+      cmd, label, valmis, kaib,
+      tekst: kaib ? label + ' …' : label,
+      keelatud: !valmis || Boolean(kaib),
+      pohjus: !valmis
+        ? label + ' ei ole veel valmis: skript puudub (' + tekst(t && t.script, 'tundmatu fail') + ')'
+        : kaib ? label + ' käib juba' : null,
+      seis: kaib ? jooksuSeis(kaib) : null,
+      peata: Boolean(kaib && kaib.oma === true),
+      lopp: viimane ? lopuRida(viimane) : null,
+    };
+  }
+
   // Üks baasirida → üks tabelirida PUHTA andmena. Ainult tekst ja arvud; DOM-i
   // ehitab views.js el()-iga, mis kirjutab textContent-i.
   function riviks(h, nyyd) {
@@ -129,11 +200,14 @@
       est,
       score,
       skooriKlass: skooriKlass(score),
+      verdict: tekst(h && h.verdict, null),
+      otsus: otsus(h && h.verdict, score),
       docs: Number.isFinite(Number(h && h.docs_count)) ? Number(h.docs_count) || 0 : 0,
       kiire: onKiire(h, nyyd),
     };
   }
 
-  const API = { KIIRE_PAEVI, paevi, onKiire, kiireloomulised, aktiivsed, filtreeri, riviks, tahtajaSilt, kuupaev, tekst, skooriKlass };
+  const API = { KIIRE_PAEVI, paevi, onKiire, kiireloomulised, aktiivsed, filtreeri, riviks,
+    tahtajaSilt, kuupaev, tekst, skooriKlass, verdiktiKlass, otsus, nupuSeis, jooksuSeis, logiRida };
   if (typeof window !== 'undefined') window.HankedLoogika = API;
 })();

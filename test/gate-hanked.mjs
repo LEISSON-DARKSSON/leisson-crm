@@ -9,8 +9,9 @@ import { spawn, spawnSync } from 'node:child_process';
 import { Worker } from 'node:worker_threads';
 import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
+import { runInNewContext } from 'node:vm';
 import { migrateHanked, upsertHange, listHanked, setState, setNote, markExpired, HANKE_STATES,
-  segmentOf, parseRss, FIT, score } from '../lib/hanked.mjs';
+  segmentOf, parseRss, FIT, score, hangeDetail, kiireidLoend, KIIRE_PAEVI } from '../lib/hanked.mjs';
 import { leiaVaravad, VALJAJATED } from '../tools/varav.mjs';
 import { syncFromXml, logiSync, avaBaas, logiSyncKindel, baasiViga } from '../agent/hanked-sync.mjs';
 
@@ -1914,4 +1915,161 @@ function pyya(too) {
   assert.ok(/res\.body\?\.cancel\(\)/.test(kood.slice(i, i + 200)),
     'keha tuleb sulgeda ENNE viskamist');
   console.log('PASS hanked: mitte-200 vastuse keha suletakse');
+}
+
+// ---------------------------------------------------------------------------
+// VERDIKT BAASI (ülesande 10 kõrvaltöö).
+//
+// score() arvutab PAKU/KAALU/JÄTA/ALLTÖÖVÕTT, aga sünk viskas verdikti ära ja
+// baasi jäi ainult arv. ALLTÖÖVÕTT EI OLE punktidest tagasi arvutatav (ta on
+// ülimuslik, vt score lõppu), seega vaade EI SAANUD teda kunagi näidata.
+// ---------------------------------------------------------------------------
+
+// W1: migratsioon on LISAV — vana baas saab veeru juurde, andmed jäävad alles.
+{
+  const dir = mkdtempSync(join(tmpdir(), 'hanked-verdict-'));
+  const db = new DatabaseSync(join(dir, 'vana.sqlite'));
+  // Vana skeem ILMA verdict-veeruta (nii nagu baas enne seda muudatust oli).
+  db.exec(`CREATE TABLE hanked (
+      ref TEXT PRIMARY KEY NOT NULL, rhr_id TEXT, buyer TEXT, buyer_reg TEXT, title TEXT NOT NULL,
+      menetlus TEXT, nature TEXT, est INTEGER, cpv TEXT, deadline TEXT, published TEXT, segment TEXT,
+      score INTEGER, score_why TEXT, state TEXT NOT NULL DEFAULT 'uus', note TEXT,
+      docs_dir TEXT, docs_count INTEGER NOT NULL DEFAULT 0,
+      seen TEXT NOT NULL DEFAULT (datetime('now')), seen_last TEXT,
+      updated TEXT NOT NULL DEFAULT (datetime('now')))`);
+  db.exec("INSERT INTO hanked (ref, title, note, state) VALUES ('vana-1','Vana rida','Inimese märkus','vaatan')");
+  const veerud = () => db.prepare('PRAGMA table_info(hanked)').all().map((c) => c.name);
+  assert.ok(!veerud().includes('verdict'), 'eeldus: vanal tabelil ei ole verdict-veergu');
+
+  migrateHanked(db);
+  assert.ok(veerud().includes('verdict'), 'migrateHanked peab lisama verdict-veeru VANALE tabelile');
+  const r = db.prepare('SELECT * FROM hanked WHERE ref = ?').get('vana-1');
+  assert.equal(r.note, 'Inimese märkus', 'lisav migratsioon ei tohi andmeid puutuda');
+  assert.equal(r.state, 'vaatan');
+  assert.equal(r.verdict, null, 'uus veerg algab tühjana, mitte välja mõeldud väärtusega');
+  migrateHanked(db);   // kordusjooks ei tohi kukkuda
+  db.close();
+  console.log('PASS hanked: verdict-veerg lisandub vanale baasile ilma andmekaota');
+}
+
+// W2: sünk kirjutab verdikti MÕLEMAS kohas — jooksva feedi ridadel JA seisu 'uus'
+// ümberarvutuse tsüklis. Kaks eri rida tõestavad kaks eri kohta:
+//   FEED-rida on seisus 'vaatan' → ümberarvutuse tsükkel EI puuduta teda;
+//   VANA-rida ei ole feedis    → ainult ümberarvutuse tsükkel puudutab teda.
+//
+// Mõlemad kannavad alltöövõtu tunnust (rollid >= 3). `rollid` ei ole veel hanked-
+// tabeli veerg — ülesanne 14 toob ta dokumentidest (score loeb docs.rollid või
+// h.rollid). Siin lisatakse ta käsitsi, et VERDIKTI TEE oleks kaetud juba enne
+// seda: lukus on see, et baasi läheb score() enda verdikt, mitte punktidest
+// tehtud oletus.
+{
+  const db = testDb();
+  db.exec('ALTER TABLE hanked ADD COLUMN rollid INTEGER');   // ülesande 14 välja asendaja
+
+  // Feedi rida, mille inimene on juba üle vaadanud → ümberarvutus jätab ta rahule.
+  syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });
+  setState(db, '314159', 'vaatan');
+  db.prepare('UPDATE hanked SET rollid = 3, est = 40000, segment = ? WHERE ref = ?')
+    .run('väike veebileht', '314159');
+
+  // Rida, mida feedis ei ole: teda puudutab AINULT ümberarvutuse tsükkel.
+  db.prepare(`INSERT INTO hanked (ref, title, segment, est, deadline, state, rollid)
+      VALUES ('vana-2', 'Vana veebileht', 'väike veebileht', 40000, '2026-12-01', 'uus', 3)`).run();
+
+  syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });
+
+  const punktideJargi = (p) => (p >= 60 ? 'PAKU' : p >= 35 ? 'KAALU' : 'JÄTA');
+  for (const ref of ['314159', 'vana-2']) {
+    const rida = db.prepare('SELECT * FROM hanked WHERE ref = ?').get(ref);
+    const oodatud = score(rida, { today: '2026-09-20' });
+    assert.equal(rida.verdict, 'ALLTÖÖVÕTT',
+      ref + ': alltöövõtu tunnusega rida peab kandma baasis verdikti, mitte ainult madalat arvu');
+    assert.equal(rida.verdict, oodatud.verdict, ref + ': baasi läheb score() enda verdikt');
+    assert.equal(rida.score, oodatud.points, ref + ': punktid ja verdikt tulevad SAMAST arvutusest');
+    assert.notEqual(rida.verdict, punktideJargi(rida.score),
+      ref + ': ' + rida.score + ' punkti annaks "' + punktideJargi(rida.score)
+      + '" — just seepärast EI SAA verdikti punktidest tagasi arvutada');
+  }
+
+  // Tavaline rida saab samuti oma verdikti (mitte ainult alltöövõtu oma).
+  for (const rida of listHanked(db, {})) {
+    const oodatud = score(rida, { today: '2026-09-20' });
+    assert.equal(rida.verdict, oodatud.verdict, rida.ref + ': iga sünkimise puudutatud rida kannab verdikti');
+    assert.ok(['PAKU', 'KAALU', 'JÄTA', 'ALLTÖÖVÕTT'].includes(rida.verdict),
+      rida.ref + ': tundmatu verdikt ' + JSON.stringify(rida.verdict));
+  }
+  db.close();
+  console.log('PASS hanked: verdikt läheb baasi mõlemast tsüklist ja ALLTÖÖVÕTT jääb alles');
+}
+
+// W3: verdikt jõuab ka LUGEMISE teed pidi välja (nimekiri ja detail).
+{
+  const db = testDb();
+  upsertHange(db, { ref: 'vv1', title: 'Veebileht', segment: 'nišš' });
+  db.prepare('UPDATE hanked SET score = 40, verdict = ? WHERE ref = ?').run('ALLTÖÖVÕTT', 'vv1');
+  assert.equal(listHanked(db, {})[0].verdict, 'ALLTÖÖVÕTT', 'nimekiri peab verdikti kaasa andma');
+  assert.equal(hangeDetail(db, 'vv1').hange.verdict, 'ALLTÖÖVÕTT', 'detail peab verdikti kaasa andma');
+  db.close();
+  console.log('PASS hanked: verdikt tuleb nimekirja ja detaili vastusesse');
+}
+
+// ---------------------------------------------------------------------------
+// KIIRELOOMULISTE LOENDUR: ÜKS reegel, kaks teostust (server ja klient).
+// Sakimärk peab ilmuma juba load()-i peale, seega loeb serveripoolne COUNT.
+// Kaks eri arvutust sama numbri jaoks on täpselt see, mida siin välditakse.
+// ---------------------------------------------------------------------------
+{
+  const aken = {};
+  runInNewContext(readFileSync(new URL('../public/hanked-loogika.js', import.meta.url), 'utf8'),
+    { window: aken }, { filename: 'public/hanked-loogika.js' });
+  const L = aken.HankedLoogika;
+  assert.equal(KIIRE_PAEVI, L.KIIRE_PAEVI, 'piir peab olema mõlemal pool sama arv');
+
+  const TANA = '2026-09-21';
+  const nyyd = new Date(TANA + 'T12:00:00Z');
+  const read = [
+    { ref: 'k0', state: 'uus', deadline: TANA },                 // täna
+    { ref: 'k1', state: 'uus', deadline: '2026-09-28' },         // +7, piir
+    { ref: 'k2', state: 'uus', deadline: '2026-09-29' },         // +8, väljas
+    { ref: 'k3', state: 'uus', deadline: '2026-09-20' },         // eile
+    { ref: 'k4', state: 'vaatan', deadline: '2026-09-24' },      // seis ei ole uus
+    { ref: 'k5', state: 'aegunud', deadline: '2026-09-24' },
+    { ref: 'k6', state: 'uus', deadline: null },
+    { ref: 'k7', state: 'uus', deadline: '' },
+    { ref: 'k8', state: 'uus', deadline: '2026-09-24 17:00' },   // kellaajaga
+    { ref: 'k9', state: 'uus', deadline: '2026-09-24T17:00' },
+    { ref: 'ka', state: 'uus', deadline: '24.09.2026' },         // eesti kuju
+    { ref: 'kb', state: 'uus', deadline: '2026-02-31' },         // olematu päev
+    { ref: 'kc', state: 'uus', deadline: '2026' },               // paljas aasta
+    { ref: 'kd', state: 'uus', deadline: '45000' },              // Juliuse päev
+    { ref: 'ke', state: 'uus', deadline: 'homme' },
+    { ref: 'kf', state: 'uus', deadline: '2026-09-2400:00' },
+  ];
+  const db = testDb();
+  for (const h of read) {
+    db.prepare('INSERT INTO hanked (ref,title,state,deadline) VALUES (?,?,?,?)')
+      .run(h.ref, 'Veebileht', h.state, h.deadline);
+  }
+
+  const serveris = kiireidLoend(db, TANA);
+  const kliendis = L.kiireloomulised(read, nyyd).map((h) => h.ref);
+  assert.equal(serveris, kliendis.length,
+    'server ja klient peavad samade ridade peal andma SAMA arvu (server ' + serveris
+    + ', klient ' + kliendis.length + ': ' + kliendis.join(',') + ')');
+  assert.deepEqual(kliendis, ['k0', 'k1', 'k8', 'k9'], 'kliendi reegel: seis uus JA tähtajani 0..7 päeva');
+  assert.equal(serveris, 4);
+
+  // Rida rea haaval: kumb pool eksib, on kohe näha.
+  for (const h of read) {
+    const yks = testDb();
+    yks.prepare('INSERT INTO hanked (ref,title,state,deadline) VALUES (?,?,?,?)')
+      .run(h.ref, 'Veebileht', h.state, h.deadline);
+    assert.equal(kiireidLoend(yks, TANA), L.kiireloomulised([h], nyyd).length,
+      'lahknevus real ' + h.ref + ' (tähtaeg ' + JSON.stringify(h.deadline) + ', seis ' + h.state + ')');
+    yks.close();
+  }
+
+  assert.throws(() => kiireidLoend(db, '21.09.2026'), /Vigane kuupäev/, 'vigane kuupäev viskab, ei vaiki');
+  db.close();
+  console.log('PASS hanked: kiireloomuliste loendur annab serveris ja kliendis sama arvu');
 }
