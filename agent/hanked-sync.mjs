@@ -15,7 +15,8 @@ import { pathToFileURL } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { open } from '../lib/db.mjs';
 import { migrateHanked, parseRss, upsertHange, markExpired, score,
-  sarnasedLepingud } from '../lib/hanked.mjs';
+  sarnasedLepingud, docsReast,
+} from '../lib/hanked.mjs';
 // Otsekaivitus kirjutab SAMASSE tabelisse, mida serveri kaivitaja kasutab (ulesanne 7).
 // finishRun ja LOG_MAX tulevad sealt, mitte teise koopiana - kaks eri lopetajat
 // tahendaks kaht eri 'tehtud'-definitsiooni.
@@ -336,7 +337,7 @@ export function syncFromXml(db, xml, { today = new Date().toISOString().slice(0,
     for (const h of read) {
       if (upsertHange(db, h) === 'uus') uus++; else uuendatud++;
       const rida = loeRida.get(String(h.ref).trim());
-      const s = score(rida, { today, ajalugu: ajalugu(rida) });
+      const s = score(rida, { today, ajalugu: ajalugu(rida), docs: docsReast(rida) });
       // score_why on JSON-massiiv, sest ulesande 13 hangeDetail teeb JSON.parse-i.
       kirjutaSkoor.run(s.points, JSON.stringify(s.why), s.verdict, rida.ref);
     }
@@ -349,7 +350,7 @@ export function syncFromXml(db, xml, { today = new Date().toISOString().slice(0,
     // mitte tuhandeid, ja kogu jooks on nagunii uks fsync. Inimese liigutatud rida
     // (vaatan, valmistun, ...) jaab puutumata: tema jarjekord on juba tema otsus.
     for (const rida of db.prepare("SELECT * FROM hanked WHERE state = 'uus'").all()) {
-      const s = score(rida, { today, ajalugu: ajalugu(rida) });
+      const s = score(rida, { today, ajalugu: ajalugu(rida), docs: docsReast(rida) });
       // Verdikt kaib SAMA teed mis punktid. Kui ta siit valja jatta, kannaks
       // feedist valja libisenud rida vana verdikti (voi mitte uhtegi) ja vaade
       // naitaks kahe eri reegli jargi arvutatud otsuseid korvuti.

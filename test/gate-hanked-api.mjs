@@ -222,11 +222,13 @@ const marsruudid = (db) => extraRoutes(db, {}, { json: () => {}, readBody: async
   assert.equal(c.kood, 200);
   assert.equal(spawnFn.kutseid, 2);
 
-  // Valmimata skript: eestikeelne 400, mitte toores Node-i viga. ULESANNE 12 tegi
-  // history valmis, seega valmimata on nuud ainult docs (ulesanne 14).
-  const d = await kutsu(db, 'POST /api/hanked/run', { keha: { cmd: 'docs' }, spawnFn });
-  assert.equal(d.kood, 400);
-  assert.match(d.keha.error, /ei ole veel valmis/);
+  // ULESANNE 14: dokumentide laadimine kaivitub nupust ja saab --ref kaasa.
+  // (Valmimata skripti eestikeelne 400 on kaetud test/gate-hanked-runs.mjs-is,
+  // kus teda mootakse kaustal, kus skripti EI OLE - see vaide ei aegu.)
+  const d = await kutsu(db, 'POST /api/hanked/run', { keha: { cmd: 'docs', args: { ref: '314159' } }, spawnFn });
+  assert.equal(d.kood, 200, 'dokumentide laadimine peab nupust kaivituma');
+  assert.equal(d.keha.cmd, 'docs');
+  assert.ok(spawnFn.argv.at(-1)[1].includes('--ref=314159'), 'ref peab lapseni jouma');
 
   // Ja vastupidi: ajaloo import KAIVITUB nupust ning saab oma argumendid kaasa.
   const e = await kutsu(db, 'POST /api/hanked/run', { keha: { cmd: 'history', args: { kuud: 1 } }, spawnFn });
@@ -252,8 +254,8 @@ const marsruudid = (db) => extraRoutes(db, {}, { json: () => {}, readBody: async
     assert.equal(v.kood, 400, 'vigane sisend ' + JSON.stringify(keha).slice(0, 60) + ' peab andma 400, andis ' + v.kood);
     assert.match(v.keha.error, muster);
   }
-  // Kolm onnestunud kaivitust (gate, sync, history) - vigane sisend ei lisa neljandat.
-  assert.equal(spawnFn.kutseid, 3, 'vigane sisend ei tohi uhtegi protsessi kaivitada');
+  // Neli onnestunud kaivitust (gate, sync, docs, history) - vigane sisend ei lisa viiendat.
+  assert.equal(spawnFn.kutseid, 4, 'vigane sisend ei tohi uhtegi protsessi kaivitada');
   db.close();
   console.log('PASS hanked API: kaivitus 200, lukk 409 runId-ga, vigane sisend 400');
 }

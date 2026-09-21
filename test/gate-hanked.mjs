@@ -1930,7 +1930,7 @@ function pyya(too) {
   assert.ok(/res\.body\?\.cancel\(\)/.test(kood.slice(i, i + 300)),
     'keha tuleb sulgeda ENNE viskamist');
 
-  for (const fail of ['hanked-sync.mjs', 'hanked-history.mjs']) {
+  for (const fail of ['hanked-sync.mjs', 'hanked-history.mjs', 'hanked-docs.mjs']) {
     const src = readFileSync(new URL('../agent/' + fail, import.meta.url), 'utf8');
     const puhas = src.split('\n').filter((rida) => !/^\s*\/\//.test(rida)).join('\n');
     assert.ok(/laeTekst\(/.test(puhas), fail + ' peab laadima laeTekst-iga');
@@ -1982,14 +1982,14 @@ function pyya(too) {
 //   FEED-rida on seisus 'vaatan' → ümberarvutuse tsükkel EI puuduta teda;
 //   VANA-rida ei ole feedis    → ainult ümberarvutuse tsükkel puudutab teda.
 //
-// Mõlemad kannavad alltöövõtu tunnust (rollid >= 3). `rollid` ei ole veel hanked-
-// tabeli veerg — ülesanne 14 toob ta dokumentidest (score loeb docs.rollid või
-// h.rollid). Siin lisatakse ta käsitsi, et VERDIKTI TEE oleks kaetud juba enne
-// seda: lukus on see, et baasi läheb score() enda verdikt, mitte punktidest
-// tehtud oletus.
+// Mõlemad kannavad alltöövõtu tunnust (rollid >= 3). ÜLESANNE 14 tegi `rollid`-st
+// päris hanked-tabeli veeru (migrateHanked) ja agent/hanked-docs.mjs täidab teda
+// dokumentidest loetuga — siin pannakse väärtus käsitsi, sest lukus on VERDIKTI
+// TEE: baasi läheb score() enda verdikt, mitte punktidest tehtud oletus.
 {
   const db = testDb();
-  db.exec('ALTER TABLE hanked ADD COLUMN rollid INTEGER');   // ülesande 14 välja asendaja
+  assert.ok(db.prepare('PRAGMA table_info(hanked)').all().some((c) => c.name === 'rollid'),
+    'ülesanne 14: rollid peab olema migratsioonis, mitte käsitsi lisatud');
 
   // Feedi rida, mille inimene on juba üle vaadanud → ümberarvutus jätab ta rahule.
   syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });

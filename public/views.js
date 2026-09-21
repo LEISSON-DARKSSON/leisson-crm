@@ -724,7 +724,83 @@
       seisuNupud(h),
       markuseValja(h, d),
       sarnasedPlokk(d.sarnased),
+      dokumendiPlokk(d.dokumendid),
     );
+  }
+
+  // ÜLESANNE 14: alusdokumendid ja neist loetud nõuded.
+  //
+  // SEE PLOKK PEAB OLEMA KONTROLLITAV SILMAGA. `rollid >= 3` annab −25 punkti ja
+  // verdikti ALLTÖÖVÕTT, mis on score-is ülimuslik — ehk üksainus valesti loetud
+  // arv võtab hanke müügist maha. Seetõttu ei näita paneel MITTE KUNAGI paljast
+  // arvu: iga leiu juures on LAUSE, millest ta tuli, ja FAIL, kust lause tuli.
+  //
+  // Ebakindel leid on siin NÄHTAV, aga eraldi märgitud („kontrolli"): ta ei ole
+  // veergu `rollid` jõudnud ega skoori liigutanud. Vaikne mahavaikimine oleks
+  // halvem kui liigne rida — see on selle projekti korduv viga.
+  function dokumendiPlokk(dok) {
+    const lapsed = [el('h3', { text: 'Alusdokumendid' })];
+    if (!dok) {
+      lapsed.push(el('p', { class: 'why',
+        text: 'Dokumente ei ole veel kordagi küsitud — vajuta „Lae dokumendid".' }));
+      return el('section', { class: 'detail-plokk', id: 'hankedDokumendid' }, lapsed);
+    }
+    if (dok.viga) {
+      lapsed.push(el('p', { class: 'warn', text: dok.viga }));
+      return el('section', { class: 'detail-plokk', id: 'hankedDokumendid' }, lapsed);
+    }
+    const arv = (v) => (v === null || v === undefined ? 'ei tuvastatud' : String(v));
+    lapsed.push(el('div', { class: 'kv2' }, [
+      el('span', { class: 'k', text: 'Faile' }),
+      el('span', { class: 'v', text: dok.failid.length + ' faili'
+        + (dok.tekstita.length ? ' · ' + dok.tekstita.length + ' ei saanud tekstiks' : '')
+        + (dok.vahelejaetud.length ? ' · ' + dok.vahelejaetud.length + ' jäi vahele' : '') }),
+      el('span', { class: 'k', text: 'Nõutud rolle' }),
+      el('span', { class: 'v', text: arv(dok.rollid)
+        + (dok.rollinimed.length ? ' (' + dok.rollinimed.join(', ') + ')' : '') }),
+      el('span', { class: 'k', text: 'Käibenõue' }),
+      el('span', { class: 'v', text: dok.kaiveNoue == null ? 'ei tuvastatud' : eur(dok.kaiveNoue) }),
+      el('span', { class: 'k', text: 'Kvaliteedi kaal' }),
+      el('span', { class: 'v', text: dok.qualityWeight == null ? 'ei tuvastatud' : dok.qualityWeight + ' % hindest' }),
+    ]));
+    if (dok.pdftotext === false) {
+      lapsed.push(el('p', { class: 'warn',
+        text: 'Masinas ei ole pdftotext-i — ükski PDF ei jõudnud tekstini, seega nõuded on lugemata.' }));
+    }
+    if (dok.leiud.length) {
+      lapsed.push(el('h4', { text: 'Leiud ja tõendid' }));
+      lapsed.push(el('ul', { class: 'leiud' }, dok.leiud.map((x) => el('li',
+        { class: x.kindlus === 'kindel' ? '' : 'warn' }, [
+          el('b', { text: leiuSilt(x) }),
+          el('span', { text: ' · ' + (x.kindlus === 'kindel' ? 'kindel' : 'kontrolli')
+            + (x.markus ? ' · ' + x.markus : '') }),
+          el('blockquote', { text: x.lause || '' }),
+          el('cite', { text: x.fail || 'fail teadmata' }),
+        ]))));
+    } else {
+      lapsed.push(el('p', { class: 'why', text: 'Dokumentidest ei loetud ühtegi nõuet.' }));
+    }
+    if (dok.failid.length) {
+      lapsed.push(el('h4', { text: 'Failid' }));
+      lapsed.push(el('ul', { class: 'failid' }, dok.failid.map((f) => el('li',
+        { text: f.nimi + ' · ' + Math.max(1, Math.round((f.suurus || 0) / 1024)) + ' kB' }))));
+    }
+    for (const x of dok.tekstita) {
+      lapsed.push(el('p', { class: 'warn', text: 'Tekstiks ei saanud: ' + x.nimi + ' — ' + x.pohjus }));
+    }
+    for (const x of dok.vahelejaetud) {
+      lapsed.push(el('p', { class: 'warn', text: 'Vahele jäetud: ' + x.nimi + ' — ' + x.pohjus }));
+    }
+    if (dok.ts) lapsed.push(el('p', { class: 'why', text: 'Laetud ' + dok.ts }));
+    return el('section', { class: 'detail-plokk', id: 'hankedDokumendid' }, lapsed);
+  }
+
+  function leiuSilt(x) {
+    if (x.liik === 'roll') return 'Roll: ' + x.roll;
+    if (x.liik === 'rollide-arv') return 'Rollide arv: ' + x.arv;
+    if (x.liik === 'käive') return 'Käive: ' + eur(x.summa);
+    if (x.liik === 'kvaliteedikaal') return 'Kvaliteedi kaal: ' + x.kaal + ' %';
+    return String(x.liik || 'leid');
   }
 
   // Osa teised võitjad ÜHE reana. Eesti keel käänab ainsuse ja mitmuse eri

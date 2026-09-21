@@ -421,29 +421,32 @@ process.exitCode = 1;
 }
 
 // ---------------------------------------------------------------------------
-// K (p8): agent/hanked-docs.mjs ei ole veel olemas (ulesanne 14). Puuduv skript
-// peab andma eestikeelse vea, mitte spawnima olematut faili ja loppema arusaamatu
-// Node-i veaga. agent/hanked-history.mjs VALMIS ulesandes 12 ja `valmis` tuli
-// kettalt ise kaasa - seda lippu ei hoita kasitsi.
+// K (p8): puuduv skript peab andma EESTIKEELSE vea, mitte spawnima olematut faili
+// ja loppema arusaamatu Node-i veaga. `valmis` tuleb KETTALT, mitte kasitsi
+// hoitavast lipust - tapselt sellepärast lakkas see plokk ise kehtimast, kui
+// ulesanne 12 tegi hanked-history.mjs ja ulesanne 14 hanked-docs.mjs valmis.
+// Valve ise on endiselt vajalik, seega teda mootatakse nuud KAUSTA peal, kus
+// skripti EI OLE - see vaide ei aegu uhegi jargmise ulesandega.
 // ---------------------------------------------------------------------------
 {
   const db = testDb();
   const fake = valeSpawn();
   const vaade = cmdView();
-  assert.equal(vaade.history.valmis, true, 'history valmis ulesandes 12');
-  for (const cmd of ['docs']) {
-    assert.equal(vaade[cmd].valmis, false, cmd + ' ei ole veel valmis');
-    assert.throws(() => startRun(db, cmd, {}, { spawnFn: fake }), /ei ole veel valmis/,
-      cmd + ' peab andma eestikeelse vea');
+  for (const cmd of ['sync', 'gate', 'history', 'docs']) {
+    assert.equal(vaade[cmd].valmis, true, cmd + ' skript on kettal olemas');
+  }
+  const puudub = join(TMP, 'puudub');
+  assert.equal(cmdView(puudub).docs.valmis, false, 'valmis loetakse kettalt');
+  assert.equal(cmdView(puudub).sync.valmis, false, 'valmis loetakse kettalt');
+  for (const cmd of ['docs', 'history']) {
+    assert.throws(() => startRun(db, cmd, {}, { spawnFn: fake, root: puudub }),
+      /ei ole veel valmis/, cmd + ' peab andma eestikeelse vea');
   }
   assert.equal(fake.kutseid, 0, 'puuduvat skripti ei spawnita');
   assert.equal(db.prepare('SELECT COUNT(*) AS c FROM hanke_runs').get().c, 0,
     'keeldutud kask ei tohi jooksurida jatta');
-  for (const cmd of ['sync', 'gate', 'history']) assert.equal(vaade[cmd].valmis, true, cmd + ' on valmis');
-  // valmis tuleb KETTALT, mitte kasitsi hoitavast lipust.
-  assert.equal(cmdView(join(TMP, 'puudub')).sync.valmis, false, 'valmis loetakse kettalt');
   db.close();
-  console.log('PASS runs: veel valmimata käsk ütleb seda eesti keeles');
+  console.log('PASS runs: puuduv skript ütleb seda eesti keeles');
 }
 
 // ---------------------------------------------------------------------------
