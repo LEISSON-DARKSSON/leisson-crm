@@ -1230,12 +1230,17 @@ ${kirjed.join('\n')}
   // `n` on NOUTUD (ulesanne 13): alla SARNASED_MIN lepingu tegurit ei rakendata.
   const aj = (medianTenders, n = 9) => score({ segment: 'nišš' },
     { today: '2026-10-01', ajalugu: { medianTenders, n } }).points;
+  // LAVED ON KALIBREERITUD 21.09.2026 (24 kuud, 46 845 lepingurida): +5 kaib
+  // jaotuse alumise kvartiili peale (mediaan <= 1) ja -10 ulemise detsiili
+  // peale (mediaan >= 4). Vana 3 / 8 andis meie nisis +5-e 83 %-le koodidest ja
+  // -10-t 1 %-le. Lave TULETUS on lukus test/gate-hanked-ajalugu-kalibreering.mjs-is.
   assert.equal(aj(8, 4), 40, 'nelja lepingu mediaan ei tohi punkte liigutada');
-  assert.equal(aj(3, 4), 40, 'lavi kehtib ka boonuse poole peal');
+  assert.equal(aj(1, 4), 40, 'lavi kehtib ka boonuse poole peal');
   assert.equal(aj(8), 30, 'kaheksa pakkujat on rahvarohke');
-  assert.equal(aj(7), 40, 'seitse jaab kahe reegli vahele');
-  assert.equal(aj(4), 40);
-  assert.equal(aj(3), 45, 'kolm voi vahem on meie vaikne hange');
+  assert.equal(aj(4), 30, 'neli pakkujat on juba ulemine detsiil');
+  assert.equal(aj(3), 40, 'kolm jaab kahe reegli vahele — Eesti turul on see TAVALINE');
+  assert.equal(aj(2), 40);
+  assert.equal(aj(1), 45, 'uks pakkuja on alumine kvartiil ehk meie vaikne hange');
 
   // Verdikti piirid.
   assert.equal(score({ segment: 'nišš', crit: ['quality'] }, { today: '2026-10-01', docs: { qualityWeight: 60 } }).verdict,
