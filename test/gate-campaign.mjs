@@ -145,6 +145,41 @@ const send=async e=>{
  db.close();
 }
 {
+ // REGRESSIOON 21.09.2026 — "determineeritud järjekord võrdse kinnitusaja korral".
+ // Enne parandust sortis nextApprovedCampaign ainult ORDER BY c.approved_at.
+ // Kaks kampaaniat, mis kinnitati sama ajatempliga (siin sama `now`, tootmises
+ // sama sekund), jäid täiesti viiki ja ülejäänud järjekorra otsustas
+ // idx_campaign_queue kattva indeksi skaneerimine — ehk campaign_id
+ // (randomUUID) tähestikuline järjekord. Mõõdetud: 6 valet valikut 12 katsest.
+ // Kaks kontrolli: (1) SUNNITUD halvim juht — hiljem loodud kampaania UUID on
+ // väiksem; vana kood kukub siin 100% kordadest; (2) 20 kordust järjest, et
+ // valik oleks ka statistiliselt stabiilne, mitte mündivise.
+ const approvedPair=()=>{
+   const db=makeDb();
+   const first=prepareCampaign(db,['a'],options),second=prepareCampaign(db,['b'],options);
+   approveCampaign(db,first.campaign.id,first.campaign.snapshot_hash,{now});
+   approveCampaign(db,second.campaign.id,second.campaign.snapshot_hash,{now});
+   assert.equal(db.prepare("SELECT COUNT(DISTINCT approved_at) n FROM sales_campaigns WHERE status='approved'").get().n,1,
+     'eeldus: mõlemad kampaaniad on kinnitatud TÄPSELT sama approved_at väärtusega');
+   return {db,first,second};
+ };
+ let worst=null;
+ for(let attempt=0;attempt<64&&!worst;attempt++){
+   const pair=approvedPair();
+   if(pair.second.campaign.id<pair.first.campaign.id)worst=pair;else pair.db.close();
+ }
+ assert(worst,'64 katsega ei tekkinud paari, kus hiljem loodud kampaania UUID on väiksem');
+ assert.equal(nextApprovedCampaign(worst.db),worst.first.campaign.id,
+   'võrdse approved_at korral võidab ESIMESENA loodud kampaania, mitte väiksem UUID');
+ worst.db.close();
+ for(let i=0;i<20;i++){
+   const pair=approvedPair();
+   assert.equal(nextApprovedCampaign(pair.db),pair.first.campaign.id,
+     'valik on iga korraga sama: varem kinnitatud (ja varem loodud) kampaania, kordus '+i);
+   pair.db.close();
+ }
+}
+{
  // Gerdi otsene soov 20.09.2026: kontroll, mis eemaldab pooleliolevast
  // kampaaniast saaja, kellele on kiri juba väljas — kas kampaaniaväliselt
  // (activity 'sent', nagu AS SA.MET 17:13 käsitsi saadetud kiri) või
