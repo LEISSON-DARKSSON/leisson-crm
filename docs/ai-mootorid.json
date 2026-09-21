@@ -1,0 +1,41 @@
+{
+  "_": "AI-nähtavuse auditi mootorid. Iga aruandes nimetatud mootori juures peab olema mõõtmisviis. Viis: api | käsitsi | paneel.",
+  "mootorid": [
+    {
+      "id": "openai",
+      "nimi": "ChatGPT / OpenAI",
+      "viis": "api",
+      "märkus": "veebiotsingu tööriistaga; API ei ole sama, mis kasutajaliides"
+    },
+    {
+      "id": "anthropic",
+      "nimi": "Claude / Anthropic",
+      "viis": "api",
+      "märkus": "veebiotsinguga"
+    },
+    {
+      "id": "gemini",
+      "nimi": "Google Gemini",
+      "viis": "api",
+      "märkus": "Search grounding"
+    },
+    {
+      "id": "perplexity",
+      "nimi": "Perplexity",
+      "viis": "api",
+      "märkus": "Sonar"
+    },
+    {
+      "id": "aio",
+      "nimi": "Google AI Overviews",
+      "viis": "paneel",
+      "märkus": "API-ga ei ole mõõdetav; paneelitööriist või käsitsi valim"
+    },
+    {
+      "id": "aimode",
+      "nimi": "Google AI Mode",
+      "viis": "paneel",
+      "märkus": "API-ga ei ole mõõdetav"
+    }
+  ]
+}

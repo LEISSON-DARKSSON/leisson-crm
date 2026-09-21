@@ -1,6 +1,6 @@
 import {randomUUID} from 'node:crypto';
 import {migrateOutbound,previewOutbound,dispatchOutbound} from './lib/outbound.mjs';
-import {migrateCampaigns,prepareCampaign,campaignView,approveCampaign,stopCampaign,campaignEvidence} from './lib/campaign.mjs';
+import {migrateCampaigns,prepareCampaign,campaignView,approveCampaign,stopCampaign,campaignEvidence,queuedCompanyIds,pruneAlreadySentItems} from './lib/campaign.mjs';
 import {reconcileSalesReplies} from './lib/sales-safety.mjs';
 import {revenueSummary} from './lib/salesdb.mjs';
 import {activeServices,CATALOG_VERSION} from '../packages/service-catalog/index.mjs';
@@ -127,8 +127,19 @@ const routes = {
     }catch(e){json(res,400,{error:e.message});}
   },
   'GET /api/campaigns': async(req,res)=>{
+    // Kõigepealt puhastame: kellele on kiri juba väljas (kampaaniaväliselt
+    // või varasemast kampaaniast), see rida blokeeritakse kohe, mitte ei
+    // jää "ootel" näidatuks kuni sweep selle kunagi avastab (vt
+    // lib/campaign.mjs pruneAlreadySentItems). Idempotentne, odav — tehakse
+    // iga kord, kui kampaaniate nimekirja küsitakse.
+    const pruned=pruneAlreadySentItems(db);
     const rows=db.prepare('SELECT id,status,snapshot_hash,created,approved_at,stopped_at FROM sales_campaigns ORDER BY created DESC LIMIT 30').all();
-    json(res,200,{campaigns:rows});
+    // Kes on PRAEGU pending mõnes kinnitamata/kinnitatud kampaanias — UI
+    // peidab need valikuekraanilt, et samat saajat ei saaks kahte eri
+    // kampaaniasse korraga panna (vt lib/campaign.mjs prepareCampaign'i
+    // kommentaar ummiku kohta).
+    json(res,200,{campaigns:rows,queuedCompanyIds:queuedCompanyIds(db).map(r=>r.company_id),
+      prunedNow:pruned.map(r=>({name:r.name||r.company_id,campaignId:r.campaign_id}))});
   },
   'POST /api/campaign/prepare': async(req,res)=>{
     try{

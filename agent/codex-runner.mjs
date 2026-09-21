@@ -1,4 +1,5 @@
-import { spawn, execFileSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
+import { execBounded } from './exec-bounded.mjs';
 import { readFileSync, writeFileSync, existsSync, mkdtempSync, mkdirSync, rmSync } from 'node:fs';
 import { join, dirname, resolve, sep } from 'node:path';
 import { tmpdir, homedir } from 'node:os';
@@ -81,20 +82,8 @@ export function parseEvents(output) {
   return { data:JSON.parse(final.item.text),usage:completed.usage??{},
     session_id:events.find(e=>e.type==='thread.started')?.thread_id??null };
 }
-export function execBounded(command,args,{cwd,env,input='',timeoutMs=600000,maxBytes=2000000}={}) {
-  return new Promise((resolveRun)=>{
-    const child=spawn(command,args,{cwd,env,shell:false,windowsHide:true,stdio:['pipe','pipe','pipe']});
-    let out='',err='',stopped=false;
-    const stop=reason=>{if(!stopped){stopped=true;err+='\n'+reason;child.kill();}};
-    const timer=setTimeout(()=>stop('runtime_timeout'),timeoutMs);
-    child.stdout.on('data',d=>{out+=d; if(Buffer.byteLength(out)>maxBytes) stop('output_limit');});
-    child.stderr.on('data',d=>{err+=d; if(Buffer.byteLength(err)>maxBytes) stop('stderr_limit');});
-    child.on('error',e=>{clearTimeout(timer);resolveRun({code:-1,out,err:e.code??'spawn_error'});});
-    child.on('close',code=>{clearTimeout(timer);resolveRun({code:code??-1,out,err});});
-    child.stdin.on('error',()=>{});
-    child.stdin.end(input);
-  });
-}
+// execBounded moved to ./exec-bounded.mjs (shared with claude-runner.mjs) 20.09.2026; re-exported below for existing importers.
+export { execBounded };
 export function restrictedCatalog(raw) {
   const models=raw.models?.filter(m=>Object.values(MODEL_BY_JOB).includes(m.slug)).map(m=>({...m,
     multi_agent_version:null,multi_agent_reasoning_effort:null,tool_mode:null,apply_patch_tool_type:null,

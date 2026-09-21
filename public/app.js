@@ -244,22 +244,15 @@
 
   /* ---------- päis ---------- */
   function renderStats() {
-    const c = S.counts;
-    const sent = c.kiri + c.kohtumine + c.pakkumine + c.voidetud;
+    // 20.09.2026: päisest jäi ainult "Päringud" alles (Gerti soov) - viis
+    // teist arvu (Vajadus kinnitatud / Pakkumised / Laekunud / Teostamisel /
+    // Lugemata) surusid navigatsiooni kerimisribale juba 1280px laiuse
+    // juures. Need arvud EI KADUNUD süsteemist - S.revenue ja unread on
+    // ikka API-s ja server.mjs-is, kui neid kunagi mujal (nt eraldi
+    // aruandevaates) uuesti vaja läheb.
     const unread = S.messages.filter((m) => m.unread).length;
-    // Külm toru: summa, mille eest on külmkiri välja läinud, aga päris
-    // pakkumist ei ole veel koostatud. See on ainus arv, mis ütleb, kui palju
-    // raha praegu ainult kirja peal seisab.
-    const cold = S.companies
-      .filter((x) => x.status === 'kiri')
-      .reduce((s, x) => s + (Number(x.price) || 0), 0);
     const items = [
       ['Päringud', S.revenue?.awaitingReply || 0, true],
-      ['Vajadus kinnitatud', S.revenue?.qualified || 0, false],
-      ['Pakkumised', S.revenue?.openOffers || 0, false],
-      ['Laekunud', eur(S.revenue?.received || 0), false],
-      ['Teostamisel', S.revenue?.deliveries || 0, false],
-      ['Lugemata', unread, unread > 0],
     ];
     $('#stats').replaceChildren(...items.map(([label, val, hot]) =>
       el('div', { class: 'nav-stat' }, [

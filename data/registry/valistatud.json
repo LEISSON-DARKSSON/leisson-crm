@@ -1,0 +1,47 @@
+{
+  "selgitus": "Registrikoodi järgi püsiv välistusnimekiri registry-candidates.mjs jaoks. Need ettevõtted on käsitsi uuritud ja teadlikult VÄLJA jäetud sihtmärkide seast 12.-20.09.2026 välitöö käigus (vt project_parnu_outreach mälufail) — kirjapanek olemas ainult mälus, seega igal järgmisel registry-candidates.mjs käivitusel tulid nad tagasi kandidaatide sekka ja peaaegu läksid kaks korda uuesti mõõtmisele. Selle faili eesmärk on teha see teadmine koodis püsivaks.",
+  "loodud": "2026-09-20",
+  "valistatud": [
+    { "kood": 10179589, "nimi": "Scanfil Osaühing", "pohjus": "rahvusvaheline_kontsern" },
+    { "kood": 10082335, "nimi": "Ruukki Products AS", "pohjus": "rahvusvaheline_kontsern" },
+    { "kood": 14082970, "nimi": "Metsä Wood Eesti AS", "pohjus": "rahvusvaheline_kontsern" },
+    { "kood": 12114252, "nimi": "Gren Eesti AS", "pohjus": "rahvusvaheline_kontsern" },
+    { "kood": 14671608, "nimi": "Mirai Chemicals Europe OÜ", "pohjus": "rahvusvaheline_kontsern" },
+    { "kood": 14184854, "nimi": "Yara Eesti OÜ", "pohjus": "rahvusvaheline_kontsern" },
+    { "kood": 10644555, "nimi": "Paged Eesti OÜ", "pohjus": "rahvusvaheline_kontsern" },
+    { "kood": 10497987, "nimi": "Rapala Eesti Aktsiaselts", "pohjus": "rahvusvaheline_kontsern" },
+    { "kood": 10468649, "nimi": "osaühing ASB Greenworld Eesti", "pohjus": "rahvusvaheline_kontsern" },
+    { "kood": 12031796, "nimi": "Billerud Estonia OÜ", "pohjus": "rahvusvaheline_kontsern" },
+    { "kood": 10796495, "nimi": "JABS Jõesuu OÜ", "pohjus": "rahvusvaheline_kontsern" },
+    { "kood": 11310695, "nimi": "HANZA Assembly Pärnu OÜ", "pohjus": "rahvusvaheline_kontsern" },
+    { "kood": 10930852, "nimi": "AQ Lasertool OÜ", "pohjus": "rahvusvaheline_kontsern" },
+    { "kood": 16532472, "nimi": "AQ Components Kodara OÜ", "pohjus": "rahvusvaheline_kontsern" },
+    { "kood": 10238205, "nimi": "Henkel Balti Operations OÜ", "pohjus": "rahvusvaheline_kontsern" },
+    { "kood": 10053049, "nimi": "AS Jiffy Products Estonia", "pohjus": "rahvusvaheline_kontsern" },
+    { "kood": 14459765, "nimi": "Casemet OÜ", "pohjus": "rahvusvaheline_kontsern" },
+
+    { "kood": 10374019, "nimi": "Vändra Tarbijate Ühistu", "pohjus": "coop_kett" },
+    { "kood": 10048611, "nimi": "Lihula Tarbijate Ühistu", "pohjus": "coop_kett" },
+    { "kood": 10070869, "nimi": "Kilingi-Nõmme Majandusühistu", "pohjus": "coop_kett" },
+
+    { "kood": 10052736, "nimi": "osaühing Weiss", "pohjus": "surnud_domeen" },
+    { "kood": 10836870, "nimi": "Aktsiaselts Treffex", "pohjus": "surnud_domeen" },
+    { "kood": 10414568, "nimi": "Osaühing Roverto", "pohjus": "surnud_domeen" },
+    { "kood": 11217139, "nimi": "Osaühing Nortring", "pohjus": "surnud_domeen", "kontroll": "20.09.2026: nortring.ee laeb, aga title on \"Domain is Registered\" — parkitud domeen, mitte päris leht." },
+
+    { "kood": 10076240, "nimi": "Aktsiaselts Torf", "pohjus": "distinktset_kodulehte_ei_leitud" },
+    { "kood": 10206553, "nimi": "osaühing Selja", "pohjus": "distinktset_kodulehte_ei_leitud" },
+    { "kood": 11512111, "nimi": "Trimtex Baltic OÜ", "pohjus": "distinktset_kodulehte_ei_leitud" },
+    { "kood": 10044866, "nimi": "Osaühing Metsagrupp", "pohjus": "distinktset_kodulehte_ei_leitud" },
+    { "kood": 11581603, "nimi": "OÜ E.Schön", "pohjus": "distinktset_kodulehte_ei_leitud" },
+    { "kood": 12363966, "nimi": "TDR Systems OÜ", "pohjus": "distinktset_kodulehte_ei_leitud" },
+    { "kood": 10357045, "nimi": "Danspin AS", "pohjus": "distinktset_kodulehte_ei_leitud" },
+    { "kood": 10052854, "nimi": "Vändra OÜ", "pohjus": "distinktset_kodulehte_ei_leitud", "kontroll": "kasutab agrone.ee domeeni koos Tartu maakonnas registreeritud Agrone OÜ-ga — pole selle juriidilise isiku enda eristatav leht." },
+    { "kood": 12662367, "nimi": "OÜ Anguilla", "pohjus": "distinktset_kodulehte_ei_leitud" },
+
+    { "kood": 10357648, "nimi": "osaühing Pärnu Perearstid", "pohjus": "email_puudub", "kontroll": "mõõdetud 12.09.2026, tugev leid (CLS 0,662), aga e-posti ei leitud lehelt mailto/tel kaudu isegi kontaktlehel. Väärt telefoni teel kontakti." },
+    { "kood": 10929518, "nimi": "Osaühing RF GRUPP", "pohjus": "leht_ei_lae", "kontroll": "18.09 ja 20.09 mõlemal korral: HTTPS-sertifikaat puudub/katki, ainult HTTP osaliselt vastab, lehte ei õnnestunud Playwright'iga renderdada kummalgi korral. Tugevaim tehniline leid kahes voorus (Magento 1.7 EOL, ISO-8859-4 rikutud kodeering), aga saab kontakteeruda ainult telefoni/posti teel." },
+
+    { "kood": 10002098, "nimi": "Aktsiaselts Taastusravikeskus Viiking", "pohjus": "juba_crm_is", "kontroll": "id viiking-as, mõõdetud 18.09, imporditud 20.09 (parnu2.json)." }
+  ]
+}

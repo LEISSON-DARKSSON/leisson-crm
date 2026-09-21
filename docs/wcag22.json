@@ -1,0 +1,55 @@
+{
+  "_": "WCAG 2.2 uued kriteeriumid. Iga aruanne peab iga rea kohta ütlema oleku. Olek: automaatne | skript | käsitsi | ei_kohaldu | kontrollimata.",
+  "standard": "WCAG 2.2 AA",
+  "alus": "EN 301 549 v4.1.1, avaldatud 02.09.2026",
+  "kriteeriumid": [
+    {
+      "id": "2.4.11",
+      "nimi": "Fookus ei ole varjatud (miinimum)",
+      "tase": "AA",
+      "meetod": "skript",
+      "vahend": "playwright-focus-obscured",
+      "olek": "kontrollimata"
+    },
+    {
+      "id": "2.5.7",
+      "nimi": "Lohistamise liigutused",
+      "tase": "AA",
+      "meetod": "käsitsi",
+      "vahend": "kandidaadid skriptist, otsus käsitsi",
+      "olek": "kontrollimata"
+    },
+    {
+      "id": "2.5.8",
+      "nimi": "Sihtmärgi suurus (miinimum)",
+      "tase": "AA",
+      "meetod": "automaatne",
+      "vahend": "axe-core target-size (wcag22aa, vaikimisi väljas)",
+      "olek": "kontrollimata"
+    },
+    {
+      "id": "3.2.6",
+      "nimi": "Järjepidev abi",
+      "tase": "A",
+      "meetod": "skript",
+      "vahend": "abi-elementide järjekord üle lehtede",
+      "olek": "kontrollimata"
+    },
+    {
+      "id": "3.3.7",
+      "nimi": "Korduv sisestus",
+      "tase": "A",
+      "meetod": "käsitsi",
+      "vahend": "mitmesammulised vormid",
+      "olek": "kontrollimata"
+    },
+    {
+      "id": "3.3.8",
+      "nimi": "Ligipääsetav autentimine (miinimum)",
+      "tase": "AA",
+      "meetod": "käsitsi",
+      "vahend": "sisselogimine, CAPTCHA, mäluülesanne",
+      "olek": "kontrollimata"
+    }
+  ]
+}
