@@ -2,7 +2,8 @@
 // ULESANNE 13: sarnased lepingud ja skoori ajalootegur.
 //
 // SIIN HAKKAB AJALOO TABEL ESIMEST KORDA OTSUST MOJUTAMA. score() annab
-// medianTenders >= 8 eest -10 ja <= 3 eest +5; verdikti piirid on 35 ja 60,
+// medianTenders >= AJALUGU_MIINUS10_ALATES eest -10 ja <= AJALUGU_PLUSS5_KUNI
+// eest +5 (kalibreeritud 21.09.2026: 4 ja 1); verdikti piirid on 35 ja 60,
 // seega KUMBKI tegur uksi liigutab hanke uhest otsusest teise. Vale mediaan ei
 // ole siin kosmeetika - ta on vale ariotsus.
 //
@@ -251,22 +252,23 @@ const kolmDb = () => testDb(['2026-08', XML_NISS], ['2026-07', nihutatud(100000)
   assert.equal(teadmata.points, 40, 'aluseta mediaan ei liiguta skoori');
   assert.ok(teadmata.why.some((x) => x.startsWith('0 · ')), 'ka see on nahtav nullrida');
 
-  // 4...7 PAKKUJAT ON TEADLIK AUK, aga ta EI TOHI olla vaikne. Paris jooksul
-  // (21.09.2026, 6671 lepingut) oli segmendi mediaan TAPSELT siin - 3.5 -> 4...7
-  // vahemikku jai iga teine hange ja score_why ei oleks uldse maininud, et
-  // ajalugu vaadati.
-  const vahepeal = score(baas, { ...tana, ajalugu: { medianTenders: 5, n: 24, alus: 'segment' } });
-  assert.equal(vahepeal.points, 40, 'neli kuni seitse pakkujat ei anna ega vota punkte');
+  // KAHE LAVE VAHE ON TEADLIK AUK, aga ta EI TOHI olla vaikne. Parast
+  // 21.09.2026 kalibreeringut (laved 1 / 4, 24 kuu andmed) on ta LAI: 88 nisi
+  // CPV-koodist jaab sinna 49. Paris jooksul on segmenditee mediaan 2 pakkujat
+  // 132 lepingul ehk TAPSELT augus - ilma selle reata ei utleks score_why
+  // uldse, et ajalugu vaadati. Vt test/gate-hanked-ajalugu-kalibreering.mjs.
+  const vahepeal = score(baas, { ...tana, ajalugu: { medianTenders: 2, n: 24, alus: 'segment' } });
+  assert.equal(vahepeal.points, 40, 'lavede vahele jaav mediaan ei anna ega vota punkte');
   assert.ok(vahepeal.why.some((x) => x.startsWith('0 · ') && /24 lepingul/.test(x)),
     'kahe reegli vahele jaav mediaan peab olema NAHTAV: ' + vahepeal.why.join(' / '));
 
   // Vaike mediaan sama lavi all.
-  assert.equal(score(baas, { ...tana, ajalugu: { medianTenders: 2, n: 8 } }).points, 45, '40 + 5');
-  assert.equal(score(baas, { ...tana, ajalugu: { medianTenders: 2, n: 4 } }).points, 40,
+  assert.equal(score(baas, { ...tana, ajalugu: { medianTenders: 1, n: 8 } }).points, 45, '40 + 5');
+  assert.equal(score(baas, { ...tana, ajalugu: { medianTenders: 1, n: 4 } }).points, 40,
     'lavi kehtib ka boonuse poole peal');
 
   // Pohjendus peab utlema, MIDA vorreldi - segmendi tee ei ole "sama CPV ajalugu".
-  const seg = score(baas, { ...tana, ajalugu: { medianTenders: 2, n: 8, alus: 'segment' } });
+  const seg = score(baas, { ...tana, ajalugu: { medianTenders: 1, n: 8, alus: 'segment' } });
   assert.ok(seg.why.some((x) => /segmendi ajalugu/.test(x) && !/sama CPV/.test(x)),
     'segmendi-varutee peab pohjenduses nahtav olema: ' + seg.why.join(' / '));
   console.log('PASS sarnased: miinimumlävi hoiab müra verdiktist eemal ja on põhjenduses näha');

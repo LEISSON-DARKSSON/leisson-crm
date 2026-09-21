@@ -92,24 +92,94 @@ Väline binaar (poppler), mida `package.json` ei kontrolli.
 
 ## B. Ajalugu ja skoor
 
-### B1. Ajalootegur on ebastabiilne — ta sõltub akna pikkusest, mitte turust
+### B1. ~~Ajalootegur on ebastabiilne~~ — TEHTUD 21.09.2026, mõõdetud 24 kuu peal
 
-`score()` annab −10, kui segmendi/CPV mediaanne pakkujate arv on ≥ 8, ja +5, kui ta on ≤ 3.
-Vahemik 4…7 on auk. Mõõdetud 21.09.2026:
+**Mõõdetud tootmise peal (ainult lugemine):** `hanke_lepingud` 46 845 rida, 21 398 hanget,
+aken 2024-09-21 … 2026-08-31, 24 kuud. Mediaanifiltri (`winner IS NOT NULL AND amount IS NOT
+NULL`) läbib 38 532 rida; võitjata 6 230, summata 8 313.
 
-| Aken | Mediaan pakkujaid nišis | Mis juhtub |
+**Läved koodist enne muutust** (`lib/hanked.mjs` `score()` plokk 6): `+5` kui
+`medianTenders <= 3`, `−10` kui `>= 8`, vahemik auk, alus alla `SARNASED_MIN = 5` lepingu →
+tegurit ei rakendata (nähtav nullrida).
+
+#### Mis mõõtmine ütles
+
+**1. Aknasõltuvus oli päris, aga ainult lühikeses aknas.** Nišisegmendi (`segment='nišš'`,
+`segment_allikas='pealkiri'`) mediaanne pakkujate arv:
+
+| Aken | Alus (lepingut) | Mediaan | Vana lävi | Uus lävi |
+| --- | --- | --- | --- | --- |
+| 3 kuud | 24 | **3,5** | auk → 0 | auk → 0 |
+| 6 kuud | 39 | **2** | **+5** | auk → 0 |
+| 12 kuud | 70 | **2** | **+5** | auk → 0 |
+| 24 kuud | 132 | **2** | **+5** | auk → 0 |
+
+Vana lävi andis 3 kuu peal ühe vastuse ja 6/12/24 kuu peal teise — sama hange, eri skoor,
+olenevalt sellest, kui palju ajalugu parasjagu laetud oli. Uus lävi annab kõigi nelja akna
+peal sama vastuse. See seos on väravas lukus.
+
+**2. Tõeline viga oli mujal: vana lävi ei eraldanud midagi.** Eesti riigihangete turul on
+pakkujaid vähe. Kõigi 32 987 lepingu peale on mediaan 2 (p25 = 1, p75 = 4, p90 = 7, max 131).
+Meie niši CPV-koodid (72*, 79*, 48*, 92*), millel on vähemalt 5 lepingut — **88 koodi** —
+jagunesid vana läve all nii:
+
+| | vana lävi (≤3 / ≥8) | uus lävi (≤1 / ≥4) |
 | --- | --- | --- |
-| 3 kuud (2026-06…08, 6671 rida, alus 24 lepingut) | **3,5** | jääb auku — tegur EI liigu |
-| 1 kuu (2026-08, alus 18 lepingut) | **2** | +5 KÕIGILE nišihangetele korraga |
+| +5 | **73 koodi (83 %)** | 26 koodi (30 %) |
+| auk | 14 (16 %) | 49 (56 %) |
+| −10 | **1 kood (1,1 %)** | 13 koodi (15 %) |
 
-- **Kui ei tee:** tegur kas ei tee midagi või liigutab kõiki hankeid ühtemoodi — kumbki ei
-  eristanud ühtki hanget teisest. Halvem: sama hange saab eri skoori sõltuvalt sellest,
-  kui palju ajalugu parasjagu laetud on. Skoori põhjendus on nähtav, seega ta ei valeta,
-  aga ta ei ütle ka midagi.
-- **Mida vaja:** üks mõõtmisvoor TÄIE 24 kuu andmetega. Alles siis on näha, kas mediaan on
-  stabiilne ja kus lävi peaks olema. Võimalik, et õige vastus on pidev tegur (mitte kaks
-  lävendit) või segmendipõhine lävi.
-- **Töö:** L — 24 kuu laadimine (kümneid minuuteid) + mõõtmine + lävendite otsus.
+Kõigi 825 piisava CPV-koodi peal oli sama pilt: +5 sai 592 (72 %), −10 sai 20 (2,4 %).
+Reegel, mis ütleb 83 %-le „jah" ja 1 %-le „ei", on konstant, mitte reegel.
+
+**3. Nišisegmendi jaotus ise ei ole ühetaoline** — mediaan 2 ei tähenda, et kõik on väikesed.
+132 lepingut, neist 129-l on pakkujate arv: p25 = 1, p50 = 2, p75 = 5, p90 = 8, max **43**.
+Kuni 3 pakkujat on 80 lepingul (62 %), 4…7 on 32-l (25 %), ≥8 on **17-l (13 %)**. Saba on
+päriselt olemas — seetõttu on `−10` haru mõttekas hoida, ainult õigel kõrgusel.
+
+**4. Kuus elavat hanget said vana läve all KÕIK sama +5.** Ühelgi neist ei ole CPV-d (RSS ei
+anna seda), seega nad kõik käivad sama segmendimediaani (2 pakkujat / 132 lepingut) kaudu.
+Tegur ei eristanud ühtegi hanget teisest — ta oli ühtlane nihe kogu radari peal.
+
+#### Otsus (üks kalibreering)
+
+Läved on nüüd **tuletatud mõõdetud jaotuse kvantiilidest, mitte valitud käest**:
+`AJALUGU_PLUSS5_KUNI = 1` (88 koodi mediaanide **p25**) ja `AJALUGU_MIINUS10_ALATES = 4`
+(sama jaotuse **p90**). Asümmeetria on teadlik: `−10` on kaks korda suurem liigutus kui `+5`
+ja peab nõudma tugevamat tõendit.
+
+| Elav hange | Skoor vana läve all | Skoor uue läve all | Verdikt |
+| --- | --- | --- | --- |
+| 315437 Rakendusuuring | 50 | 45 | KAALU → KAALU |
+| 314194 Tulevikuseire koolitus | 50 | 45 | KAALU → KAALU |
+| 310983 OsKus infosüsteem | 45 | 40 | KAALU → KAALU |
+| 313518 Turvalise koostöö e-kursus | 45 | 40 | KAALU → KAALU |
+| 314159 Nikotiini eneseabi | 45 | 40 | KAALU → KAALU |
+| 312645 Reisiteenuste platvorm | 30 | 25 | JÄTA → JÄTA |
+
+**Verdikt muutus 0 hankel kuuest.** See ei ole nõrk tulemus, vaid tõend: vana `+5` oli
+ühtlane nihe, mis ei kandnud ühegi hanke kohta infot. Nüüd ütleb `score_why` selle välja —
+`0 · segmendi ajalugu (CPV-d ei ole): mediaan 2 pakkujat 132 lepingul — üle 1 ja alla 4 jääb
+kahe reegli vahele`.
+
+#### Mis seda lukus hoiab
+
+`crm/test/gate-hanked-ajalugu-kalibreering.mjs` jookseb **kommititud fikstuuri**
+`crm/test/fixtures/hanked-ajalugu-24k.json` peal (4 553 rida tootmisbaasist, **ilma
+isikuandmeteta** — nimesid, registrikoode, ostjat ega pealkirju ei ole kaasas ja võitja on
+pseudonüüm `V0001`; põhjus on mõõdetud: `winner_reg`-is on 329 rida Eesti isikukoodi kujul).
+Värav nõuab, et `AJALUGU_PLUSS5_KUNI === p25` ja `AJALUGU_MIINUS10_ALATES === p90` selle
+fikstuuri jaotusest, ja et kõik neli akent annaksid sama teguri. **Läve muutmine ilma uue
+mõõtmiseta kukutab värava** — pöördtestitud: vanade lävedega 3 / 8 kukub värav real
+„AKEN EI TOHI TEGURIT LIIGUTADA … andsid: 0, 5".
+
+#### Mis jääb ikka lahti
+
+Nišisegmendi mediaan on **kogu segmendi omadus, mitte selle hanke oma** — iga `nišš`-hange
+saab sama arvu. Seni kuni RSS CPV-d ei anna, on ajalootegur kogu radari peale ühtlane nihe,
+ükskõik kus lävi on. Praegu on see nihe 0, ehk kahjutu. Päriselt eristama hakkab tegur alles
+siis, kui elavatel hangetel on CPV (ülesande 6 eForms-tee) — **siis tuleb see mõõtmine üle
+korrata** ja vaadata, kas p25/p90 on ikka õiged lõikekohad.
 
 ### B2. Ajaloo laadimine EI arvuta skoore ümber
 
