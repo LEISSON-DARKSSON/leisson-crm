@@ -1,0 +1,16 @@
+name: shared-drift
+on:
+  schedule: [{ cron: "0 6 * * 1" }]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node tools/check-pin.mjs
+        env: { GH_TOKEN: "${{ secrets.SHARED_READ_TOKEN }}" }
