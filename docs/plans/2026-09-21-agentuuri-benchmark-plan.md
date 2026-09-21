@@ -777,6 +777,30 @@ disainikeskus.ee andmebaas (Trinidad ja Velvet on mõlemad seal) + Eesti ettevõ
 
 ---
 
+# Väljalaskejärjekord (fikseeritud 21.09.2026)
+
+**1. crm-offline parandus enne kõike muud.** `crm-offline` ei ole „eelnevalt
+punane" — ta on **ebastabiilne**. `nextApprovedCampaign` sortis ainult
+`ORDER BY c.approved_at`; kahe sama sekundi kinnitusaja korral jäi järjestus
+viiki ja võitja otsustas päringuplaan (väiksem `randomUUID`), mitte
+kinnitusaeg. Mõõdetud kõrvalaknas: **10 jooksust 4 punast (~40 %)**.
+Parandus `ORDER BY c.approved_at, c.rowid, i.position` on harul
+`feat/crm-riigihanked` (commit 50f301e), **mitte `main`-il** — kontrollitud
+`git show origin/main:crm/lib/campaign.mjs` real 202, 21.09.2026.
+
+**Tagajärg meie PR-idele:** iga „crm-offline roheline" enne selle parandust
+on ~60 % kulli-ja-kirja, mitte tõend. PR #12 ja #14 said rohelise just nii.
+Ära loe seda värava läbimiseks.
+
+**2. PR #13** (Orbit tüpograafia) — punane snapshot teadlikult vastu võttes.
+`main`-i jooks uuendab baasjoone ise.
+
+**3. PR #12** (Voor 4) ja **4. PR #14** (Voor 5) — alles siis on nende
+roheline päris.
+
+Vastupidine järjekord tähendab, et #12 snapshot läheb pärast #13 merge'i
+uuesti punaseks ja sama tsükkel kordub.
+
 # Mõõtmine kuu pärast
 
 GA4: `inquiry_accepted` kuus ≥ 2× baasjoon JA `service_selected` täidetud ≥ 70 % päringutest.
