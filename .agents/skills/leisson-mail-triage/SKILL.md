@@ -24,7 +24,7 @@ A sender's own form test, newsletter, automated notification or old positive quo
 
 ## Evidence and next action
 Separate actual incoming content, immutable sent content, quoted previous content and reconstruction. A technical score, company turnover or inferred revenue loss does not prove need or budget. Never infer a price objection from refusal without a stated price concern.
-Classify stale business mail for history; do not suggest an urgent reply after its deadline. The shared service catalog is packages/service-catalog/catalog.json at the repository root. Classification does not approve a service, payment or outgoing message.
+Classify stale business mail for history; do not suggest an urgent reply after its deadline. The shared service catalog is `service-catalog/catalog.json` in the `@leisson/shared` package (`node_modules/@leisson/shared/service-catalog/catalog.json`). Classification does not approve a service, payment or outgoing message.
 
 All sales are from gert@leisson.eu, with separate human approval of the exact recipient and final text. This model has no sending rights.
 

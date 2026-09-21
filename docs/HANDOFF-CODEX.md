@@ -3,7 +3,7 @@
 Kirjutatud 15.09.2026 Codexile ülevõtmiseks. Siin on see, mida koodist **ei näe**:
 miks asjad on nii, mis on juba katki läinud, ja mida mitte teha.
 
-Iga number siin on mõõdetud. Kui number on vana, jooksuta `npm run tohusus`.
+Iga number siin on mõõdetud. Kui number on vana, jooksuta `node win	ohusus.mjs`.
 
 ---
 
@@ -28,7 +28,7 @@ juhtunud (vt § 7).
 
 ## 1. Mis see on
 
-Kohalik CRM Gerti masinal: `C:\Users\gert\Desktop\LEISSON.CREATIVE\Leisson Creative\crm`.
+Kohalik CRM Gerti masinal: `C:\Users\gert\Desktop\LEISSON.CREATIVE\leisson-crm` (repo `LEISSON-DARKSSON/leisson-crm`; varem monorepo kaust `crm/`).
 Node 22, `node:sqlite` (`DatabaseSync`), **null natiivset sõltuvust**. Server
 kuulab ainult `127.0.0.1:4310`. Andmebaas: `data/crm.sqlite` (WAL).
 
@@ -225,6 +225,8 @@ Nõutakse täielikku sõna või koolonit (`Auto:`).
 
 ## 9. Ajastatud ülesanded (Windows)
 
+> Ajakavad allpool on 15.09 seis. Kehtiv ajakava on `win/README.md` ja `win/install-*.ps1`.
+
 ```powershell
 .\win\install-saatja.ps1            # saatja + järelkirjad + loobumised
 .\win\install-saatja.ps1 -Eemalda   # kõik välja
@@ -246,8 +248,8 @@ ei kirjutata.
 ## 10. Käsud, mida päriselt kasutad
 
 ```powershell
-npm test                      # KÕIK väravad — 297 väidet, peab olema 0 kukkumist
-npm run tohusus               # mõõdetud tõhusus: toru, raha, agendikulu, puhangud
+npm test                      # KÕIK väravad, peab olema 0 kukkumist
+node win	ohusus.mjs          # mõõdetud tõhusus: toru, raha, agendikulu, puhangud
 npm run saatja:seis           # kes järjekorras, kes välja jääb ja miks
 npm run jarelkiri:kuiv        # näitab täpse teksti, mis välja läheks
 node win\saatmislugu.mjs      # kogu saatmislugu koos vahedega
@@ -280,7 +282,7 @@ Redeli aste 1 (290 €) ei ole veel kellelegi pakutud peale Pärnu Muuseumi.
 
 ## 12. leisson.eu
 
-Repo `LEISSON-DARKSSON/leisson-greative`, Vercel projekt `leisson-creative`.
+Sait elab eraldi repos `leisson-site` (mitte selles repos); allolev on 15.09 seis: repo `LEISSON-DARKSSON/leisson-greative`, Vercel projekt `leisson-creative`.
 Disainisüsteem **Orbit** — skill `leisson-orbit-ds` (tokenid, komponendid,
 väravad, ET/EN).
 
