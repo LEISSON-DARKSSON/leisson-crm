@@ -1027,7 +1027,7 @@ ${kirjed.join('\n')}
 
   const s = score({ title: 'Infosüsteemi arendus', segment: 'nišš', est: 4000000,
     menetlus: 'Avatud hankemenetlus', crit: ['price'], deadline: '2026-12-01',
-    rollid: 3 }, { today: '2026-10-01', ajalugu: { medianTenders: 11 } });
+    rollid: 3 }, { today: '2026-10-01', ajalugu: { medianTenders: 11, n: 9 } });
   assert.equal(s.verdict, 'ALLTÖÖVÕTT', 'kolm rolli sunnib alltoovottu');
   assert.ok(s.points < 35, 'alltoovotu hange ei tohi ka punktides ules joosta');
 
@@ -1190,13 +1190,16 @@ ${kirjed.join('\n')}
 // S8 (otsus 7): punktid VOIVAD jaada negatiivseks ja me ei loika neid nulli -
 // negatiivne skoor jarjestab halvimad hanked nimekirja lopus oiges jarjekorras.
 {
+  // ULESANNE 13: ajalootegur nouab `n`-i (mediaani alust). Ilma selleta on
+  // mediaan mura ja teda EI RAKENDATA - vt lib/hanked.mjs SARNASED_MIN ja
+  // test/gate-hanked-sarnased.mjs plokk H.
   const r = score({ segment: null, est: 4000000, rollid: 6, deadline: '2026-10-02' },
-    { today: '2026-10-01', ajalugu: { medianTenders: 12 } });
+    { today: '2026-10-01', ajalugu: { medianTenders: 12, n: 9 } });
   assert.equal(r.points, -60, '0 - 10 - 25 - 10 - 15');
   assert.equal(r.verdict, 'ALLTÖÖVÕTT');
 
   const ilma = score({ segment: null, est: 4000000, deadline: '2026-10-02' },
-    { today: '2026-10-01', ajalugu: { medianTenders: 12 } });
+    { today: '2026-10-01', ajalugu: { medianTenders: 12, n: 9 } });
   assert.equal(ilma.points, -35);
   assert.equal(ilma.verdict, 'JÄTA');
   console.log('PASS hanked: skoor võib olla negatiivne');
@@ -1224,7 +1227,11 @@ ${kirjed.join('\n')}
   assert.equal(score({ segment: 'nišš', menetlus: 'Avatud hankemenetlus' }, { today: '2026-10-01' }).points,
     40, 'avatud hankemenetlus ei ole kerge menetlus');
 
-  const aj = (medianTenders) => score({ segment: 'nišš' }, { today: '2026-10-01', ajalugu: { medianTenders } }).points;
+  // `n` on NOUTUD (ulesanne 13): alla SARNASED_MIN lepingu tegurit ei rakendata.
+  const aj = (medianTenders, n = 9) => score({ segment: 'nišš' },
+    { today: '2026-10-01', ajalugu: { medianTenders, n } }).points;
+  assert.equal(aj(8, 4), 40, 'nelja lepingu mediaan ei tohi punkte liigutada');
+  assert.equal(aj(3, 4), 40, 'lavi kehtib ka boonuse poole peal');
   assert.equal(aj(8), 30, 'kaheksa pakkujat on rahvarohke');
   assert.equal(aj(7), 40, 'seitse jaab kahe reegli vahele');
   assert.equal(aj(4), 40);
@@ -1236,7 +1243,7 @@ ${kirjed.join('\n')}
   assert.equal(score({ segment: 'nišš', est: 45000 }, { today: '2026-10-01' }).verdict, 'KAALU', '55 on KAALU');
   assert.equal(score({ segment: 'nišš' }, { today: '2026-10-01' }).verdict, 'KAALU', '40 on KAALU');
   assert.equal(aj(8), 30);
-  assert.equal(score({ segment: 'nišš' }, { today: '2026-10-01', ajalugu: { medianTenders: 8 } }).verdict,
+  assert.equal(score({ segment: 'nišš' }, { today: '2026-10-01', ajalugu: { medianTenders: 8, n: 9 } }).verdict,
     'JÄTA', '30 on juba JATA');
   console.log('PASS hanked: kvaliteet, menetlus, ajalugu ja verdikti piirid');
 }
@@ -1248,7 +1255,7 @@ ${kirjed.join('\n')}
   const h = { title: 'UX audit', segment: 'nišš', est: 45000, crit: ['quality'],
     menetlus: 'Lihthange', deadline: '2026-12-01' };
   const koopia = JSON.parse(JSON.stringify(h));
-  const valikud = { today: '2026-10-01', ajalugu: { medianTenders: 5 }, docs: { qualityWeight: 60 } };
+  const valikud = { today: '2026-10-01', ajalugu: { medianTenders: 5, n: 9 }, docs: { qualityWeight: 60 } };
   const a = score(h, valikud);
   const b = score(h, valikud);
   assert.deepEqual(a, b, 'sama sisend peab andma sama valjundi');

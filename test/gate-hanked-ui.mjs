@@ -427,8 +427,9 @@ const T = (iso) => new Date(iso);
   assert.match(views, /addEventListener\('blur'/, 'märkus salvestub fookuse kaotusel');
   assert.match(views, /riigihanked\.riik\.ee\/rhr-web\/#\/procurement\//, 'RHR-i link puudub');
   assert.match(views, /rhr_id/, 'link peab tulema rhr_id väljast');
-  assert.match(views, /Sarnased lepingud/, 'ülesande 13 plokile peab olema koht jäetud');
-  assert.doesNotMatch(views, /sarnased\.map|d\.sarnased/, 'ülesande 13 sisu ei ehitata ette');
+  assert.match(views, /Sarnased lepingud/, 'sarnaste lepingute plokk puudub');
+  assert.match(views, /d\.sarnased|hankedData\.detail\.sarnased/,
+    'ülesanne 13: plokk peab tulema detaili vastusest, mitte eraldi päringust');
   // Detaili EI TOHI kusida iga pollimise peale - vastus laheb vahemallu.
   assert.match(views, /hankedData\.detail/, 'detail peab olema mudelis, mitte iga joonistuse peale päritav');
 
@@ -441,4 +442,25 @@ const T = (iso) => new Date(iso);
   assert.match(views, /CRM\.mark\(/, 'views.js peab kasutama SAMA märgikirjutajat, mitte oma koopiat');
 
   console.log('PASS hanked UI: detailpaneeli leping ja sakimärk tulevad load()-ist');
+}
+
+/* ------------------------------- 14. sarnased lepingud (ülesanne 13) */
+{
+  // Plokk kannab OTSUST, seega ta peab ütlema ka selle, MILLEL otsus põhineb.
+  // Paljas mediaan ilma aluseta on halvem kui mitte midagi: kahel lepingul
+  // põhinev arv näeb välja täpselt nagu kahekümnel põhinev.
+  assert.match(views, /sarnasedPlokk|hankedSarnased/, 'sarnaste lepingute plokil peab olema ehitaja');
+  assert.match(views, /medianAmount/, 'mediaanhind peab vaatesse jõudma');
+  assert.match(views, /medianTenders/, 'mediaanne pakkujate arv peab vaatesse jõudma');
+  assert.match(views, /\.n\b/, 'mediaani alus (mitu lepingut) peab vaatesse jõudma');
+  assert.match(views, /valjaJai/, 'väljajäänud lepingud peavad olema öeldud, mitte vaikitud');
+  assert.match(views, /CPV-d ei ole/, 'segmendi-varutee peab olema NÄHTAVALT märgitud');
+  assert.match(views, /piisav/, 'alla läve jääv alus peab vaates eristuma');
+
+  // RHR-i tekst (võitja nimi, pealkiri) käib el()-i kaudu. innerHTML-i ei ole
+  // selles failis ÜHTEGI ja see plokk ei tohi olla esimene.
+  assert.doesNotMatch(views, /innerHTML|insertAdjacentHTML|outerHTML/,
+    'RHR-ist tulev tekst ei tohi minna lehele HTML-ina');
+
+  console.log('PASS hanked UI: sarnaste lepingute plokk kannab alust, varuteed ja väljajäetut');
 }

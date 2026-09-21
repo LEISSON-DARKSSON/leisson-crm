@@ -678,6 +678,10 @@
     if (hankedData.valitud !== ref) return;
     hankedData.detail = {
       ref, hange: d.hange || {}, why: Array.isArray(d.why) ? d.why : [],
+      // ÜLESANNE 13: sarnased lepingud tulevad SAMA vastusega. Eraldi päring
+      // tähendaks teist võrguringi iga valiku peale ja kaht eri hetke, mille
+      // pealt mediaan ja skoori põhjendus on arvutatud.
+      sarnased: d.sarnased || null,
       mustand: null,   // poolikult kirjutatud märkus, mida täisjoonistus ei tohi süüa
     };
     joonistaDetail();
@@ -719,14 +723,82 @@
       pohjendused(d.why),
       seisuNupud(h),
       markuseValja(h, d),
-      // ÜLESANNE 13 täidab selle ploki (sama CPV varasemad lepingud). Tühja
-      // massiivi siia praegu ei ehitata: „lepinguid ei ole" ja „me ei ole neid
-      // veel kordagi küsinud" on kaks eri vastust.
-      el('section', { class: 'detail-plokk', id: 'hankedSarnased' }, [
-        el('h3', { text: 'Sarnased lepingud' }),
-        el('p', { class: 'why', text: 'Sama CPV varasemad lepingud tulevad ülesandega 13 — neid ei ole veel kordagi päritud.' }),
-      ]),
+      sarnasedPlokk(d.sarnased),
     );
+  }
+
+  // Osa teised võitjad ÜHE reana. Eesti keel käänab ainsuse ja mitmuse eri
+  // moodi ja „+ 1 konsortsiumipartnerit" on lihtsalt vale — see tekst on
+  // kasutaja ees iga mitmevõitjalise osa juures.
+  function kaaslased(r) {
+    const n = (r.voitjaid || 0) - 1;
+    if (n < 1) return '';
+    const sona = r.konsortsium
+      ? (n === 1 ? 'konsortsiumipartner' : 'konsortsiumipartnerit')
+      : (n === 1 ? 'võitja' : 'võitjat');
+    return ' + ' + n + ' ' + sona;
+  }
+
+  // ÜLESANNE 13: varasemad sarnased lepingud.
+  //
+  // SEE PLOKK KANNAB OTSUST, seega ta peab ütlema ka selle, MILLEL otsus
+  // põhineb. Paljas mediaan on halvem kui mitte midagi: kahel lepingul põhinev
+  // arv näeb ekraanil välja täpselt nagu kahekümnel põhinev, aga skoori
+  // liigutab ainult teine (lib/hanked.mjs SARNASED_MIN). Seega on paneelil
+  // ALATI kolm asja: mille järgi võrreldi, mitmel lepingul mediaan põhineb ja
+  // mitu lepingut jäi välja.
+  //
+  // Võitja nimi ja pealkiri tulevad RHR-ist — kogu tekst läheb lehele el()-i
+  // kaudu (textContent), nagu mujal selles failis.
+  function sarnasedPlokk(s) {
+    const lapsed = [el('h3', { text: 'Sarnased lepingud' })];
+    if (!s) {
+      // „Me ei ole neid veel kordagi küsinud" EI OLE sama, mis „lepinguid ei ole".
+      lapsed.push(el('p', { class: 'why', text: 'Varasemaid lepinguid ei ole veel päritud.' }));
+      return el('section', { class: 'detail-plokk', id: 'hankedSarnased' }, lapsed);
+    }
+    if (!s.alus) {
+      lapsed.push(el('p', { class: 'why',
+        text: 'Ajaloo tabelis ei ole selle CPV ega segmendi kohta ühtegi lepingut — '
+          + 'lae ajalugu („Lae ajalugu" nupp) või oota järgmist kuist importi.' }));
+      return el('section', { class: 'detail-plokk', id: 'hankedSarnased' }, lapsed);
+    }
+    // VARUTEE ON NÄHTAV, MITTE VAIKNE. RSS ei anna CPV-d üldse, seega segmendi
+    // järgi võrdlemine on TAVALINE vastus — ja kasutaja peab teadma, et ta ei
+    // vaata sama CPV hindu. Segmendi pool võrdleb ainult pealkirjatabamusi:
+    // lepinguteate kirjelduses on registri boilerplate ja nii sattus nišši
+    // „Kunda alajaama jõutrafode ost" summaga 4,4 miljonit eurot.
+    lapsed.push(el('p', { class: 'why', text: s.alus === 'cpv'
+      ? 'Võrdlus CPV ' + s.cpv + ' järgi.'
+      : 'CPV-d ei ole — võrdlus segmendi järgi (' + s.segment + ', ainult pealkirjatabamused).' }));
+    lapsed.push(el('div', { class: 'kv2' }, [
+      el('span', { class: 'k', text: 'Mediaanhind' }),
+      el('span', { class: 'v', text: s.medianAmount == null ? 'teadmata' : eur(s.medianAmount) }),
+      el('span', { class: 'k', text: 'Pakkujaid (mediaan)' }),
+      el('span', { class: 'v', text: s.medianTenders == null ? 'teadmata' : String(s.medianTenders) }),
+      el('span', { class: 'k', text: 'Alus' }),
+      el('span', { class: 'v', text: s.n + ' lepingut'
+        + (s.valjaJai ? ' · ' + s.valjaJai + ' lepingut jäi välja (summa või võitja puudub)' : '') }),
+    ]));
+    if (!s.piisav) {
+      lapsed.push(el('p', { class: 'warn',
+        text: 'Mediaan põhineb ainult ' + s.n + ' lepingul — skoori see ei mõjuta.' }));
+    }
+    lapsed.push(s.read.length
+      ? el('table', { class: 'tbl' }, [
+        el('thead', {}, el('tr', {}, ['Kuupäev', 'Võitja', 'Summa', 'Pakkujaid']
+          .map((t) => el('th', { text: t })))),
+        el('tbody', {}, s.read.map((r) => el('tr', {}, [
+          el('td', { class: 'n', text: L.tekst(r.date, '—') }),
+          // Konsortsiumi ja mitme võitjaga osa puhul on real ÜKS nimi (summat
+          // kandev juht) — ülejäänud on loendatud, mitte maha vaikitud.
+          el('td', { text: L.tekst(r.winner, 'võitjata') + kaaslased(r) }),
+          el('td', { class: 'n', text: r.amount == null ? '—' : eur(r.amount) }),
+          el('td', { class: 'n', text: r.tenders == null ? '—' : String(r.tenders) }),
+        ]))),
+      ])
+      : el('p', { class: 'why', text: 'Ühelgi leitud lepingul ei ole nii summat kui võitjat.' }));
+    return el('section', { class: 'detail-plokk', id: 'hankedSarnased' }, lapsed);
   }
 
   // Link RHR-i käib rhr_id pealt (parseRss loeb ta kirje lingist). Kui teda ei

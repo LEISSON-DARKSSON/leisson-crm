@@ -14,7 +14,8 @@
 import { pathToFileURL } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { open } from '../lib/db.mjs';
-import { migrateHanked, parseRss, upsertHange, markExpired, score } from '../lib/hanked.mjs';
+import { migrateHanked, parseRss, upsertHange, markExpired, score,
+  sarnasedLepingud } from '../lib/hanked.mjs';
 // Otsekaivitus kirjutab SAMASSE tabelisse, mida serveri kaivitaja kasutab (ulesanne 7).
 // finishRun ja LOG_MAX tulevad sealt, mitte teise koopiana - kaks eri lopetajat
 // tahendaks kaht eri 'tehtud'-definitsiooni.
@@ -320,10 +321,21 @@ export function syncFromXml(db, xml, { today = new Date().toISOString().slice(0,
     // visata, ei saa vaade teda kunagi naidata.
     const kirjutaSkoor = db.prepare('UPDATE hanked SET score = ?, score_why = ?, verdict = ? WHERE ref = ?');
 
+    // ULESANNE 13: varasemate lepingute mediaan laheb skoorile. VAHEMALU ON
+    // JOOKSU OMA ja teda jagavad MOLEMAD tsuklid - sama hange kaib siit labi
+    // kaks korda (feedi ring ja 'uus'-ridade umberarvutus) ja RSS-i ridadel on
+    // kusimus identne, sest RSS EI ANNA CPV-d uldse (moodetud ulesandes 9) ja
+    // segment on kogu nisil sama. Ilma vahemaluta teeks uks jooks kumneid
+    // taiesti samu paringuid; mooduli tasemel vahemalu seevastu valetaks, sest
+    // ajaloo import kirjutab samasse tabelisse.
+    const ajalooVahemalu = new Map();
+    const ajalugu = (rida) => sarnasedLepingud(db, rida.cpv,
+      { segment: rida.segment, cache: ajalooVahemalu });
+
     for (const h of read) {
       if (upsertHange(db, h) === 'uus') uus++; else uuendatud++;
       const rida = loeRida.get(String(h.ref).trim());
-      const s = score(rida, { today });
+      const s = score(rida, { today, ajalugu: ajalugu(rida) });
       // score_why on JSON-massiiv, sest ulesande 13 hangeDetail teeb JSON.parse-i.
       kirjutaSkoor.run(s.points, JSON.stringify(s.why), s.verdict, rida.ref);
     }
@@ -336,7 +348,7 @@ export function syncFromXml(db, xml, { today = new Date().toISOString().slice(0,
     // mitte tuhandeid, ja kogu jooks on nagunii uks fsync. Inimese liigutatud rida
     // (vaatan, valmistun, ...) jaab puutumata: tema jarjekord on juba tema otsus.
     for (const rida of db.prepare("SELECT * FROM hanked WHERE state = 'uus'").all()) {
-      const s = score(rida, { today });
+      const s = score(rida, { today, ajalugu: ajalugu(rida) });
       // Verdikt kaib SAMA teed mis punktid. Kui ta siit valja jatta, kannaks
       // feedist valja libisenud rida vana verdikti (voi mitte uhtegi) ja vaade
       // naitaks kahe eri reegli jargi arvutatud otsuseid korvuti.

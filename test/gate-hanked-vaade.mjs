@@ -51,6 +51,42 @@ const TASKS = {
   gate: { script: 'test/gate-hanked.mjs', label: 'Värav', valmis: true },
 };
 
+// ULESANNE 13: detailpaneeli plokk "Sarnased lepingud". Kolm ERI vastust, sest
+// kolm eri asja peab lehel valja paistma:
+//   R-KIIRE  - CPV-alus ule miinimumlave: mediaanid ja read on naha, voitja nimi
+//              tuleb RHR-ist ja peab jaama TEKSTIKS;
+//   R-TAVA   - CPV-d ei ole, alus on SEGMENT ja alus on ALLA lave: varutee ja
+//              ebakindlus peavad olema NAHTAVALT margitud, mitte vaikitud;
+//   R-VOIT   - ajalugu on tuhi: "ei ole veel kordagi paritud" ei ole sama, mis
+//              "sarnaseid lepinguid ei ole".
+const SARNASED = {
+  'R-KIIRE': {
+    alus: 'cpv', cpv: '72000000', segment: null, n: 6, koguArv: 8, koguRidu: 11,
+    valjaJai: 2, medianAmount: 32070, medianTenders: 8.5, piisav: true,
+    read: [
+      { ref: '306243', lot: 'LOT-0000', date: '2026-08-04', title: KURI, buyer: 'Tallinna Linnavalitsus',
+        winner: KURI, winner_reg: '1', voitjaid: 1, amount: 50000, tenders: 16,
+        konsortsium: 0, segment_allikas: 'pealkiri' },
+      { ref: '313251', lot: 'LOT-0001', date: '2026-08-13', title: 'Encrypted DNS', buyer: 'RIA',
+        winner: 'FOB Solutions OÜ', winner_reg: '2', voitjaid: 1, amount: 14140, tenders: 1,
+        konsortsium: 0, segment_allikas: 'pealkiri' },
+    ],
+  },
+  'R-TAVA': {
+    alus: 'segment', cpv: null, segment: 'nišš', n: 2, koguArv: 3, koguRidu: 4,
+    valjaJai: 1, medianAmount: 44527, medianTenders: 2, piisav: false,
+    read: [
+      { ref: '309231', lot: 'LOT-0000', date: '2026-08-14', title: 'Ainekavad', buyer: 'HTM',
+        winner: 'Sihtasutus Estonian Business School', winner_reg: '3', voitjaid: 2,
+        amount: 161978, tenders: 2, konsortsium: 1, segment_allikas: 'pealkiri' },
+    ],
+  },
+  vaikimisi: {
+    alus: null, cpv: null, segment: null, n: 0, koguArv: 0, koguRidu: 0, valjaJai: 0,
+    medianAmount: null, medianTenders: null, piisav: false, read: [],
+  },
+};
+
 const valmisJooks = (o = {}) => ({
   id: 1, cmd: 'sync', args: '{}', state: 'tehtud', started: TANA + 'T10:00:00Z',
   finished: TANA + 'T10:01:00Z', progress: null, rows: 3, error: null, pid: 1, oma: false,
@@ -144,7 +180,8 @@ const server = createServer(async (req, res) => {
       loendur.detail++;
       const h = hankedAll.find((x) => x.ref === b.ref);
       if (!h) return json(res, { error: 'Hanget ei leitud: ' + b.ref }, 404);
-      return json(res, { hange: h, why: [KURI, '+40 · sobiv segment: nišš', '-25 · 3 rolli CV-nõuet — üksi ei kvalifitseeru'] });
+      return json(res, { hange: h, why: [KURI, '+40 · sobiv segment: nišš', '-25 · 3 rolli CV-nõuet — üksi ei kvalifitseeru'],
+        sarnased: SARNASED[b.ref] || SARNASED.vaikimisi });
     }
     if (req.url === '/api/hanked/run') {
       if (!TASKS[b.cmd]) return json(res, { error: 'Tundmatu käsk: ' + b.cmd }, 400);
@@ -387,8 +424,24 @@ try {
     'https://riigihanked.riik.ee/rhr-web/#/procurement/1/general-info', 'link peab tulema rhr_id väljast');
   assert.equal(await link.getAttribute('rel'), 'noopener noreferrer');
 
-  // Ulesande 13 koht on OLEMAS, aga tuhi ja ausalt margitud.
-  assert.ok(detailTekst.includes('Sarnased lepingud'), 'ülesande 13 plokk peab olema ette nähtud');
+  /* --- ULESANNE 13: sarnased lepingud --- */
+  assert.ok(detailTekst.includes('Sarnased lepingud'), 'sarnaste lepingute plokk puudub');
+  const sarnased = detail.locator('#hankedSarnased');
+  const sTekst = await sarnased.textContent();
+  // Mediaan ja tema ALUS kaivad KOOS: paljas arv ei utle, kas ta on usaldusvaarne.
+  assert.ok(/6\s*lepingu/.test(sTekst), 'mediaani alus peab olema kirjas: ' + sTekst);
+  assert.ok(/8[.,]5/.test(sTekst), 'mediaanne pakkujate arv peab olema näha: ' + sTekst);
+  assert.ok(/32\s*070|32070/.test(sTekst.replace(/\u00a0/g, ' ')),
+    'mediaanhind peab olema näha: ' + sTekst);
+  assert.ok(/CPV/.test(sTekst) && /72000000/.test(sTekst),
+    'CPV-alus peab olema nimetatud: ' + sTekst);
+  assert.ok(sTekst.includes('FOB Solutions OÜ'), 'võitja peab reas olema: ' + sTekst);
+  assert.ok(/2\s*lepingut? jäi|välja/.test(sTekst), 'väljajäänud lepingud peavad olema öeldud: ' + sTekst);
+  // Voitja nimi tuleb RHR-ist - ta on TEKST, mitte HTML.
+  assert.equal(await sarnased.locator('img').count(), 0, 'võitja nimest ei tohi tekkida <img>');
+  assert.equal(await page.evaluate(() => window.__xss), undefined,
+    'sarnaste lepingute plokist ei tohi tekkida skripti');
+  assert.ok(sTekst.includes(KURI), 'võõras võitja nimi jääb TEKSTIKS');
 
   // Markus: onblur -> POST /api/hanked/note.
   const note = detail.locator('textarea');
@@ -420,6 +473,22 @@ try {
     'ilma rhr_id-ta ei tohi linki välja mõelda');
   assert.ok(/RHR-i viide puudub/.test(await detail.textContent()),
     'puuduv viide peab olema seletatud: ' + await detail.textContent());
+
+  // SEGMENDI-VARUTEE PEAB OLEMA NAHTAV. RSS ei anna CPV-d uldse, seega see on
+  // TAVALINE vastus - ja mediaan, mis pohineb kahel lepingul, ei tohi valja
+  // naha sama kindel kui kuuel pohinev.
+  const sTava = await detail.locator('#hankedSarnased').textContent();
+  assert.ok(/CPV-d ei ole/.test(sTava), 'segmendi-varutee peab olema välja öeldud: ' + sTava);
+  assert.ok(/nišš/.test(sTava), 'segment peab olema nimetatud: ' + sTava);
+  assert.ok(/pealkirja/i.test(sTava), 'pealkirjaeelistus peab olema välja öeldud: ' + sTava);
+  assert.ok(/ei mõjuta|skoori ei/i.test(sTava),
+    'alla läve jääv alus peab ütlema, et ta skoori ei liiguta: ' + sTava);
+  assert.equal(await detail.locator('#hankedSarnased .warn').count(), 1,
+    'nõrk alus peab olema märgitud hoiatusena');
+  // Eesti keel käänab: „+ 1 konsortsiumipartnerit" on vale ja see tekst on
+  // kasutaja ees iga mitmevõitjalise osa juures.
+  assert.ok(/\+ 1 konsortsiumipartner(?!it)/.test(sTava),
+    'ühe kaaslase puhul on ainsus: ' + sTava);
 
   /* --- seisumuutus EI lae nimekirja uuesti --- */
   const hankedEnneRippu = loendur.hanked;
