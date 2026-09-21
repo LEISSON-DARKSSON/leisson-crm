@@ -15,3 +15,6 @@
 # CRLF-i taasistutamine checkout'il muudaks baidiarvu ja varav laheks vardses
 # kloonis punaseks ilma et koodis oleks midagi katki.
 *.xml text eol=lf
+# rhr_tools jooksevad ka Linuxis (fetch.sh shebang) - CRLF lohuks need katki.
+*.sh text eol=lf
+*.py text eol=lf
