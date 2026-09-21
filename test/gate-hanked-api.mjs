@@ -86,7 +86,10 @@ const marsruudid = (db) => extraRoutes(db, {}, { json: () => {}, readBody: async
   // tasks tuleb cmdView-st, mitte paljast CMD-st: nupp peab teadma, kas skript on olemas.
   assert.equal(typeof v.keha.tasks.sync.label, 'string');
   assert.equal(v.keha.tasks.sync.valmis, true, 'agent/hanked-sync.mjs on kettal');
-  assert.equal(v.keha.tasks.history.valmis, false, 'agent/hanked-history.mjs ei ole veel olemas');
+  // ULESANNE 12 on tehtud: agent/hanked-history.mjs on kettal, seega nupp "Lae
+  // ajalugu" on valmis. `valmis` tuleb KETTALT (cmdView existsSync), seega see
+  // rida muutus ise - kasitsi hoitav lipp oleks siia vaikselt valeks jaanud.
+  assert.equal(v.keha.tasks.history.valmis, true, 'agent/hanked-history.mjs on kettal (ulesanne 12)');
   assert.ok(Array.isArray(v.keha.runs), 'runs peab olema massiiv');
   // Seisude nimekiri tuleb serverilt, et vaade ei hoiaks oma koopiat.
   assert.deepEqual(v.keha.states, HANKE_STATES, 'states peab tulema serverilt');
@@ -219,10 +222,17 @@ const marsruudid = (db) => extraRoutes(db, {}, { json: () => {}, readBody: async
   assert.equal(c.kood, 200);
   assert.equal(spawnFn.kutseid, 2);
 
-  // Valmimata skript: eestikeelne 400, mitte toores Node-i viga.
-  const d = await kutsu(db, 'POST /api/hanked/run', { keha: { cmd: 'history' }, spawnFn });
+  // Valmimata skript: eestikeelne 400, mitte toores Node-i viga. ULESANNE 12 tegi
+  // history valmis, seega valmimata on nuud ainult docs (ulesanne 14).
+  const d = await kutsu(db, 'POST /api/hanked/run', { keha: { cmd: 'docs' }, spawnFn });
   assert.equal(d.kood, 400);
   assert.match(d.keha.error, /ei ole veel valmis/);
+
+  // Ja vastupidi: ajaloo import KAIVITUB nupust ning saab oma argumendid kaasa.
+  const e = await kutsu(db, 'POST /api/hanked/run', { keha: { cmd: 'history', args: { kuud: 1 } }, spawnFn });
+  assert.equal(e.kood, 200, 'ajaloo import peab nupust kaivituma');
+  assert.equal(e.keha.cmd, 'history');
+  assert.ok(spawnFn.argv.at(-1)[1].includes('--kuud=1'), 'argument peab lapseni jouma');
 
   // Sisendi valve.
   const vigased = [
@@ -242,7 +252,8 @@ const marsruudid = (db) => extraRoutes(db, {}, { json: () => {}, readBody: async
     assert.equal(v.kood, 400, 'vigane sisend ' + JSON.stringify(keha).slice(0, 60) + ' peab andma 400, andis ' + v.kood);
     assert.match(v.keha.error, muster);
   }
-  assert.equal(spawnFn.kutseid, 2, 'vigane sisend ei tohi uhtegi protsessi kaivitada');
+  // Kolm onnestunud kaivitust (gate, sync, history) - vigane sisend ei lisa neljandat.
+  assert.equal(spawnFn.kutseid, 3, 'vigane sisend ei tohi uhtegi protsessi kaivitada');
   db.close();
   console.log('PASS hanked API: kaivitus 200, lukk 409 runId-ga, vigane sisend 400');
 }

@@ -413,15 +413,17 @@ process.exitCode = 1;
 }
 
 // ---------------------------------------------------------------------------
-// K (p8): agent/hanked-history.mjs ja agent/hanked-docs.mjs ei ole veel olemas
-// (ulesanded 12 ja 14). Puuduv skript peab andma eestikeelse vea, mitte spawnima
-// olematut faili ja loppema arusaamatu Node-i veaga.
+// K (p8): agent/hanked-docs.mjs ei ole veel olemas (ulesanne 14). Puuduv skript
+// peab andma eestikeelse vea, mitte spawnima olematut faili ja loppema arusaamatu
+// Node-i veaga. agent/hanked-history.mjs VALMIS ulesandes 12 ja `valmis` tuli
+// kettalt ise kaasa - seda lippu ei hoita kasitsi.
 // ---------------------------------------------------------------------------
 {
   const db = testDb();
   const fake = valeSpawn();
   const vaade = cmdView();
-  for (const cmd of ['history', 'docs']) {
+  assert.equal(vaade.history.valmis, true, 'history valmis ulesandes 12');
+  for (const cmd of ['docs']) {
     assert.equal(vaade[cmd].valmis, false, cmd + ' ei ole veel valmis');
     assert.throws(() => startRun(db, cmd, {}, { spawnFn: fake }), /ei ole veel valmis/,
       cmd + ' peab andma eestikeelse vea');
@@ -429,7 +431,7 @@ process.exitCode = 1;
   assert.equal(fake.kutseid, 0, 'puuduvat skripti ei spawnita');
   assert.equal(db.prepare('SELECT COUNT(*) AS c FROM hanke_runs').get().c, 0,
     'keeldutud kask ei tohi jooksurida jatta');
-  for (const cmd of ['sync', 'gate']) assert.equal(vaade[cmd].valmis, true, cmd + ' on valmis');
+  for (const cmd of ['sync', 'gate', 'history']) assert.equal(vaade[cmd].valmis, true, cmd + ' on valmis');
   // valmis tuleb KETTALT, mitte kasitsi hoitavast lipust.
   assert.equal(cmdView(join(TMP, 'puudub')).sync.valmis, false, 'valmis loetakse kettalt');
   db.close();

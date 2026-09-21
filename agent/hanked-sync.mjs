@@ -18,7 +18,7 @@ import { migrateHanked, parseRss, upsertHange, markExpired, score } from '../lib
 // Otsekaivitus kirjutab SAMASSE tabelisse, mida serveri kaivitaja kasutab (ulesanne 7).
 // finishRun ja LOG_MAX tulevad sealt, mitte teise koopiana - kaks eri lopetajat
 // tahendaks kaht eri 'tehtud'-definitsiooni.
-import { finishRun, LOG_MAX } from '../lib/hanked-runs.mjs';
+import { finishRun, LOG_MAX, CMD } from '../lib/hanked-runs.mjs';
 
 // URL on ulekirjutatav AINULT selleks, et varav saaks main()-i paris lapsprotsessina
 // kohaliku serveri vastu jooksutada - ilma selleta jaaks vorguveakasitlus katsetamata.
@@ -190,26 +190,40 @@ const ORVU_POHJUS = 'Eelmine ajastatud jooks katkes (masin kustus või protsess 
 //      OLE serverit, kes cleanupOrphans-iga koristaks; ilma selleta jaaks uks
 //      kustunud masin sunkimise IGAVESEKS kinni, ilma uhegi punase reata.
 // VOORAST rida (serveri boot_id) me EI puutu kunagi - see on serveri too.
-export function alustaOtseJooks(db, { pid = process.pid, elab = pidElab, bootId = null } = {}) {
+//
+// KASK ON PARAMEETER: ulesande 12 ajaloo import (cmd = 'history') kaib SAMA teed ja
+// tema lukk on OMA - kuine ajalugu ja paevane sunk ei tohi teineteist vahele jatta.
+//
+// SERVERI LAPS EI TEE OMA RIDA. Kui jooksu kaivitas CRM-i nupp (lib/hanked-runs.mjs
+// startRun), on rida juba olemas ja VANEM kirjutab teda; laps saab tema id
+// keskkonnamuutujas HANKED_RUN_ID. Ilma selle valveta kukuks laps oma INSERT-iga
+// tapselt sellesse lukku, mille vanem hetk tagasi votis, ja teataks "kaib juba" -
+// ehk nupuvajutus ei teeks MITTE MIDAGI ja jalg utleks, et jooks jai vahele.
+export function alustaOtseJooks(db, { pid = process.pid, elab = pidElab, bootId = null,
+  cmd = OTSE_CMD, vanemaJooks = process.env.HANKED_RUN_ID } = {}) {
   migrateHanked(db);
+  const vanem = nr(vanemaJooks);
+  if (vanem !== null) return { id: null, vanem, bootId: null, pohjus: null, blokeerija: null };
+  const silt = (CMD[cmd] && CMD[cmd].label) || cmd;
   const boot = bootId || OTSE_BOOT + randomUUID();
   const lisa = () => nr(db.prepare(`INSERT INTO hanke_runs (cmd, args, state, started, boot_id, pid)
-      VALUES (?, '{}', 'käib', datetime('now'), ?, ?)`).run(OTSE_CMD, boot, pid).lastInsertRowid);
+      VALUES (?, '{}', 'käib', datetime('now'), ?, ?)`).run(cmd, boot, pid).lastInsertRowid);
 
   // Kaks katset: esimene kukub luku peale, teine jookseb koristatud luku pealt.
   for (let katse = 1; katse <= 2; katse++) {
-    try { return { id: lisa(), bootId: boot, pohjus: null, blokeerija: null }; } catch (e) {
+    try { return { id: lisa(), vanem: null, bootId: boot, pohjus: null, blokeerija: null }; } catch (e) {
       if (!/UNIQUE constraint failed/i.test(String(e && e.message))) throw e;
       const kaib = db.prepare("SELECT id, pid, boot_id FROM hanke_runs WHERE cmd = ? AND state = 'käib'")
-        .get(OTSE_CMD);
+        .get(cmd);
       const meieOrb = Boolean(kaib) && String(kaib.boot_id || '').startsWith(OTSE_BOOT)
         && !elab(nr(kaib.pid));
       if (!meieOrb || katse === 2) {
         return {
           id: null,
+          vanem: null,
           bootId: boot,
           blokeerija: kaib ? nr(kaib.id) : null,
-          pohjus: 'Sünkroon käib juba' + (kaib ? ' (jooks ' + kaib.id + ')' : '')
+          pohjus: silt + ' käib juba' + (kaib ? ' (jooks ' + kaib.id + ')' : '')
             + ' — ajastatud jooks jäi vahele',
         };
       }
@@ -218,7 +232,7 @@ export function alustaOtseJooks(db, { pid = process.pid, elab = pidElab, bootId 
     }
   }
   // Siia ei joua: tsukkel tagastab molemal katsel.
-  return { id: null, bootId: boot, pohjus: 'Sünkroon käib juba', blokeerija: null };
+  return { id: null, vanem: null, bootId: boot, pohjus: silt + ' käib juba', blokeerija: null };
 }
 
 // Logi ja progress kirjutatakse UHE korraga lopus, mitte rea kaupa: vahepeal hoiab
@@ -365,13 +379,14 @@ async function main() {
   // kukkus - ja et catch teaks vahet, kas kukkus avamine voi jooks.
   let db = null;
   // Jooksurida on samuti valjaspool: catch peab teda punaseks margima.
-  let jooks = { id: null };
+  let jooks = { id: null, vanem: null };
   try {
     db = avaBaas();
     migrateHanked(db);
 
     jooks = alustaOtseJooks(db);
-    if (jooks.id === null) {
+    // vanem !== null: jooksu kaivitas CRM-i nupp ja rida kuulub serverile.
+    if (jooks.id === null && jooks.vanem === null) {
       // VAHELEJATT EI OLE RIKE. Valjumiskood jaab 0-ks: kui inimene parasjagu
       // vajutas CRM-is "Sünkroon", naitaks kood 1 Task Scheduleris punast riket,
       // mida ei ole. Pohjus laheb stdout-i ja elav jooks on vaates nagunii nahtav.

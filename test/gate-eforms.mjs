@@ -427,6 +427,10 @@ const VOITJA_TEADE = teade(`<efac:NoticeResult>
   for (const [k, v] of Object.entries(a)) {
     if (k === 'date') continue;
     if (k === 'winners') { assert.deepEqual(v, [], 'winners on tühi massiiv'); continue; }
+    // ÜLESANNE 12: `lots` on osade massiiv. Tühi massiiv tähendab "sellel teatel ei
+    // ole NoticeResult-i" — importija teeb siis teate tasemel ühe rea. NULL oleks
+    // siin vale kuju: lugeja peab saama ilma tüübikontrollita üle käia.
+    if (k === 'lots') { assert.deepEqual(v, [], 'lots on tühi massiiv'); continue; }
     if (k === 'winner_arv') { assert.equal(v, 0, 'winner_arv on 0'); continue; }
     assert.equal(v, null, `puuduv väli ${k} peab olema null, mitte ${JSON.stringify(v)}`);
     assert.ok(!Number.isNaN(v), `puuduv väli ${k} ei tohi olla NaN`);
