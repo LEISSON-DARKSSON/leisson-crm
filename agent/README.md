@@ -23,7 +23,7 @@ Usaldatud baasjuhis on lühike model-instructions.md; rollispetsiifilised Codexi
 CLI vajab olemasolevat mudelikataloogi `$CODEX_HOME/models_cache.json`.
 
 Päris töö saab eraldi ajutise töökataloogi ja CODEX_HOME-i, kuhu kopeeritakse ainult ChatGPT autentimine
-ning piiratud kataloog. Värskendatud ChatGPT tokenid säilivad privaatselt crm/data/codex-auth-cache all; võtmes on algse autentimise räsi ja konto identiteet. Üks kirjutaja ning atomaarne faili asendamine väldivad võistlust. Kasutaja globaalset auth.json faili ei muudeta. Uus kasutajalogin loob uue lähteidentiteedi.
+ning piiratud kataloog. Värskendatud ChatGPT tokenid säilivad privaatselt data/codex-auth-cache all; võtmes on algse autentimise räsi ja konto identiteet. Üks kirjutaja ning atomaarne faili asendamine väldivad võistlust. Kasutaja globaalset auth.json faili ei muudeta. Uus kasutajalogin loob uue lähteidentiteedi.
 Kasutaja konfiguratsioon, reeglid, pluginad, hook'id ja projekti juhised
 ei laadu. Protsessi keskkond ei sisalda SMTP/IMAP ega API saladusi. Mudelile ei anta CRM-i failiteed.
 

@@ -65,4 +65,3 @@ Names start with `Leisson CRM ` (no dash): `konduktor` (registered disabled by `
 - Local `127.0.0.1` + Origin + CSRF token is not authentication of the owner; campaign approval is stored as `local-crm-operator`.
 - A post-edit formatter hook may rewrite whole files: prefer `sed`/scripts for line edits and check `git diff --stat`.
 - Use `python`, not `python3`, locally (CI uses `python3`). Git Bash syntax; the `*:win` npm scripts call PowerShell.
-- A few Estonian passages in skills, `agent/README.md` and `win/README.md` still say `crm/` or mention unfinished tasks; treat `crm/` as this repo root.

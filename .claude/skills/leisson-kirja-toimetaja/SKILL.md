@@ -17,7 +17,7 @@ Gert Leisson, LEISSON OÜ (reg 16952932, Tallinn). Veebiarendus, disainisüsteem
 4. **Aus piir.** Mida ma ei mõõtnud, ei tea või ei luba.
 5. **Üks järgmine samm.** Konkreetne, väike, ajaliselt määratud.
 
-Allkiri tuleb `crm/signature/leisson-signature.html`-ist. Ära kirjuta allkirja käsitsi.
+Allkiri tuleb `signature/leisson-signature.html`-ist. Ära kirjuta allkirja käsitsi.
 
 ## Numbri tõlkimise reegel
 
