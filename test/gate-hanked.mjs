@@ -5,13 +5,14 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtempSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
+import { Worker } from 'node:worker_threads';
 import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import { migrateHanked, upsertHange, listHanked, setState, setNote, markExpired, HANKE_STATES,
   segmentOf, parseRss, FIT, score } from '../lib/hanked.mjs';
 import { leiaVaravad, VALJAJATED } from '../tools/varav.mjs';
-import { syncFromXml, logiSync } from '../agent/hanked-sync.mjs';
+import { syncFromXml, logiSync, avaBaas, logiSyncKindel, baasiViga } from '../agent/hanked-sync.mjs';
 
 function testDb() {
   const dir = mkdtempSync(join(tmpdir(), 'hanked-'));
@@ -1366,6 +1367,21 @@ ${kirjed.join('\n')}
   assert.ok(/katkine baas/.test(log.note || ''), 'note utleb, mis kukkus: ' + log.note);
 
   db.exec('DROP TRIGGER katki');
+
+  // TEHINGU AATOMSUS. Ulalolev trigger katkestab ESIMESE rea peal, seega poolikut
+  // seisu ei tekiks ka ilma BEGIN IMMEDIATE / COMMIT-ita - see vaide ei katnud tehingut
+  // uldse (moodetud poordtestiga: tehingu eemaldamine jattis varava roheliseks).
+  // Kolmanda kirje peal katkestamine katab: kaks esimest rida on baasis juba sees ja
+  // ainult tehing keerab nad tagasi.
+  db.exec('DELETE FROM hanked');
+  db.exec("CREATE TRIGGER katki3 BEFORE INSERT ON hanked WHEN NEW.ref = '555555' "
+    + "BEGIN SELECT RAISE(ABORT,'kolmas kirje katki'); END");
+  assert.throws(() => syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' }), /kolmas kirje katki/,
+    'kolmanda kirje viga peab valja tulema');
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM hanked').get().c, 0,
+    'kaks esimest rida peab tehing tagasi keerama, mitte poolikuna alles jatma');
+  db.exec('DROP TRIGGER katki3');
+
   syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });
   assert.equal(db.prepare("SELECT ok FROM hanke_sync WHERE key='rss'").get().ok, 1,
     'jargmine onnestunud jooks puhastab punase jalje');
@@ -1525,6 +1541,10 @@ ${kirjed.join('\n')}
   assert.equal(a.read.at(-1).rows, 5);
   assert.equal(a.hankeid, 5, 'laps kirjutas baasi');
   assert.equal(a.log.ok, 1);
+  assert.ok(/· allikas: 127\.0\.0\.1:/.test(a.log.note || ''),
+    'mitte-vaikimisi allikas jatab jalje ka onnestunud jooksus: ' + a.log.note);
+  assert.ok(a.read.some((x) => /allikas: 127\.0\.0\.1:/.test(x.progress || '')),
+    'allikas on nahtav ka progressireal: ' + JSON.stringify(a.read));
 
   const b = await jooks(`http://127.0.0.1:${port}/html`);
   assert.equal(b.kood, 1, 'HTML-veateade XML-i asemel peab andma valjumiskoodi 1');
@@ -1540,4 +1560,320 @@ ${kirjed.join('\n')}
 
   server.close();
   console.log('PASS hanked: main() kirjutab JSON-read ja käitub veaga õigesti');
+}
+
+// ---------------------------------------------------------------------------
+// KVALITEEDIULEVAATUS: VAIKNE KADU LUKUKONKURENTSI ALL.
+// Laps kirjutab baasi paralleelselt serveriga (vt agent/hanked-sync.mjs paise).
+// Koik siinsed testid kasutavad PARIS SQLite lukku paris failibaasil - mock ei
+// tooks seda viga kunagi valja, sest viga ON lukk.
+// ---------------------------------------------------------------------------
+
+// Failibaas ketta peal: :memory: ei saa teist uhendust ja WAL-lukku ei teki.
+function lukuDb() {
+  return join(mkdtempSync(join(tmpdir(), 'hanked-lukk-')), 'crm.sqlite');
+}
+
+// Kirjutuslukk kinni. busy_timeout = 0, et TEISE uhenduse ootamine ei venitaks
+// varavat sekunditesse - lukk ise on tapselt sama paris.
+function lukusta(path) {
+  const a = new DatabaseSync(path);
+  a.exec('PRAGMA journal_mode = WAL');
+  a.exec('BEGIN IMMEDIATE');
+  return a;
+}
+
+// Lyhiajaline lukk: teine LOIM votab luku ja laseb ms parast lahti. Teine loim on
+// noutud, sest korduskatse paus blokeerib siinse sundmustsukli (Atomics.wait) -
+// setTimeout ei jookseks kunagi ja "lukk laheb lahti" ei saaks testis juhtuda.
+function lukuHoidja(path, ms) {
+  const w = new Worker(`
+    const { DatabaseSync } = require('node:sqlite');
+    const db = new DatabaseSync(${JSON.stringify(path)});
+    db.exec('PRAGMA busy_timeout = 5000');
+    db.exec('BEGIN IMMEDIATE');
+    require('node:worker_threads').parentPort.postMessage('lukus');
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ${Number(ms)});
+    db.exec('ROLLBACK'); db.close();
+  `, { eval: true });
+  return new Promise((valmis) => w.once('message', () => valmis(w)));
+}
+
+// Kogub stdout-read kokku (teata() kirjutab sinna) ja annab JSON-ridadena tagasi.
+function pyya(too) {
+  const kogutud = [];
+  const vana = process.stdout.write.bind(process.stdout);
+  process.stdout.write = (s) => { kogutud.push(String(s)); return true; };
+  try { return { tulem: too(), read: kogutud.join('').trim().split('\n').filter(Boolean).map((x) => JSON.parse(x)) }; }
+  finally { process.stdout.write = vana; }
+}
+
+// Z1 (K1): open() JOOKSUTAB MIGRATSIOONE, ehk ta on kirjutaja. Kui server kirjutab
+// samal hetkel, viskab ta "database is locked". Lyhiajalise konkurentsi peale ei tohi
+// jooks surra - avaBaas proovib uuesti; pusiva luku peale peab viga VALJA tulema.
+{
+  // Lukk laheb keset korduskatseid lahti: jooks PEAB sellest yle saama.
+  const p2 = lukuDb();
+  const hoidja = await lukuHoidja(p2, 700);
+  const db = avaBaas({ dbPath: p2, busyTimeout: 80, katseid: 8, paus: 200 });
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM companies').get().c, 0,
+    'lyhiajaline lukk ei tohi jooksu tappa - avaBaas peab andma tookorras baasi');
+  db.close();
+  await hoidja.terminate();
+
+  // Pusiv lukk peab endiselt VALJA tulema, mitte vaikselt onnestuma.
+  const p = lukuDb();
+  const lukk = lukusta(p);
+  const t0 = Date.now();
+  assert.throws(() => avaBaas({ dbPath: p, busyTimeout: 50, katseid: 3, paus: 60 }),
+    /database is locked/, 'pusiva luku peale peab avaBaas viskama');
+  assert.ok(Date.now() - t0 >= 120, 'kolm katset tahendab kahte pausi, kulus ' + (Date.now() - t0) + ' ms');
+  lukk.exec('ROLLBACK'); lukk.close();
+
+  // Toos kasutatav pehmendus on 3 katset 2 s vahega - test ise jookseb kiiremate
+  // arvudega, seega see number peab olema koodis nahtav.
+  const src = readFileSync(new URL('../agent/hanked-sync.mjs', import.meta.url), 'utf8');
+  assert.ok(/katseid = 3/.test(src) && /paus = 2000/.test(src),
+    'vaikimisi peab olema 3 katset 2000 ms vahega');
+  console.log('PASS hanked: avaBaas saab lyhiajalisest lukust yle ja pusivast mitte');
+}
+
+// Z2 (K1): main() ei tohi surra ilma UHEGI JSON-reata. Kui baasi ei saa avada,
+// naeb ulesande 11 server ainult toorest ingliskeelset stack trace'i.
+{
+  const skript = fileURLToPath(new URL('../agent/hanked-sync.mjs', import.meta.url));
+  const kaust = mkdtempSync(join(tmpdir(), 'hanked-kinni-'));
+  // Kataloog ei ole baasifail: DatabaseSync viskab kohe, korduskatseta (ei ole lukk).
+  const r = spawnSync(process.execPath, [skript],
+    { env: { ...process.env, CRM_DB_PATH: kaust, HANKED_RSS_URL: 'http://127.0.0.1:1/rss' }, encoding: 'utf8' });
+  const read = (r.stdout || '').trim().split('\n').filter(Boolean).map((x) => JSON.parse(x));
+  assert.ok(read.length > 0, 'avamata baas peab andma vahemalt uhe JSON-rea, sai: ' + JSON.stringify(r.stdout));
+  const viga = read.find((x) => x.error);
+  assert.ok(viga, 'peab tulema veatega rida: ' + JSON.stringify(read));
+  assert.ok(/^Baasi ei saanud avada: /.test(viga.error), 'teade on eesti keeles: ' + viga.error);
+  assert.equal(r.status, 1, 'avamata baas annab valjumiskoodi 1');
+  console.log('PASS hanked: avamata baas annab eestikeelse JSON-rea, mitte stack trace');
+}
+
+// Z3 (K2): OK = 0 JALG KAOB TAPSELT SIIS, KUI TEDA KOIGE ROHKEM VAJA ON. Tuhi
+// catch neelas luku alla jaanud logiSync-i ja hanke_sync jai vanale reale ok = 1 -
+// vaates roheline, kuigi jooks kukkus.
+{
+  const p = lukuDb();
+  const db = new DatabaseSync(p);
+  db.exec('PRAGMA journal_mode = WAL');
+  db.exec('PRAGMA busy_timeout = 0');
+  migrateHanked(db);
+
+  const lukk = lukusta(p);
+  const { tulem, read } = pyya(() =>
+    logiSyncKindel(db, { ok: 0, rows: 5, note: 'katkine baas' }, { katseid: 3, paus: 40 }));
+  assert.equal(tulem, false, 'pusiva luku all ei onnestu jalge jatta');
+  const jalgeta = read.find((x) => x.jalgeta);
+  assert.ok(jalgeta, 'jalje puudumine peab minema stdout-i, et server teaks vaate olevat vana: '
+    + JSON.stringify(read));
+  assert.equal(jalgeta.jalgeta, true);
+  assert.ok(/katkine baas/.test(jalgeta.error), 'rida utleb, MIS kukkus: ' + JSON.stringify(jalgeta));
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM hanke_sync').get().c, 0, 'lukus baasi ei kirjutatud');
+  lukk.exec('ROLLBACK'); lukk.close();
+
+  // Lukk laheb korduskatsete ajal lahti -> jalg JOUAB baasi.
+  const hoidja = await lukuHoidja(p, 700);
+  assert.equal(logiSyncKindel(db, { ok: 0, rows: 5, note: 'katkine baas' },
+    { katseid: 8, paus: 200 }), true, 'lyhiajaline lukk ei tohi jalge ara sooma');
+  await hoidja.terminate();
+  const log = db.prepare("SELECT * FROM hanke_sync WHERE key='rss'").get();
+  assert.equal(log.ok, 0, 'vigane jooks jatab ok = 0 ka lukukonkurentsi jarel');
+  assert.equal(log.rows, 5);
+  db.close();
+  console.log('PASS hanked: ok = 0 jalg jouab baasi ka lukukonkurentsi alt');
+}
+
+// Z4 (K2): syncFromXml-i catch ei tohi enam kasutada palja logiSync-i ega tuhja
+// catch-i, ja ulesande 11 varskuse reegel peab olema koodis kirjas.
+{
+  const src = readFileSync(new URL('../agent/hanked-sync.mjs', import.meta.url), 'utf8');
+  assert.ok(!/catch\s*\{\s*\/\*\s*baas kinni/.test(src),
+    'jalje kadu ei tohi enam tuhja catch-i sisse kaduda');
+  assert.ok(/logiSyncKindel\(db/.test(src), 'catch-plokid kasutavad korduskatsega jalge');
+  assert.ok(/hanke_sync\.ts/.test(src),
+    'ulesande 11 jaoks peab olema kirjas, et varskust arvutatakse hanke_sync.ts pealt');
+  console.log('PASS hanked: jalje jatmine on korduskatsega ja varskuse reegel on kirjas');
+}
+
+// Z5 (K3): RSS_KUJU vaatab ainult umbrist. Kui RHR jatab <rss version="2.0"> alles,
+// aga nimetab kirjed umber, annab sunk ok = 1, rows = 0 - roheline jooks, null hanget.
+{
+  const tyhi = '<?xml version="1.0"?><rss version="2.0"><channel><title>RHR</title></channel></rss>';
+  const db = testDb();
+  const r1 = syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });
+  assert.equal(r1.kokku, 5);
+  const r2 = syncFromXml(db, tyhi, { today: '2026-09-20' });
+  assert.equal(r2.kokku, 0, 'tyhi feed annab null rida');
+  const log = db.prepare("SELECT * FROM hanke_sync WHERE key='rss'").get();
+  assert.equal(log.ok, 0, 'eelmine jooks andis kirjeid, nuud null - see EI OLE roheline jooks');
+  assert.ok(/^feed tühjenes: eelmine jooks andis 5 kirjet/.test(log.note || ''),
+    'note utleb, mitu kirjet eelmine jooks andis: ' + log.note);
+  // Paris tyhi feed jaab roheliseks, kui ka eelmine oli tyhi.
+  const db2 = testDb();
+  syncFromXml(db2, tyhi, { today: '2026-09-20' });
+  assert.equal(db2.prepare("SELECT ok FROM hanke_sync WHERE key='rss'").get().ok, 1,
+    'esimene tyhi jooks ei ole viga');
+  syncFromXml(db2, tyhi, { today: '2026-09-20' });
+  assert.equal(db2.prepare("SELECT ok FROM hanke_sync WHERE key='rss'").get().ok, 1,
+    'tyhi parast tyhja jaab roheliseks');
+
+  // Ja punane jalg kaob, kui feed tagasi tuleb.
+  syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });
+  assert.equal(db.prepare("SELECT ok FROM hanke_sync WHERE key='rss'").get().ok, 1,
+    'feedi naasmine puhastab punase jalje');
+  db.close(); db2.close();
+  console.log('PASS hanked: tyhjaks jaanud feed ei ole roheline jooks');
+}
+
+// Z6 (K5): `updated` peab tahendama "midagi muutus", mitte "sunk nagi teda viimati".
+// Iga 15 min jooks kirjutas varem updated-i igale reale ja vaates "muutus" kogu
+// nimekiri - paris muutus (nihkunud tahtaeg) upub sinna ara.
+{
+  const db = testDb();
+  syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });
+  const veerud = db.prepare('PRAGMA table_info(hanked)').all().map((c) => c.name);
+  assert.ok(veerud.includes('seen_last'), 'sunkimisaja jaoks on oma veerg: ' + veerud.join(','));
+
+  const AMMU = '2000-01-01 00:00:00';
+  db.exec(`UPDATE hanked SET updated = '${AMMU}', seen_last = '${AMMU}'`);
+  syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });
+  const r = db.prepare('SELECT * FROM hanked WHERE ref = ?').get('314159');
+  assert.equal(r.updated, AMMU, 'identne teine jooks EI TOHI updated-it puutuda');
+  assert.notEqual(r.seen_last, AMMU, 'aga seen_last peab utlema, et sunk nagi teda praegu');
+
+  // Paris muutus (nihkunud tahtaeg) liigutab molemat.
+  const nihkes = RSS_FIKSTUUR.replace('Tähtaeg: 13.10.2026 11:00', 'Tähtaeg: 20.10.2026 11:00');
+  assert.notEqual(nihkes, RSS_FIKSTUUR, 'fikstuuri asendus peab pihta minema');
+  db.exec(`UPDATE hanked SET updated = '${AMMU}', seen_last = '${AMMU}'`);
+  syncFromXml(db, nihkes, { today: '2026-09-20' });
+  const r2 = db.prepare('SELECT * FROM hanked WHERE ref = ?').get('314159');
+  assert.equal(r2.deadline, '2026-10-20', 'tahtaeg liikus');
+  assert.notEqual(r2.updated, AMMU, 'paris muutus peab updated-i liigutama');
+  assert.notEqual(r2.seen_last, AMMU);
+  // Ja rida, mida MUUTUS ei puudutanud, jaab paigale.
+  const r3 = db.prepare('SELECT * FROM hanked WHERE ref = ?').get('666666');
+  assert.equal(r3.updated, AMMU, 'muutmata rida jaab updated-i mottes paigale');
+  db.close();
+  console.log('PASS hanked: updated tahendab muutust, seen_last sunkimisaega');
+}
+
+// Z7 (K6): baasivead lahevad vaatesse eesti keeles nagu koik muu selles failis.
+// Moodetud oli {"error":"database is locked"} - ainus ingliskeelne teade.
+{
+  const p = lukuDb();
+  const db = new DatabaseSync(p);
+  db.exec('PRAGMA journal_mode = WAL');
+  db.exec('PRAGMA busy_timeout = 0');
+  migrateHanked(db);
+  const lukk = lukusta(p);
+  let paris = null;
+  try { logiSync(db, { ok: 0, note: 'x' }); } catch (e) { paris = e; }
+  assert.ok(paris, 'lukus baas peab viskama - muidu ei ole seda testi millegi peal teha');
+  assert.equal(baasiViga(paris), 'Baasi ei saanud kirjutada: database is locked');
+  lukk.exec('ROLLBACK'); lukk.close();
+  db.close();
+  // Meie oma eestikeelne viga jaab PUUTUMATA - topeltprefiksit ei teki.
+  assert.equal(baasiViga(new Error('RSS-i ei saanud: TimeoutError')), 'RSS-i ei saanud: TimeoutError');
+  console.log('PASS hanked: baasiviga jouab vaatesse eesti keeles');
+}
+
+// Z8 (K7): vale allikaga jooks peab jatma jalje. HANKED_RSS_URL on ulekirjutatav
+// (varav vajab seda) ja ilma jaljeta ei ole tagantjarele nahtav, KUST andmed tulid.
+{
+  const db = testDb();
+  syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20', allikas: '127.0.0.1:8080' });
+  const note = db.prepare("SELECT note FROM hanke_sync WHERE key='rss'").get().note;
+  assert.ok(/· allikas: 127\.0\.0\.1:8080$/.test(note), 'allikas laheb hanke_sync.note-sse: ' + note);
+  const db2 = testDb();
+  syncFromXml(db2, RSS_FIKSTUUR, { today: '2026-09-20' });
+  assert.ok(!/allikas/.test(db2.prepare("SELECT note FROM hanke_sync WHERE key='rss'").get().note),
+    'paris RHR-i pealt ei ole allikareal mottet');
+  db.close(); db2.close();
+  console.log('PASS hanked: mitte-vaikimisi allikas jatab jalje');
+}
+
+// Z9 (K10): skoor jai aegunuks ridadel, mis RSS-i aknast valja libisevad. "Tahtajani
+// < 3 paeva" karistus ei rakendunud neile KUNAGI ja vaate jarjestus triivis vaikselt.
+{
+  const db = testDb();
+  syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });
+  // Rida, mida jooksvas feedis EI OLE: tahtaeg kahe paeva parast.
+  db.prepare(`INSERT INTO hanked (ref,title,segment,deadline,score,score_why)
+      VALUES ('999999','Vana hange feedist valjas','nišš','2026-09-22',40,'["+40 · vana põhjendus"]')`).run();
+  syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });
+  const r = db.prepare('SELECT * FROM hanked WHERE ref = ?').get('999999');
+  const why = JSON.parse(r.score_why);
+  assert.ok(why.some((x) => /^-15 · tähtajani 2 päeva$/.test(x)),
+    'feedist valja kukkunud rida peab saama kiirustamise karistuse: ' + r.score_why);
+  assert.equal(r.score, 25, '40 nissi - 15 tahtaeg');
+  assert.ok(!why.some((x) => /vana põhjendus/.test(x)), 'vana pohjendus ei tohi alles jaada');
+  // Inimese liigutatud rida EI ole enam 'uus' - teda ei arvutata umber.
+  db.prepare("UPDATE hanked SET state='valmistun', score=1, score_why='[\"vana\"]' WHERE ref='999999'").run();
+  syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });
+  assert.equal(db.prepare('SELECT score FROM hanked WHERE ref = ?').get('999999').score, 1,
+    'inimese liigutatud rida jaab puutumata');
+  db.close();
+  console.log('PASS hanked: skoor arvutatakse umber ka feedist valja kukkunud ridadel');
+}
+
+// Z10 (K8, K6, K9): laps kukub BAASIVEA peale - rida hanke_sync-is peab jaama
+// tapseks (rows ei tohi teine kirjutus NULL-iga ule kirjutada) ja veateade eesti
+// keelde. Baas on ette valmistatud nii, et kirjutamine kukub paris SQL-i peal.
+{
+  const server = createServer((req, res) => {
+    res.writeHead(200, { 'content-type': 'application/rss+xml; charset=utf-8' });
+    res.end(RSS_FIKSTUUR);
+  });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const port = server.address().port;
+  const skript = fileURLToPath(new URL('../agent/hanked-sync.mjs', import.meta.url));
+  const dbPath = join(mkdtempSync(join(tmpdir(), 'hanked-katki-')), 'crm.sqlite');
+  const ette = new DatabaseSync(dbPath);
+  migrateHanked(ette);
+  ette.exec("CREATE TRIGGER katki BEFORE INSERT ON hanked BEGIN SELECT RAISE(ABORT,'katkine baas'); END");
+  ette.close();
+
+  // spawnSync EI KOLBA (sama lugu mis Y11-s): ta blokeerib siinse sundmustsukli ja
+  // kohalik server ei vastaks lapsele kunagi - laps kukuks 60 s parast aegumisega ja
+  // test "toestaks" hoopis vorguvea kasitlust.
+  const r = await new Promise((valmis) => {
+    const laps = spawn(process.execPath, [skript],
+      { env: { ...process.env, CRM_DB_PATH: dbPath, HANKED_RSS_URL: `http://127.0.0.1:${port}/rss` } });
+    let valja = ''; let viga = '';
+    laps.stdout.on('data', (d) => { valja += d; });
+    laps.stderr.on('data', (d) => { viga += d; });
+    laps.on('close', (kood) => valmis({ status: kood, stdout: valja, stderr: viga }));
+  });
+  server.close();
+  const read = (r.stdout || '').trim().split('\n').filter(Boolean).map((x) => JSON.parse(x));
+  const viga = read.find((x) => x.error);
+  assert.ok(viga, 'baasiviga peab tulema JSON-reana: ' + JSON.stringify(r.stdout) + r.stderr);
+  assert.ok(/^Baasi ei saanud kirjutada: /.test(viga.error), 'baasiviga eesti keeles: ' + viga.error);
+  assert.ok(/katkine baas/.test(viga.error));
+  assert.equal(r.status, 1);
+
+  const db = new DatabaseSync(dbPath);
+  const log = db.prepare("SELECT * FROM hanke_sync WHERE key='rss'").get();
+  db.close();
+  assert.equal(log.ok, 0, 'kukkunud jooks jatab punase jalje');
+  assert.equal(log.rows, 5, 'teine logiSync ei tohi rows-i NULL-iga ule kirjutada: ' + JSON.stringify(log));
+  assert.ok(/allikas: 127\.0\.0\.1:/.test(log.note || ''), 'allikas on jaljes: ' + log.note);
+  console.log('PASS hanked: baasivea jalg on tapne ja eestikeelne');
+}
+
+// Z11 (K9): mitte-200 vastuse keha tuleb sulgeda, muidu jaab uhendus rippuma.
+{
+  const src = readFileSync(new URL('../agent/hanked-sync.mjs', import.meta.url), 'utf8');
+  const kood = src.split('\n').filter((rida) => !/^\s*\/\//.test(rida)).join('\n');
+  const i = kood.indexOf('if (!res.ok)');
+  assert.ok(i > 0, 'mitte-200 valve peab alles olema');
+  assert.ok(/res\.body\?\.cancel\(\)/.test(kood.slice(i, i + 200)),
+    'keha tuleb sulgeda ENNE viskamist');
+  console.log('PASS hanked: mitte-200 vastuse keha suletakse');
 }

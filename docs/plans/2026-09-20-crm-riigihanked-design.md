@@ -27,13 +27,22 @@ Lisav migratsioon `migrateHanked(db)` failis `lib/hanked.mjs`, sama muster mis `
 
 | Tabel | Sisu | Võti |
 |---|---|---|
-| `hanked` | viitenumber, RHR id, hankija + registrikood, nimetus, menetlus, eeldatav maksumus, CPV-d, tähtaeg, avaldatud, segment, skoor, `score_why`, **seis**, **märkus**, dokumentide kaust ja arv | `ref` |
+| `hanked` | viitenumber, RHR id, hankija + registrikood, nimetus, menetlus, eeldatav maksumus, CPV-d, tähtaeg, avaldatud, segment, skoor, `score_why`, **seis**, **märkus**, dokumentide kaust ja arv, `seen` / `seen_last` / `updated` | `ref` |
 | `hanke_lepingud` | kuupäev, hankija, nimetus, CPV, võitja + registrikood + suurus, summa, pakkumuste arv, menetlus | `id`; indeksid `cpv`, `winner`, `date` |
 | `hanke_sync` | mis on laetud (`rss`, `notice_award:2026-08`), ridade arv, aeg, tulemus | `key` |
 | `hanke_runs` | `cmd`, `args`, `state`, algus, lõpp, progress, ridu, log (≤4000 tm), viga, pid | `id` |
 
 **Reegel:** sünk kirjutab ainult avastusvälju. `state`, `note` ja otsus on inimese omad ja neid ei
 kirjutata kunagi üle (sama kaitse mis registrikoodi täitmisel).
+
+**Reegel (mõõdetud 21.09.2026):** `updated` tähendab „mõni väli muutus“, `seen_last` „sünk nägi rida
+viimati“. Iga jooks kirjutab `seen_last`-i; `updated` liigub ainult päris muutuse peale. Ilma selleta
+„muutuks“ vaates iga 15 minuti tagant kogu nimekiri ja üks päris muutus (nihkunud tähtaeg) upuks müra
+sisse.
+
+**Reegel (mõõdetud 21.09.2026):** jooksu värskust arvutab vaade `hanke_sync.ts` pealt — punane, kui
+rida on vanem kui 2× sünkimisintervall — mitte ainult `ok`-lipu pealt. Lukus baasi korral ei pruugi
+`ok` üldse liikuda; laps annab siis stdout-is rea `{"jalgeta": true}`, mis ütleb, et vaade on vana.
 
 Ajalugu hoitakse 24 kuud; vanemad read kustutatakse impordi lõpus. Salvestatakse ainult teenuste
 read — ehitustööd ja asjad visatakse parsimise ajal minema (~1,4 GB allalaadimisest jääb baasi 30–60 MB).

@@ -17,8 +17,21 @@ import { migrateHanked, parseRss, upsertHange, markExpired, score } from '../lib
 
 // URL on ulekirjutatav AINULT selleks, et varav saaks main()-i paris lapsprotsessina
 // kohaliku serveri vastu jooksutada - ilma selleta jaaks vorguveakasitlus katsetamata.
-const RSS = process.env.HANKED_RSS_URL || 'https://riigihanked.riik.ee/rhr/api/public/v1/rss';
+const VAIKE_RSS = 'https://riigihanked.riik.ee/rhr/api/public/v1/rss';
+const RSS = process.env.HANKED_RSS_URL || VAIKE_RSS;
 const VOTI = 'rss';
+
+// VALE ALLIKAGA JOOKS PEAB JATMA JALJE. SSRF-risk on vaike (lib/env.mjs loeb .env-i
+// omaenda objekti, mitte process.env-i), aga ilma jaljeta ei ole tagantjarele
+// NAHTAV, kust andmed tulid: 5 rida kohalikust katseserverist naeb vaates tapselt
+// samasugune valja nagu 5 rida RHR-ist. Jalg on ainult siis, kui allikas EI OLE
+// vaikevaartus - paris RHR-i pealt oleks see rida mura.
+const ALLIKAS = (() => {
+  if (RSS === VAIKE_RSS) return null;
+  try { return new URL(RSS).host; } catch { return String(RSS).slice(0, 80); }
+})();
+
+const margiAllikas = (tekst, allikas = ALLIKAS) => (allikas ? tekst + ' · allikas: ' + allikas : tekst);
 const AEGUMINE = 60000;
 
 // Server (ulesanne 11) loeb neid ridu lapse stdout-ist. Uks rida = uks JSON.
@@ -59,6 +72,63 @@ export function logiSync(db, { rows = null, ok = 1, note = null, key = VOTI } = 
   db.prepare(SYNC_SQL).run(key, rows, ok ? 1 : 0, note);
 }
 
+// Sunkroonne paus. setTimeout ei kolba: korduskatse peab juhtuma ENNE, kui
+// funktsioon vastuse annab, ja main() ainsana on async - syncFromXml ei ole.
+const oota = (ms) => { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms); };
+
+// SQLITE_BUSY (5) ja SQLITE_LOCKED (6). Korduskatse on LUKU jaoks, mitte pusiva rikke
+// jaoks: kataloogi baasiks avamine ei parane ootamisega ja kolm pausi teeksid sellest
+// ainult aeglase vea.
+const LUKUS = (e) => Boolean(e)
+  && (e.errcode === 5 || e.errcode === 6 || /locked|is busy/i.test(String((e && e.message) || '')));
+
+// Baasivead lahevad vaatesse EESTI KEELES nagu koik muu selles failis. Moodetud oli
+// {"error":"database is locked"} - ainus ingliskeelne teade kogu ahelas. Meie oma
+// eestikeelsed vead (need ei kanna errcode'i) lahevad labi puutumata.
+export const baasiViga = (e) => (LUKUS(e) || (e && e.code === 'ERR_SQLITE_ERROR')
+  ? 'Baasi ei saanud kirjutada: ' + lyhike(e)
+  : lyhike(e));
+
+// open() JOOKSUTAB MIGRATSIOONE, ehk ta on kirjutaja. Kui server kirjutab samal
+// hetkel, viskab ta "database is locked" ja main() sureb ilma uheainsa stdout-i
+// JSON-reata - ulesande 11 server ei saaks isegi veateadet naidata. Tegu on
+// LUHIAJALISE konkurentsiga (serveri kirjutus kestab millisekundeid), seega paar
+// korduskatset lahendab selle taielikult; pusiv lukk peab endiselt valja tulema.
+export function avaBaas({ katseid = 3, paus = 2000, ...valikud } = {}) {
+  let viimane = null;
+  for (let katse = 1; katse <= katseid; katse++) {
+    try { return open(valikud); } catch (e) {
+      viimane = e;
+      if (!LUKUS(e) || katse === katseid) break;
+      oota(paus);
+    }
+  }
+  throw viimane;
+}
+
+// OK = 0 JALG KAOB TAPSELT SIIS, KUI TEDA KOIGE ROHKEM VAJA ON. logiSync vajab SAMA
+// kirjutuslukku, mille peale jooks ise kukkus: tuhi catch neelas "database is locked" alla ja
+// hanke_sync jai vanale reale ok = 1 - vaade naitas rohelist, kuigi jooks kukkus.
+// Seega: paar korduskatset, ja kui jalge IKKAGI ei onnestu jatta, laheb see fakt
+// stdout-i ({"jalgeta": true}), et ulesande 11 server teaks vaate olevat vana.
+//
+// ULESANNE 11 (varskus): jooksu tervist EI TOHI lugeda ainult hanke_sync.ok pealt -
+// see lipp ei liigu, kui jalge ei saanud jatta. Varskus tuleb arvutada hanke_sync.ts
+// pealt: punane, kui rida on vanem kui 2x sunkimisintervall.
+export function logiSyncKindel(db, valikud = {}, { katseid = 3, paus = 300 } = {}) {
+  let viimane = null;
+  for (let katse = 1; katse <= katseid; katse++) {
+    try { logiSync(db, valikud); return true; } catch (e) {
+      viimane = e;
+      // Muu kui lukk (katkine skeem, ketas tais) ei parane ootamisega.
+      if (!LUKUS(e) || katse === katseid) break;
+      oota(paus);
+    }
+  }
+  teata({ error: valikud.note || lyhike(viimane), jalgeta: true, baas: baasiViga(viimane) });
+  return false;
+}
+
 // Vastus peab olema RSS, mitte HTML-veateade ega tuhi keha. Ilma selle valveta
 // annaks proxy 502-leht parseRss-ilt tuhja massiivi ja jooks LOPPEKS EDUKALT
 // ("0 uut"), keerates baasi aegumise sisse ilma uhegi varskendatud hanketa.
@@ -71,12 +141,13 @@ function kirjeldaKeha(xml) {
   return s.length > 120 ? s.slice(0, 120) + '…' : s;
 }
 
-export function syncFromXml(db, xml, { today = new Date().toISOString().slice(0, 10) } = {}) {
+export function syncFromXml(db, xml, { today = new Date().toISOString().slice(0, 10),
+  allikas = ALLIKAS } = {}) {
   migrateHanked(db);
 
   if (typeof xml !== 'string' || !RSS_KUJU.test(xml)) {
     const viga = new Error('RHR ei andnud RSS-i: ' + kirjeldaKeha(xml));
-    logiSync(db, { rows: 0, ok: 0, note: viga.message });
+    logiSync(db, { rows: 0, ok: 0, note: margiAllikas(viga.message, allikas) });
     throw viga;
   }
 
@@ -85,6 +156,14 @@ export function syncFromXml(db, xml, { today = new Date().toISOString().slice(0,
   let uus = 0;
   let uuendatud = 0;
   let aegunud = 0;
+
+  // RSS_KUJU valvab ainult UMBRIST. Kui RHR jatab <rss version="2.0"> alles, aga
+  // nimetab kirjed umber, on vastus "korrektne RSS" ja jooks lopeks ok = 1, rows = 0:
+  // roheline jooks, null hanget. Loendurid olid olemas, aga miski ei sidunud neid
+  // ok-lipuga. Eelmine rida on ainus, mis teab vahet "feed ongi tuhi" ja "feed
+  // tuhjenes" vahel - seega loeme ta ENNE kirjutamist.
+  const eelmine = db.prepare('SELECT rows, ok FROM hanke_sync WHERE key = ?').get(VOTI);
+  const tyhjenes = Boolean(loend.kirjeid === 0 && eelmine && eelmine.ok === 1 && eelmine.rows > 0);
 
   // Kas MEIE alustasime tehingut. Kui BEGIN IMMEDIATE ise kukub (kutsujal on juba
   // tehing lahti), siis ei tohi catch-plokk teha ROLLBACK-i: see keeraks tagasi
@@ -116,28 +195,52 @@ export function syncFromXml(db, xml, { today = new Date().toISOString().slice(0,
       kirjutaSkoor.run(s.points, JSON.stringify(s.why), rida.ref);
     }
 
+    // SKOOR JAI AEGUNUKS RIDADEL, MIS FEEDIST VALJA KUKUVAD. Skoori arvutati ainult
+    // jooksva feedi ref-ide jaoks, seega hange, mis RSS-i aknast valja libises, kandis
+    // vana skoori edasi: "tahtajani < 3 paeva" karistus (-15) ei rakendunud talle
+    // KUNAGI ja vaate jarjestus triivis vaikselt. Arvutame sama tehingu sees umber
+    // koik read, mida inimene ei ole veel puutunud (state = 'uus') - neid on kumneid,
+    // mitte tuhandeid, ja kogu jooks on nagunii uks fsync. Inimese liigutatud rida
+    // (vaatan, valmistun, ...) jaab puutumata: tema jarjekord on juba tema otsus.
+    for (const rida of db.prepare("SELECT * FROM hanked WHERE state = 'uus'").all()) {
+      const s = score(rida, { today });
+      kirjutaSkoor.run(s.points, JSON.stringify(s.why), rida.ref);
+    }
+
     // markExpired ei ava ise tehingut (uks UPDATE), seega pesastumist ei teki -
     // kontrollitud lib/hanked.mjs-ist, mitte eeldatud.
     aegunud = markExpired(db, today);
-    db.prepare(SYNC_SQL).run(VOTI, read.length, 1, loendiTekst(loend));
+    // Paris tuhi feed jaab roheliseks ainult siis, kui ka eelmine oli tuhi.
+    const note = tyhjenes
+      ? 'feed tühjenes: eelmine jooks andis ' + vorm(eelmine.rows, 'kirje', 'kirjet')
+        + ' · ' + loendiTekst(loend)
+      : loendiTekst(loend);
+    db.prepare(SYNC_SQL).run(VOTI, read.length, tyhjenes ? 0 : 1, margiAllikas(note, allikas));
     db.exec('COMMIT');
   } catch (e) {
     if (meieTehing) {
       // Tagasikeeramine ja jalje jatmine ei tohi kumbki algset viga varjata.
       try { db.exec('ROLLBACK'); } catch { /* tehing voib olla juba ise katkenud */ }
-      try { logiSync(db, { rows: read.length, ok: 0, note: lyhike(e) }); } catch { /* baas kinni */ }
+      // Jalg on TAPNE: rows = read.length. main() ei tea seda arvu ja tema teine
+      // logiSync kirjutaks sama rea rows = NULL-iga ule - margime vea ara, et seda
+      // ei juhtuks.
+      if (logiSyncKindel(db, { rows: read.length, ok: 0, note: margiAllikas(lyhike(e), allikas) })
+        && e && typeof e === 'object') e.jalg = true;
     }
     throw e;
   }
 
-  return { uus, uuendatud, aegunud, kokku: read.length };
+  return { uus, uuendatud, aegunud, kokku: read.length, tyhjenes };
 }
 
 async function main() {
-  const db = open();
+  // db on valjaspool try-plokki, et finally saaks ta sulgeda ka siis, kui AVAMINE ise
+  // kukkus - ja et catch teaks vahet, kas kukkus avamine voi jooks.
+  let db = null;
   try {
+    db = avaBaas();
     migrateHanked(db);
-    teata({ progress: 'laen RSS-i' });
+    teata({ progress: margiAllikas('laen RSS-i') });
 
     let xml;
     try {
@@ -147,7 +250,11 @@ async function main() {
       });
       // Mitte-200 keha EI lahe parserisse: RHR-i 502 on HTML ja parser teeks
       // sellest vaikse "0 uut" jooksu.
-      if (!res.ok) throw new Error('RHR vastas ' + res.status + ' ' + (res.statusText || ''));
+      if (!res.ok) {
+        // Lugemata keha hoiaks uhendust lahti kuni prugikoristuseni.
+        await res.body?.cancel();
+        throw new Error('RHR vastas ' + res.status + ' ' + (res.statusText || ''));
+      }
       xml = await res.text();
     } catch (e) {
       // Timeout, DNS, TLS, 500 - koik uhe nahtava sonumi alla.
@@ -157,13 +264,18 @@ async function main() {
     const r = syncFromXml(db, xml);
     teata({ progress: r.uus + ' uut · ' + r.uuendatud + ' uuendatud · ' + r.aegunud + ' aegunud',
       rows: r.kokku });
-    teata({ done: true, rows: r.kokku, uus: r.uus, uuendatud: r.uuendatud, aegunud: r.aegunud });
+    teata({ done: true, rows: r.kokku, uus: r.uus, uuendatud: r.uuendatud, aegunud: r.aegunud,
+      tyhjenes: r.tyhjenes });
   } catch (e) {
-    try { logiSync(db, { ok: 0, note: lyhike(e) }); } catch { /* baas kinni - viga laheb ikka valja */ }
-    teata({ error: lyhike(e) });
+    if (db === null) {
+      teata({ error: 'Baasi ei saanud avada: ' + lyhike(e) });
+    } else {
+      if (!(e && e.jalg)) logiSyncKindel(db, { ok: 0, note: margiAllikas(lyhike(e)) });
+      teata({ error: baasiViga(e) });
+    }
     process.exitCode = 1;
   } finally {
-    db.close();
+    db?.close();
   }
 }
 
