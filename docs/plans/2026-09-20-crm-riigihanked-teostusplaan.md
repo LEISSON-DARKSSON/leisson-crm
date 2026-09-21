@@ -937,6 +937,25 @@ Detailpaneel (`detailPaneel(ref)`) kutsub `POST /api/hanked/detail` ja näitab: 
 
 ## Ülesanne 11: Task Scheduler
 
+> **OTSUS TEHTUD (21.09.2026): laps jääb kirjutajaks, aga pikk tehing lõhutakse kuudeks.**
+>
+> Mõõdetud olukord (ülesanne 7): `node:sqlite` `DatabaseSync` on SÜNKROONNE. Kui laps hoiab
+> kirjutuslukku, ei blokeeru mitte ainult vanema kirjutus, vaid kogu serveri sündmustsükkel
+> kuni `busy_timeout`-ini (5 s). RSS-jooksu juures on see millisekundid — mõõdetud:
+> `SQLITE_BUSY` 0 korda, vanema pool tegi kogu jooksu peale 5 kirjutust (naiivne versioon
+> oleks teinud 2401). Ajaloo import (ülesanne 12) kestab aga kümneid minuteid ja üks
+> `BEGIN IMMEDIATE` kogu 24 kuu peale tähendaks **kinni jooksnud CRM-i**.
+>
+> Otsus: (a) vanem puhverdab logi mälus ja kirjutab intervalliga, mitte rea kaupa —
+> **tehtud** ülesandes 7; (b) ajaloo import commitib **KUU KAUPA**, mitte kogu akna kaupa,
+> nii et kirjutuslukku hoitakse sekundeid, mitte minuteid. Kuupõhine commit on nagunii vajalik
+> `tehtudKuud`-i jaoks ja teeb katkenud impordi jätkatavaks.
+>
+> Alternatiiv „laps ei ava baasi, kirjutab stdout-i ja server salvestab" lükati tagasi: serveri
+> kirjutus on samuti sünkroonne, seega blokeering ainult koliks vanemasse, ja `npm run
+> hanked:sync` käsurealt lakkaks töötamast.
+
+
 **Failid:**
 - Loo: `crm/win/install-hanked-task.ps1`
 - Muuda: `crm/test/gate-hanked.mjs`
