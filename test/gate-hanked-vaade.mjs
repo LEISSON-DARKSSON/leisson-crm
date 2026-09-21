@@ -49,7 +49,18 @@ const TASKS = {
   sync: { script: 'agent/hanked-sync.mjs', label: 'Sünkroon', valmis: true },
   history: { script: 'agent/hanked-history.mjs', label: 'Lae ajalugu', valmis: false },
   gate: { script: 'test/gate-hanked.mjs', label: 'Värav', valmis: true },
+  docs: { script: 'agent/hanked-docs.mjs', label: 'Lae dokumendid', valmis: true },
 };
+// Millised kasud NOUAVAD argumenti. Fikstuur peab siin olema sama range kui paris
+// server (lib/hanked-runs.mjs valideeriArgs + agent/hanked-docs.mjs --ref), muidu
+// ei saa varav kinni puuduvat argumenti - ja tapselt see viga oli: "Lae dokumendid"
+// nupp saatis ainult {cmd}, oli klikitav ja ALATI kukkuv, samal ajal kui paneel
+// utles "vajuta Lae dokumendid". Varav oli roheline, sest keegi ei vajutanud nuppu.
+const NOUAB_ARGUMENTI = { docs: 'ref' };
+// Iga kaivituspaaring, mille server TAGASI LUKKAS. Ribateksti peale ei saa
+// vaidet ehitada - seal seisavad ka eelmiste plokkide read -, seega loeb
+// varav paris vastuseid.
+const keeldud = [];
 
 // ULESANNE 13: detailpaneeli plokk "Sarnased lepingud". Kolm ERI vastust, sest
 // kolm eri asja peab lehel valja paistma:
@@ -185,6 +196,15 @@ const server = createServer(async (req, res) => {
     }
     if (req.url === '/api/hanked/run') {
       if (!TASKS[b.cmd]) return json(res, { error: 'Tundmatu käsk: ' + b.cmd }, 400);
+      if (!TASKS[b.cmd].valmis) {
+        keeldud.push({ cmd: b.cmd, pohjus: 'ei ole veel valmis' });
+        return json(res, { error: TASKS[b.cmd].label + ' ei ole veel valmis: skript puudub' }, 400);
+      }
+      const noutud = NOUAB_ARGUMENTI[b.cmd];
+      if (noutud && !(b.args && b.args[noutud])) {
+        keeldud.push({ cmd: b.cmd, pohjus: 'Puudub --' + noutud });
+        return json(res, { error: 'Puudub --' + noutud + '=<viitenumber>' }, 400);
+      }
       if (konflikt) return json(res, { error: TASKS[b.cmd].label + ' käib juba', runId: 77 }, 409);
       const r = { id: ++jooksuId, cmd: b.cmd, args: '{}', state: 'käib', started: new Date().toISOString(),
         finished: null, progress: null, rows: null, error: null, pid: 1, oma: jargmineOma,
@@ -519,6 +539,69 @@ try {
   katki = false;
   await page.getByRole('button', { name: 'Proovi uuesti' }).click();
   await page.locator('tbody tr[data-ref]').first().waitFor();
+
+  /* ---------------------------------------------------------------------
+     NUPUSUITS: iga LUBATUD nupp saab kliki ja ei tohi anda viga.
+
+     Miks see plokk on olemas. Lopukontroll (ulesanne 15) leidis kaks viga,
+     MOLEMAD sama klassi: nupp lubab midagi, mida ta teha ei saa.
+       - "Lae dokumendid" saatis ainult {cmd}, aga agent noab --ref -> nupp oli
+         klikitav ja ALATI kukkuv, samal ajal kui detailpaneel utles "vajuta
+         Lae dokumendid";
+       - valiHange ei pannud serveri `dokumendid`-valja vahemallu -> kogu
+         ulesande 14 toendiplokk oli ekraanil kattesaamatu.
+     Molemad varavad olid rohelised, sest struktuurne kontroll vaatab koodi ja
+     brauserivarav klikkis ainult "Sunkroon". Nuud klikitakse KOIKI - uue kasu
+     lisamine toob ta automaatselt siia, sest nimekiri tuleb DOM-ist.
+     -------------------------------------------------------------------- */
+  {
+    // Valitud hange on olemas, et --ref-i noudev kask saaks toota.
+    await page.locator('tbody tr[data-ref] .linkbtn').first().click();
+    await page.waitForFunction(() => document.querySelector('#hankedDetail')?.textContent?.length > 0);
+
+    const enneVigu = vead.length;
+    const nupud = page.locator('#hankedRunbar button:not([disabled])');
+    const arv = await nupud.count();
+    assert.ok(arv >= 3, 'lubatud kaske peab olema vahemalt kolm, on ' + arv);
+
+    for (let i = 0; i < arv; i++) {
+      const nupp = page.locator('#hankedRunbar button:not([disabled])').nth(i);
+      const silt = (await nupp.textContent() || '').trim();
+      if (/^Peata/.test(silt)) continue;               // Peata on eelmise jooksu oma
+      await nupp.click();
+      // Kas vastus tuli ja kas ta on VIGA. Ootame, kuni riba midagi utleb.
+      await page.waitForFunction(
+        () => (document.querySelector('#hankedRunbar')?.textContent || '').length > 0);
+      // Vaide kaib PARIS VASTUSE, mitte ribateksti peale: ribal seisavad ka
+      // eelmiste plokkide read ja tekstisobitus annaks vale-punase.
+      assert.deepEqual(keeldud, [],
+        'lubatud nupp "' + silt + '" sai serverilt keeldumise: ' + JSON.stringify(keeldud));
+      // Ja paring pidi PARISELT valja minema, mitte klikk tuhja.
+      assert.ok(saadetud.some((x) => x.url === '/api/hanked/run'),
+        'nupp "' + silt + '" ei saatnud ühtegi käivituspäringut');
+    }
+
+    // --ref-i noudev kask peab selle PARISELT kaasa andma.
+    const docsPar = saadetud.filter((x) => x.url === '/api/hanked/run' && x.keha.cmd === 'docs');
+    assert.equal(docsPar.length >= 1, true, '"Lae dokumendid" peab käivituspäringu saatma');
+    assert.ok(docsPar[docsPar.length - 1].keha.args && docsPar[docsPar.length - 1].keha.args.ref,
+      '"Lae dokumendid" peab andma valitud hanke viitenumbri kaasa: '
+      + JSON.stringify(docsPar[docsPar.length - 1].keha));
+
+    // VALMIMATA kask (history, valmis:false) peab olema keelatud ja SELETATUD,
+    // mitte peidetud. Kaivad kasud on samuti keelatud, aga hoopis muul pohjusel -
+    // seega otsime just selle nupu, mille silt kuulub valmimata kasule.
+    const valmimata = Object.entries(TASKS).find(([, t]) => !t.valmis);
+    if (valmimata) {
+      const nupp = page.locator('#hankedRunbar button', { hasText: valmimata[1].label }).first();
+      assert.equal(await nupp.isDisabled(), true,
+        'valmimata käsk "' + valmimata[1].label + '" peab olema keelatud');
+      const t = await nupp.getAttribute('title');
+      assert.ok(t && /ei ole veel valmis|puudub/i.test(t),
+        'keelatud nupp peab seletama, MIKS: ' + t);
+    }
+    assert.deepEqual(vead.slice(enneVigu), [], 'nuppude klikkimine ei tohi anda püüdmata vigu');
+  }
 
   /* --- ükski võõras otspunkt ei saanud kirjet --- */
   assert.deepEqual([...new Set(kirjed)].sort(),
