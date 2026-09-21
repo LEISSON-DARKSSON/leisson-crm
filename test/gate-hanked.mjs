@@ -1916,14 +1916,30 @@ function pyya(too) {
 }
 
 // Z11 (K9): mitte-200 vastuse keha tuleb sulgeda, muidu jaab uhendus rippuma.
+//
+// Valve ise kolis lib/hanked-net.mjs-i (ulesanne 13: fetch + eraldi res.text()
+// EI OLE aegumine - vt gate-hanked-net.mjs). Seega kontrollime kahte asja:
+// valve on olemas oma uues kohas, ja MOLEMAD agendid kaivad sealt labi. Teine
+// vaide on see, mis loeb: kui keegi kirjutab uue toore fetch-i tagasi, on tal
+// jalle oma aegumine, oma veateade ja oma sulgemata keha.
 {
-  const src = readFileSync(new URL('../agent/hanked-sync.mjs', import.meta.url), 'utf8');
-  const kood = src.split('\n').filter((rida) => !/^\s*\/\//.test(rida)).join('\n');
+  const net = readFileSync(new URL('../lib/hanked-net.mjs', import.meta.url), 'utf8');
+  const kood = net.split('\n').filter((rida) => !/^\s*\/\//.test(rida)).join('\n');
   const i = kood.indexOf('if (!res.ok)');
   assert.ok(i > 0, 'mitte-200 valve peab alles olema');
-  assert.ok(/res\.body\?\.cancel\(\)/.test(kood.slice(i, i + 200)),
+  assert.ok(/res\.body\?\.cancel\(\)/.test(kood.slice(i, i + 300)),
     'keha tuleb sulgeda ENNE viskamist');
-  console.log('PASS hanked: mitte-200 vastuse keha suletakse');
+
+  for (const fail of ['hanked-sync.mjs', 'hanked-history.mjs']) {
+    const src = readFileSync(new URL('../agent/' + fail, import.meta.url), 'utf8');
+    const puhas = src.split('\n').filter((rida) => !/^\s*\/\//.test(rida)).join('\n');
+    assert.ok(/laeTekst\(/.test(puhas), fail + ' peab laadima laeTekst-iga');
+    assert.ok(!/\bfetch\(/.test(puhas),
+      fail + ' ei tohi enam toorest fetch-i kasutada — aegumine peab katma ka KEHA');
+    assert.ok(!/AbortSignal\.timeout/.test(puhas),
+      fail + ': AbortSignal.timeout uksi ei katkesta seisma jaanud keha lugemist');
+  }
+  console.log('PASS hanked: mitte-200 valve ja uks allalaadimise tee');
 }
 
 // ---------------------------------------------------------------------------

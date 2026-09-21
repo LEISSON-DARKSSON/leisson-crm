@@ -20,6 +20,7 @@ import { migrateHanked, parseRss, upsertHange, markExpired, score,
 // finishRun ja LOG_MAX tulevad sealt, mitte teise koopiana - kaks eri lopetajat
 // tahendaks kaht eri 'tehtud'-definitsiooni.
 import { finishRun, LOG_MAX, CMD } from '../lib/hanked-runs.mjs';
+import { laeTekst } from '../lib/hanked-net.mjs';
 
 // URL on ulekirjutatav AINULT selleks, et varav saaks main()-i paris lapsprotsessina
 // kohaliku serveri vastu jooksutada - ilma selleta jaaks vorguveakasitlus katsetamata.
@@ -410,18 +411,16 @@ async function main() {
 
     let xml;
     try {
-      const res = await fetch(RSS, {
-        signal: AbortSignal.timeout(AEGUMINE),
+      // laeTekst katab aegumisega PAISE JA KEHA. Varem oli siin fetch(signal) +
+      // eraldi res.text(), mis ei olnud aegumine: ulesande 13 mootmisel jai sama
+      // muster hanked-history-s rippuma ULE 9 MINUTI 5-minutilise aegumise juures
+      // (Node 25.6.1, Windows). Mitte-200 keha EI lahe parserisse - RHR-i 502 on
+      // HTML ja parser teeks sellest vaikse "0 uut" jooksu; selle eest hoolitseb
+      // laeTekst ise ja sulgeb ka lugemata keha.
+      xml = await laeTekst(RSS, {
+        aegumine: AEGUMINE,
         headers: { accept: 'application/rss+xml, application/xml;q=0.9, */*;q=0.1' },
       });
-      // Mitte-200 keha EI lahe parserisse: RHR-i 502 on HTML ja parser teeks
-      // sellest vaikse "0 uut" jooksu.
-      if (!res.ok) {
-        // Lugemata keha hoiaks uhendust lahti kuni prugikoristuseni.
-        await res.body?.cancel();
-        throw new Error('RHR vastas ' + res.status + ' ' + (res.statusText || ''));
-      }
-      xml = await res.text();
     } catch (e) {
       // Timeout, DNS, TLS, 500 - koik uhe nahtava sonumi alla.
       throw new Error('RSS-i ei saanud: ' + lyhike(e));

@@ -45,6 +45,7 @@ import { pathToFileURL } from 'node:url';
 import { ROOT } from '../lib/env.mjs';
 import { migrateHanked, segmentOf, kuupaevaValve } from '../lib/hanked.mjs';
 import { splitNotices, parseAward } from '../lib/eforms.mjs';
+import { laeTekst } from '../lib/hanked-net.mjs';
 import { avaBaas, logiSync, logiSyncKindel, baasiViga, alustaOtseJooks,
   lopetaOtseJooks } from './hanked-sync.mjs';
 import { LOG_MAX } from '../lib/hanked-runs.mjs';
@@ -490,23 +491,18 @@ function vabaKetas(tee = ROOT) {
   } catch { return null; } // tundmatu ketas ei tohi importi ara keelata
 }
 
+// AEGUMINE katab PAISE JA KEHA. Varem oli siin fetch(signal) + eraldi res.text()
+// ja see ei olnud aegumine: ulesande 13 mootmisel jai see allalaadimine Windowsis
+// (Node 25.6.1) rippuma ULE 9 MINUTI, kuigi AEGUMINE on 5 minutit. Rippuv kuujooks
+// oleks jatnud hanke_runs rea igaveseks 'käib' seisu ja jargmine kuu teataks
+// "kaib juba - jai vahele" - ajalugu ei uueneks enam kunagi, punast rida ei tuleks.
+// Vt lib/hanked-net.mjs ja test/gate-hanked-net.mjs.
 async function laeKuu(kuu) {
-  const url = awardUrl(kuu);
-  let res;
-  try {
-    res = await fetch(url, {
-      signal: AbortSignal.timeout(AEGUMINE),
-      headers: { accept: 'application/xml, text/xml;q=0.9, */*;q=0.1' },
-    });
-  } catch (e) {
-    // Timeout, DNS, TLS - koik uhe nahtava eestikeelse sonumi alla.
-    throw new Error('Kuu ' + kuu + ': vastust ei saadud — ' + lyhike(e));
-  }
-  if (!res.ok) {
-    await res.body?.cancel(); // lugemata keha hoiaks uhenduse lahti
-    throw new Error('Kuu ' + kuu + ': RHR vastas ' + res.status + ' ' + (res.statusText || ''));
-  }
-  return res.text();
+  return laeTekst(awardUrl(kuu), {
+    aegumine: AEGUMINE,
+    silt: 'Kuu ' + kuu,
+    headers: { accept: 'application/xml, text/xml;q=0.9, */*;q=0.1' },
+  });
 }
 
 async function main() {
