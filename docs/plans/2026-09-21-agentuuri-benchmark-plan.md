@@ -1085,3 +1085,48 @@ URL-ide nimekiri laienes 7 → 9 (uus case-leht ja üks insights-leht) nii runne
 `crm-offline` kukub assertiga „earliest-approved campaign is picked first". Sama viga on `main`-i viimases jooksus (run 35531576177, commit 7ad42cd „feat(campaign): eemalda pooleliolevast kampaaniast saaja…") — **enne kui see haru olemas oli**. Minu haru ei puuduta `crm/` kaustast ühtegi faili.
 
 **Tähendus väljalaskele:** `main` on praegu punane. Voor 4 lõpus ei saa `release/production`-isse minna enne, kui see CRM-test on parandatud — see on eraldi töö `crm/` pool, mitte selle sprindi sees.
+
+---
+
+# VOOR 4 (21.09.2026, haru feat/agentuuri-benchmark-voor4, PR #11 järel)
+
+## Task 13 — `apple-design` käsitööpass (kaks commitit)
+
+**Leid: Orbit oli juba suures osas Apple'i reeglite peal.** `.btn` teeb surve-tagasisidet tokeni skaalaga (`--orbit-motion-press-scale` 0.98, `--orbit-motion-duration-press` 100 ms), `.topbar` kannab `prefers-reduced-transparency` tühistust, fookusrõngad on signaalvärvi, puutepind on mobiilis 44 px. Käsitööpass ei pidanud neid leiutama.
+
+**Päris lüngad olid selle sprindi uutel pindadel ja kahes kohas kogu repos:**
+
+| | Mis tehti |
+|---|---|
+| Surve-tagasiside | Paketivalija rida on kontroll ja vastab nüüd pointer-down'ile, mitte vabastamisele (apple-design §1), sama tokeniga mis nupp |
+| `prefers-contrast: more` | **Seda repos varem ei olnud.** Hairline on 12 % ja kõrge kontrasti seades kaob praktiliselt ära |
+| `prefers-reduced-motion` | Liikumine asendub, tagasiside jääb – „reduced motion ei tähenda tagasiside puudumist" |
+| Lingistiil | Alljoon ei lõika enam mono-numbritest läbi |
+
+**Tüpograafia (eraldi commit `55e9033`, eraldi revertitav).** Orbiti jäljeskaala oli Apple'i reegli suhtes **tagurpidi**: 44 px h2 kandis `+0.005em` ja 28 px h3 samuti, kuigi suur kiri tahab negatiivset jälge. Barlow Condensed on kitsas ja see muutis suured pealkirjad lõdvaks.
+
+Uus kaar on monotoonne: `display 72 → -0.015em · h1 56 → -0.012em · stat 40 → -0.01em · h2 44 → -0.008em · h3 28 → -0.003em · h4 20 → 0em · lede 19 → +0.005em · body 16 → +0.01em`.
+
+**Tagajärg:** see liigutab DS-lehe visuaalset snapshot-baasjoont. CI teeb `--update` ainult main-i push'i peal, seega **PR-is läheb snapshot-värav punaseks**. See on tahtlik disainimuudatus, mitte regressioon, ja paraneb ise merge'i järel.
+
+## Task 14 — hinnavõrdlusartikkel (ET-ainus)
+
+`content/insights/kodulehe-hind-eestis-2026.mdx`. Kümne pakkuja avalikud hinnad ühes tabelis, iga rida vaadatud pakkuja enda lehelt 20.09.2026 koos lingi ja vaatluskuupäevaga.
+
+**Värav enne artiklit:** `tests/claims.mjs` insights-värav. `content/insights` ei olnud varem **üheski** väravas. Nõutakse meta välju, ET-plokki, SEO-pealkirja ≤ 41 tm, eesti tüpograafiat ja – peamine – **iga euro-summat kandev tabelirida peab kandma allikalinki JA vaatluskuupäeva**. Negatiivtest: 3 viga, taastamisel roheline.
+
+**Meie enda hinnad ei ole tabelis.** Oma pakkumise asetamine võrdlusesse, mille me ise koostasime, ei ole võrdlus. Link `/et/prices` peale. See lahendab ühtlasi reegli, et hind ei tohi olla tekstis.
+
+**Mõõdetud pärast:** `<title>` 55 tm, og:image olemas, 6 H2-st **neli küsimusekujulist**, 1 tabel, 2 nummerdatud loendit, nähtav kuupäev, horisontaalne kerimine 0.
+
+**Olemasolev `kaibemaks` värav püüdis fraasi „lisandub käibemaks"** – see oli minu lauses küsimus teisele pakkujale, aga värav on kontekstipime ja tal on õigus olla range. Ümber sõnastatud, väravat ei nõrgendatud.
+
+## Voor 4 lõppseis
+
+| Task | Commit | Väravad |
+|---|---|---|
+| 13 · käsitööpass, sait | `16b747d` | 16/16 |
+| 13 · tüpograafia tokenid | `55e9033` | 16/16 lokaalselt; **snapshot punane PR-is, tahtlikult** |
+| 14 · hinnavõrdlusartikkel + insights-värav | `076452b` | 16/16 |
+
+Kliendi-JS muutumatu (mõlemad taskid on CSS ja sisu).
