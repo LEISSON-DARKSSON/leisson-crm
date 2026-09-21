@@ -9,7 +9,7 @@
 // Kõik alamprotsessid jooksevad os.tmpdir() võltsjuures. Võrku ei kasutata,
 // päris CRM-i SQLite-i ei avata.
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync as fsReadFileSync, existsSync as fsExistsSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync as fsReadFileSync, existsSync as fsExistsSync, readdirSync as fsReaddirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -216,6 +216,42 @@ check('CI kutsub brauserivaravaid jooksja kaudu, mitte nimekirja pidi', () => {
 function getFs() {
   return { readFileSync: fsReadFileSync, existsSync: fsExistsSync };
 }
+
+
+// --- 9. Ukski varav ei tohi haarata TOODANGU porti. --------------------------
+// test/gate.mjs valis pordi reaga `4300 + Math.random() * 90` ehk vahemikust
+// 4300-4389. Gerti elav CRM kuulab 4310 peal (lib/env.mjs vaikevaartus), ehk
+// iga `npm test` jooks oli 1:90 toenaosusega vastuolus toodanguserveriga - ja
+// ONNESTUMISE korral oleks varav raakinud oma API-kontrollid PARIS CRM-iga.
+// Leitud 21.09.2026. Vaikne ja harv on siin halvem kui vali ja sage.
+check('ukski varav ei loosi porti toodangu vahemikust', () => {
+  const { readdirSync } = getFs2();
+  // vaba-port.mjs KANNAB vaikeporti (ta on see, kes ta valja jatab) ja see varav
+  // nimetab teda veateates - neid kahte ei saa iseenda reegliga kinni puuda.
+  const VABASTATUD = new Set(['vaba-port.mjs', 'gate-varav.mjs']);
+  const teste = readdirSync(join(JUUR, 'test'))
+    .filter((f) => f.endsWith('.mjs') && !VABASTATUD.has(f));
+  const patud = [];
+  for (const f of teste) {
+    const src = fsReadFileSync(join(JUUR, 'test', f), 'utf8');
+    const kood = src.split('\n').filter((r) => !/^\s*\/\//.test(r)).join('\n');
+    // 1) juhuslik port kindlast vahemikust
+    if (/\b4[0-9]{3}\s*\+\s*Math\.(floor|round)?\(?\s*Math\.random/.test(kood)) {
+      patud.push(f + ': loosib pordi kindlast vahemikust');
+    }
+    // 2) korvakirjutatud vaikeport
+    if (/(?<![\d.])4310(?![\d])/.test(kood)) patud.push(f + ': sisaldab toodangu porti 4310');
+  }
+  assert.deepEqual(patud, [],
+    'varav peab kusima vaba pordi OS-ilt (test/vaba-port.mjs), mitte arvama: ' + patud.join(' · '));
+
+  // Ja abifunktsioon ise peab CRM_PORT-i valja jatma.
+  const vp = fsReadFileSync(join(JUUR, 'test', 'vaba-port.mjs'), 'utf8');
+  assert.match(vp, /listen\(0/, 'vaba port tuleb OS-ilt (listen 0)');
+  assert.match(vp, /CRM_PORT/, 'seadistatud CRM_PORT peab olema valistatud');
+});
+
+function getFs2() { return { readdirSync: fsReaddirSync }; }
 
 for (const juur of prugi) rmSync(juur, { recursive: true, force: true });
 console.log(`PASS varav: ${tehtud} kontrolli`);
