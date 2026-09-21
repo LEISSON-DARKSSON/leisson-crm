@@ -335,3 +335,65 @@ ul.doclist li .btn { margin-left: auto; }
 .draft-why[open] > summary::before { content: '▾ '; }
 .draft-why > summary:hover { opacity: 1; }
 .draft-why > .why { margin-top: 4px; }
+
+/* --- riigihanked (ülesanded 9 ja 10) ---
+   Käskude riba: iga käsk on oma plokk (nupp + staatusrida), et jooksva käsu
+   seis oleks NUPU JUURES, mitte anonüümses reas riba lõpus. */
+.runbar { display: flex; gap: .75rem 1.25rem; flex-wrap: wrap; align-items: flex-start; }
+.runbar .cmd { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
+.runbar .cmd.busy .run-row { color: var(--orbit-color-ink); }
+.runbar .run-row.warn { color: var(--orbit-color-signal); }
+.runbar button[disabled] { opacity: .55; cursor: not-allowed; }
+.run-row { font-size: .85rem; color: var(--orbit-color-ink-3);
+  font-family: var(--orbit-font-data); font-variant-numeric: tabular-nums; }
+
+/* Tabel on lai ja pealkirjad on pikad: nimetus võib murduda, ülejäänu mitte. */
+table.tbl.hanked td.nimetus { min-width: 260px; overflow-wrap: anywhere; }
+table.tbl.hanked td.hankija { max-width: 220px; overflow-wrap: anywhere; }
+table.tbl.hanked td.taht { white-space: nowrap; }
+table.tbl.hanked td.taht b { display: block; color: var(--orbit-color-ink); }
+table.tbl.hanked td.taht .kp { display: block; font-size: 11px; color: var(--orbit-color-ink-3); }
+table.tbl.hanked td.taht.kiire b { color: var(--orbit-color-signal); }
+table.tbl.hanked td.taht.muted b { color: var(--orbit-color-ink-3); }
+table.tbl.hanked td.skoor { white-space: nowrap; }
+table.tbl.hanked td.skoor.top { color: var(--orbit-color-ink); font-weight: 600; }
+table.tbl.hanked td.skoor.jata { color: var(--orbit-color-ink-3); }
+/* ALLTÖÖVÕTT ei ole "hea" ega "halb" skoor, vaid teine müügivestlus — seega
+   oma märk, mitte punktiskaala värv. */
+table.tbl.hanked td.skoor.allt { color: var(--orbit-color-signal); font-weight: 600; }
+table.tbl.hanked tr.kiire { background: var(--orbit-color-paper); }
+table.tbl.hanked tr[aria-current="true"] { outline: 1px solid var(--orbit-color-signal); outline-offset: -1px; }
+table.tbl.hanked tr.tyhi td { color: var(--orbit-color-ink-3); }
+
+/* Viitenumber on nupp, et detail oleks Tab + Enteriga kättesaadav. */
+.linkbtn { background: none; border: 0; padding: 0; cursor: pointer; text-align: left;
+  font-family: var(--orbit-font-data); font-size: 13px; color: var(--orbit-color-signal);
+  text-decoration: underline; text-underline-offset: 2px; }
+.linkbtn:hover { color: var(--orbit-color-ink); }
+
+/* Tühi detailpaneel ei tohi jätta lehele tühja kasti. */
+.hanked-detail:empty { display: none; }
+.hanked-detail .detail-head { display: flex; gap: .75rem; align-items: baseline; flex-wrap: wrap; }
+.hanked-detail .detail-head h2 { margin: 0; }
+.hanked-detail .detail-head .tag.allt,
+.hanked-detail .detail-head .tag.top { color: var(--orbit-color-signal); }
+.hanked-detail .detail-plokk { margin-top: 1rem; }
+.hanked-detail .detail-plokk h3 { margin: 0 0 .35rem; font-size: 13px; text-transform: uppercase;
+  letter-spacing: .04em; color: var(--orbit-color-ink-3); }
+.hanked-detail .why-list { margin: 0; padding-left: 1.1rem; }
+.hanked-detail .why-list li { font-family: var(--orbit-font-data); font-size: 13px; overflow-wrap: anywhere; }
+.hanked-detail textarea.input { width: 100%; resize: vertical; }
+/* ÜLESANNE 14: alusdokumentide leiud. Iga leid kannab TÕENDIT (lause + fail),
+   sest `rollid >= 3` annab verdikti ALLTÖÖVÕTT — paljas arv ei ole silmaga
+   kontrollitav. Ebakindel leid on sama nimekirja sees, aga hoiatusvärvi all. */
+.hanked-detail .detail-plokk h4 { margin: .6rem 0 .25rem; font-size: 12px;
+  text-transform: uppercase; letter-spacing: .04em; color: var(--orbit-color-ink-3); }
+.hanked-detail ul.leiud, .hanked-detail ul.failid { margin: 0; padding-left: 1.1rem; }
+.hanked-detail ul.leiud li { margin-bottom: .45rem; font-size: 13px; overflow-wrap: anywhere; }
+.hanked-detail ul.leiud li.warn { color: var(--orbit-color-warn, #a4661a); }
+.hanked-detail ul.leiud blockquote { margin: .2rem 0 .1rem; padding-left: .6rem;
+  border-left: 2px solid var(--orbit-color-line, #d8d8d8); font-style: italic; }
+.hanked-detail ul.leiud cite { font-family: var(--orbit-font-data); font-size: 12px;
+  color: var(--orbit-color-ink-3); font-style: normal; }
+.hanked-detail ul.failid li { font-family: var(--orbit-font-data); font-size: 12.5px;
+  overflow-wrap: anywhere; }

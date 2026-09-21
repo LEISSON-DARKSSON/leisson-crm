@@ -1,4 +1,4 @@
-/* Leisson CRM — klient. Sõltuvusteta. Kuus vaadet; siin on müügitoru ja postkast. */
+/* Leisson CRM — klient. Sõltuvusteta. Seitse vaadet; siin on müügitoru ja postkast. */
 (() => {
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -39,7 +39,7 @@
   try { const m = localStorage.getItem(MODE_KEY); if (m) document.documentElement.dataset.mode = m; } catch {}
 
   /* ---------- vaated ---------- */
-  const VIEWS = ['pipeline', 'inbox', 'stats', 'services', 'billing', 'agents'];
+  const VIEWS = ['pipeline', 'inbox', 'stats', 'services', 'billing', 'agents', 'hanked'];
   const viewEl = (v) => $('#view' + v[0].toUpperCase() + v.slice(1));
   $$('.view-tab').forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
   function setView(v) {
@@ -63,13 +63,36 @@
     toastTimer = setTimeout(() => { t.hidden = true; }, bad ? 9000 : 3800);
   }
 
+  // Vea korral EI KAO serveri keha. Varem viskas api() ainult sõnumi ja kõik
+  // ülejäänud väljad kadusid — 409 vastus POST /api/hanked/run pealt on
+  // { error, runId } ja ilma runId-ta ei saa vaade öelda, KUMB jooks juba käib
+  // (riigihangete käsuriba, views.js). Sõnum jääb täpselt samaks, juurde tulevad
+  // e.status ja e.keha; ülejäänud CRM kasutab endiselt ainult e.message.
   async function api(path, body) {
     const r = await fetch(path, body ? {
       method: 'POST', headers: { 'content-type': 'application/json', 'x-crm-csrf': S?.csrfToken || '' }, body: JSON.stringify(body),
     } : {});
     const data = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
+    if (!r.ok) {
+      const err = new Error(data.error || ('HTTP ' + r.status));
+      err.status = r.status;
+      err.keha = data;
+      throw err;
+    }
     return data;
+  }
+
+  /* Sakimärk ÜHEST kohast: number, peidus kui 0, ja ekraanilugeja silt.
+     views.js kirjutab sama märki (window.CRM.mark), kui seis muutub — kaks
+     koopiat sama DOM-i-kirjutusest triiviksid lahku (üks unustaks aria-label-i
+     või jätaks nulli kasti püsima). */
+  function mark(id, n, label) {
+    const b = $('#' + id);
+    if (!b) return;
+    const v = Number.isFinite(Number(n)) ? Number(n) : 0;
+    b.textContent = String(v);
+    b.hidden = v === 0;
+    b.setAttribute('aria-label', v + ' ' + label);
   }
 
 
@@ -265,6 +288,13 @@
     const b = $('#inboxBadge');
     b.textContent = String(unread);
     b.hidden = unread === 0;
+    // Kiireloomuliste hangete märk tuleb SERVERILT (/api/state → hankedKiireid,
+    // üks COUNT). Varem arvutas teda ainult views.js ja number ilmus sakile alles
+    // pärast ESIMEST sakiklikki — ehk täpselt siis, kui teda enam vaja ei olnud.
+    // Reegel (seis 'uus', tähtajani 0..7 päeva) on lib/hanked.mjs kiireidLoend-is
+    // ja public/hanked-loogika.js onKiire-s; test/gate-hanked.mjs nõuab neilt
+    // samade ridade peal sama arvu.
+    mark('hankedBadge', S.hankedKiireid, 'kiireloomulist hanget');
   }
 
   /* ---------- müügitoru filtrid ---------- */
@@ -979,7 +1009,7 @@
 
   /* ---------- jagatud pind views.js jaoks ---------- */
   window.CRM = {
-    api, el, toast, eur, dt, usd, setView,
+    api, el, toast, eur, dt, usd, setView, mark,
     btnDeleteDoc,
     state: () => S,
     reload: load,

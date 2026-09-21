@@ -23,6 +23,7 @@
     <button class="view-tab" type="button" role="tab" data-view="services" aria-selected="false">Teenused</button>
     <button class="view-tab" type="button" role="tab" data-view="billing" aria-selected="false">Arved &amp; pakkumised</button>
     <button class="view-tab" type="button" role="tab" data-view="agents" aria-selected="false">Agendid</button>
+    <button class="view-tab" type="button" role="tab" data-view="hanked" aria-selected="false">Riigihanked <span class="badge" id="hankedBadge" hidden>0</span></button>
   </nav>
   <div class="nav-stats" id="stats"></div>
   <div class="nav-acts">
@@ -73,9 +74,11 @@
 <main class="wide" id="viewServices" hidden><div class="sheet" id="servicesBody"></div></main>
 <main class="wide" id="viewBilling" hidden><div class="sheet" id="billingBody"></div></main>
 <main class="wide" id="viewAgents" hidden><div class="sheet" id="agentsBody"></div></main>
+<main class="wide" id="viewHanked" hidden><div class="sheet" id="hankedBody"></div></main>
 
 <div class="toast" id="toast" hidden></div>
 <script src="/app.js"></script>
+<script src="/hanked-loogika.js"></script>
 <script src="/views.js"></script>
 </body>
 </html>

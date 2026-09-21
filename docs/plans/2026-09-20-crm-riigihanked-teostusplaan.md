@@ -27,7 +27,16 @@
 
 # Etapp F1 — andmekiht (ülesanded 1–6)
 
+> **Plaan on ajalugu, kood on tõde.** Iga tehtud ülesande all on rida „TEOSTATUD", mis
+> nimetab commiti(d). Kui plaani näidiskood ja teostus lahknevad, siis KEHTIB TEOSTUS —
+> lahknevused on põhjendatud commiti sõnumis ja koodikommentaarides, mitte siin.
+
 ## Ülesanne 1: tabelid ja migratsioon
+
+> **TEOSTATUD** — `ae2d2aa`, parandused `31ead85`, `7b5707d`. Teostus erineb plaanist: `ref` on
+> `TEXT PRIMARY KEY NOT NULL`, seisul on `CHECK`, lepingute unikaalindeks on avaldisindeks
+> `COALESCE`-iga, ja lausete vahemälu on baasipõhine (`WeakMap` + `finalized`-korduskatse).
+
 
 **Failid:**
 - Loo: `crm/lib/hanked.mjs`
@@ -147,6 +156,11 @@ git commit -F commitmsg.txt   # "feat(hanked): tabelid ja upsert, mis ei kirjuta
 
 ## Ülesanne 2: seis ja märkus jäävad sünkides puutumata
 
+> **TEOSTATUD** — `c234464`. Kriitiline parandus plaani suhtes: `markExpired` võrdleb
+> `date()`-ga, mitte stringidena (`'13.10.2026'` aegus muidu kohe), ja `today` valideeritakse.
+> `setNote` kasutab sama normaliseerijat mis `upsertHange`.
+
+
 **Failid:**
 - Muuda: `crm/test/gate-hanked.mjs` (lisa plokk)
 - Muuda: `crm/lib/hanked.mjs` (lisa `setState`, `setNote`, `markExpired`)
@@ -215,6 +229,13 @@ export function markExpired(db, today = new Date().toISOString().slice(0, 10)) {
 ---
 
 ## Ülesanne 3: RSS-i lugeja ja nišifilter
+
+> **TEOSTATUD** — `eb8e0b1`, parandused `d482884`, `ddead1c`. Kolm viga, mida plaanis ei olnud:
+> FIT peab vaatama pealkirja JA kirjeldust (muidu 3 leidu 6 asemel); sama ref tuleb feedis
+> mitu korda ja vanem teade kirjutas uuema üle; puuduv/parseerimatu `pubDate` laskis vanemal
+> ikkagi võita. `segmentOf(title, kirjeldus)` peab jääma sünkroonis failiga
+> `riigihanked/rhr_tools/rhr_watch.py`.
+
 
 **Failid:**
 - Muuda: `crm/lib/hanked.mjs` (lisa `FIT`, `EXCL`, `SMALLWEB`, `segmentOf`, `parseRss`)
@@ -312,6 +333,13 @@ export function parseRss(xml) {
 ---
 
 ## Ülesanne 4: skoor ja põhjendus
+
+> **TEOSTATUD** — `3bff69d`. Teostus erineb plaani näidiskoodist seitsmes kohas, kõik
+> kommenteeritud koodis: +40 on tingimuslik (tundmatu segment annab nähtava nullrea);
+> vahemik 140 001 – 1 M € on teadlik auk; alltöövõtu põhjus nimetab mõlemad põhjused;
+> vigane tähtaeg annab nullrea ja vigane `today` viskab; vorming `57 000 €`; `est`
+> valideeritakse nagu `viide()`; punkte ei lõigata nulli.
+
 
 **Failid:**
 - Muuda: `crm/lib/hanked.mjs` (lisa `score`)
@@ -465,7 +493,7 @@ async function main() {
 if (import.meta.url === 'file://' + process.argv[1].replace(/\\/g, '/')) main();
 ```
 
-`package.json`: lisa `"hanked:sync": "node agent/hanked-sync.mjs"` ja `"hanked:gate": "node test/gate-hanked.mjs"`; lisa `&& node test/gate-hanked.mjs` ahela `test:offline` lõppu.
+`package.json`: lisa `"hanked:sync": "node agent/hanked-sync.mjs"`. ~~lisa `&& node test/gate-hanked.mjs` ahela `test:offline` lõppu~~ — **aegunud**: `test:offline` on alates `1a9b2f8`-st `node tools/varav.mjs`, mis avastab väravad ise.
 
 **Samm 4: jooksuta** — `node test/gate-hanked.mjs` PASS, seejärel üks päris jooks: `npm run hanked:sync` peab lõppema `{"done":true,...}` reaga.
 
@@ -474,6 +502,16 @@ if (import.meta.url === 'file://' + process.argv[1].replace(/\\/g, '/')) main();
 ---
 
 ## Ülesanne 6: eForms-parser (ettevalmistus ajaloole)
+
+> **TEOSTATUD** — `8edc438`. Näidiskood oli mõõdetult vale: päris kuu (956 teadet) peal andis
+> ta **274 teatel (29 %) vale või väljamõeldud võitja**, `notice_id` oli 956/956 vale ja `date`
+> võttis 591 teatel lepingu sõlmimise kuupäeva teate kuupäeva asemel — see oleks ülesande 12
+> 24 kuu akna vaikselt nihutanud. Teostus võtab võitja ahelast
+> `LotResult → LotTender → TenderingParty → Tenderer → Organization` (nagu `rhr_parse.py`),
+> valib statistika liigi järgi ja märgib iga oletuse väljadega `winner_allikas`,
+> `tenders_allikas`, `amount_allikas`. Võrreldud `rhr_parse.py`-ga: 956/956 identne kõigil
+> võrreldavatel väljadel.
+
 
 **Failid:**
 - Loo: `crm/lib/eforms.mjs`
@@ -567,6 +605,13 @@ export function parseAward(blk) {
 # Etapp F2 — leht ja nupud (ülesanded 7–11)
 
 ## Ülesanne 7: käivitaja lukuga
+
+> **TEOSTATUD** — `4c3fc54`. 409-lukk ei ole kontroll-siis-INSERT, vaid osaline unikaalindeks
+> `(cmd) WHERE state='käib'` — kaks paralleelset päringut ei saa enam mõlemad läbi. Serveril on
+> `boot_id`, sest pid-id lähevad pärast taaskäivitust ringlusse: võõra instantsi jooks on alati orb
+> ja teda ei tapeta pid-i järgi. Logi puhverdatakse mälus: **2401 baasikirjutust → 4**. Plaani väide
+> „`exit` kaotab viimased read" ei reprodutseerunud — `close` valiti, sest ta ei ole kunagi halvem.
+
 
 **Failid:**
 - Loo: `crm/lib/hanked-runs.mjs`
@@ -689,6 +734,12 @@ export function runsView(db, limit = 5) {
 
 ## Ülesanne 8: marsruudid
 
+> **TEOSTATUD** — `68a3aa9`. Plaani import oleks serveri käivitumast takistanud (`hangeDetail`
+> tuleb alles ülesandes 13, ESM viskab puuduva ekspordi peale) — tehtud minimaalne `hangeDetail`.
+> Toores `e.message` ei lähe enam kliendile: ainult numbrilise koodiga (400/404/409) erindid,
+> muu on 500 + serveri logi. Polliv vastus 20 KB → 6,3 KB (`logTail` 400 märki, mitte täislogi).
+
+
 **Failid:**
 - Muuda: `crm/lib/routes2.mjs` (kuus marsruuti `extraRoutes`-i sisse)
 - Muuda: `crm/server.mjs` (kutsu `cleanupOrphans` käivitumisel, `migrateHanked` `initSales` kõrval)
@@ -752,6 +803,13 @@ ja `extraRoutes`-i tagastatavasse objekti:
 ---
 
 ## Ülesanne 9: sakk ja tabel
+
+> **TEOSTATUD** — `f7ea83f`. Seisufilter ei ole kliendis käsitsi kirjutatud nimekiri, vaid tuletatud
+> `SEISU_LIIK`-ist (`töös`/`lõpp`). Tähtajaarvutus võrdleb kalendripäevi, mitte millisekundeid —
+> naiivne `Date.parse` andis Eesti ajavööndis ühe võrra vale vastuse. Seisumuutus ei joonista
+> tabelit uuesti. Testid on kahes failis: puhas loogika `gate-hanked-ui.mjs`, brauser
+> `gate-hanked-vaade.mjs` (vajab playwrighti, jookseb `npm run varav:brauser`).
+
 
 **Failid:**
 - Muuda: `crm/public/index.html:19-26` (sakk) ja lisa `<main class="wide" id="viewHanked" hidden><div class="sheet" id="hankedBody"></div></main>` teiste `main`-ide kõrvale
@@ -834,6 +892,18 @@ Ruuter: `const R = { stats: renderStats, services: renderServices, billing: rend
 
 ## Ülesanne 10: nupud, staatus ja detailpaneel
 
+> **TEOSTATUD** — `3551e9c`, `8cd4d0e`. Plaani `poll()` oli aegunud: ta kutsus `renderHanked()`,
+> mis teeb uue päringu — ülesanne 9 keelab selle mustri. Lisaks kaks kasutaja kinnitatud tööd:
+> **verdikt läheb baasi** (`verdict TEXT`; `ALLTÖÖVÕTT` ei ole punktidest tagasi arvutatav) ja
+> **märk uueneb `app.js` `load()`-is** (`kiireidLoend` = üks `SELECT COUNT(*)` `/api/state` vastuses;
+> värav võrdleb serveri SQL-i kliendi `onKiire`-ga 16 piirijuhtumi peal). `8cd4d0e` ühendas
+> `markExpired` ja `kiireidLoend` kuupäevavalved — aegumise oma oli lõdvem ja andis samale reale
+> teise vastuse.
+>
+> **NB:** `ALLTÖÖVÕTT` ei ole täna toodangus saavutatav — `score()` loeb `rollid` ja `kaiveNoue`,
+> mida `hanked`-tabelis ei ole. Need tulevad ülesandega 14.
+
+
 **Failid:** `crm/public/views.js`, `crm/public/crm2.css`, `crm/test/gate-hanked.mjs`
 
 **Samm 1: kirjuta kukkuv test**
@@ -899,6 +969,42 @@ Detailpaneel (`detailPaneel(ref)`) kutsub `POST /api/hanked/detail` ja näitab: 
 
 ## Ülesanne 11: Task Scheduler
 
+> **OTSUS TEHTUD (21.09.2026): laps jääb kirjutajaks, aga pikk tehing lõhutakse kuudeks.**
+>
+> Mõõdetud olukord (ülesanne 7): `node:sqlite` `DatabaseSync` on SÜNKROONNE. Kui laps hoiab
+> kirjutuslukku, ei blokeeru mitte ainult vanema kirjutus, vaid kogu serveri sündmustsükkel
+> kuni `busy_timeout`-ini (5 s). RSS-jooksu juures on see millisekundid — mõõdetud:
+> `SQLITE_BUSY` 0 korda, vanema pool tegi kogu jooksu peale 5 kirjutust (naiivne versioon
+> oleks teinud 2401). Ajaloo import (ülesanne 12) kestab aga kümneid minuteid ja üks
+> `BEGIN IMMEDIATE` kogu 24 kuu peale tähendaks **kinni jooksnud CRM-i**.
+>
+> Otsus: (a) vanem puhverdab logi mälus ja kirjutab intervalliga, mitte rea kaupa —
+> **tehtud** ülesandes 7; (b) ajaloo import commitib **KUU KAUPA**, mitte kogu akna kaupa,
+> nii et kirjutuslukku hoitakse sekundeid, mitte minuteid. Kuupõhine commit on nagunii vajalik
+> `tehtudKuud`-i jaoks ja teeb katkenud impordi jätkatavaks.
+>
+> Alternatiiv „laps ei ava baasi, kirjutab stdout-i ja server salvestab" lükati tagasi: serveri
+> kirjutus on samuti sünkroonne, seega blokeering ainult koliks vanemasse, ja `npm run
+> hanked:sync` käsurealt lakkaks töötamast.
+
+
+> **TEOSTATUD** — `d3530fb`. **Allolev näidiskood on katki, ära kopeeri seda:**
+> `New-ScheduledTaskTrigger` EI TOETA lippu `-Monthly` (ainult `-Once/-Daily/-Weekly/-AtLogOn/-AtStartup`)
+> — kuine käiviti tuleb CIM-klassist `MSFT_TaskMonthlyTrigger`, kus `DaysOfMonth` on bitimask
+> (3. päev = 4). Nimed on masina mustris `Leisson CRM hanked sync` / `… ajalugu`, ilma mõttekriipsuta
+> (U+2014 läheb konsooli vaikekodeeringus prügiks ja `-Eemalda` ei leiaks ülesannet enam üles).
+>
+> Kaks sisulist parandust: (a) **ajaloo-ülesanne jääb registreerimata**, kuni
+> `agent/hanked-history.mjs` on olemas — registreeritud ülesanne puuduva failiga kukuks iga kuu
+> vaikselt; (b) **`hanked-sync.mjs` kirjutab otsekäivitusel ise `hanke_runs` rea**
+> (`boot_id='otse:<uuid>'` → `oma=false`), sest Task Scheduler kutsub skripti serverist mööda ja
+> öine jooks ei oleks CRM-i vaates üldse näha. Elav lukk → vahelejätt väljumiskoodiga 0 ja
+> põhjusega, mitte ingliskeelne `UNIQUE constraint failed`.
+>
+> **Ülesandeid EI OLE registreeritud** — see on Gerti otsus. Käsk:
+> `powershell -NoProfile -ExecutionPolicy Bypass -File win\install-hanked-task.ps1`
+> (`-Kuiv` näitab, mida teeks; `-Eemalda` võtab maha).
+
 **Failid:**
 - Loo: `crm/win/install-hanked-task.ps1`
 - Muuda: `crm/test/gate-hanked.mjs`
@@ -947,6 +1053,33 @@ Get-ScheduledTask -TaskName "LEISSON — hanked*" | Format-Table TaskName, State
 # Etapp F3 — ajalugu (ülesanded 12–15)
 
 ## Ülesanne 12: kuine ajaloo import
+
+> **MEELDETULETUS (ülesandest 11):** kui `agent/hanked-history.mjs` on valmis, tuleb
+> `win\install-hanked-task.ps1` UUESTI jooksutada — kuine ülesanne jäeti teadlikult
+> registreerimata, sest skripti ei olnud. Ilma selleta ei uuene ajalugu kunagi ja keegi ei märka.
+>
+> **LÕKS (ülesandest 6):** `segmentOf(a.title)` ainult pealkirjaga kaotas ülesandes 3 päris
+> hanke (310983) — FIT peab vaatama pealkirja JA kirjeldust. Lepinguteatel ei ole RSS-i
+> kirjeldust; otsusta, kas anda teine argument `cbc:Description`-ist või teadvustada, et
+> ajaloo segment on kitsam kui elava hanke oma. Praegune rida on ainult kohahoidja.
+>
+> **OTSUS TEHTUD (21.09.2026): rida OSA kohta, mitte teate kohta.**
+> Konkurentide pingerida on selle tabeli ainus mõte, ja teatepõhine rida annab
+> süstemaatiliselt vale vastuse just seal, kus raha on — suured mitmeosalised hanked on
+> täpselt need, kus alltöövõtu partnerid välja paistavad. Skeemi muutmine praegu maksab ühe
+> additiivse migratsiooni; pärast 24 kuu laadimist maksab ta uuesti laadimise. Tabel on veel
+> tühi, seega arenduskiirusele see midagi ei maksa.
+>
+> Mõõdetud taust (august 2026, 956 lepinguteadet): **54 teatel on nii mitu osa kui mitu
+> võitjat** (`osi > 1 && winner_arv > 1`), **17-l on osade tulemused erinevad** (`segu`) ja
+> **137 on võitjata** (`clos-nw`). NB: ülesandes 6 nimetati arve 113 ja 143 — need tulid
+> laiemast definitsioonist („mitu võitjat kokku, sõltumata osade arvust"). Kehtivad ülemised,
+> sest need on mõõdetud pariteedifikstuuri ehitamisel sama failiga. `hanke_lepingud` hoiab praegu ÜHT rida teate kohta, seega `winner` ja `tenders`
+> kirjeldavad esimest osa. Rida OSA kohta on ainus kuju, mis annab õige konkurentide
+> pingerea. Vaata ka: eForms annab `nature`/`menetlus` ingliskeelsete koodidena
+> (`services`, `open`), RSS-i tee annab eestikeelsed sõnad (`Teenused`, `Avatud
+> hankemenetlus`) — üks sõnavara tuleb valida ja normaliseerida, lugeja ise ei tõlgi.
+
 
 **Failid:**
 - Loo: `crm/agent/hanked-history.mjs`
@@ -1010,7 +1143,7 @@ export function importMonthXml(db, kuu, xml) {
       const a = parseAward(blk);
       if (a.nature !== 'services' || !a.winner) continue;          // ehitus ja asjad lendavad minema
       lisa.run(a.ref, a.date, a.buyer, a.title, a.cpv, a.winner, a.winner_reg, a.winner_size,
-               a.amount, a.tenders, a.menetlus, segmentOf(a.title));
+               a.amount, a.tenders, a.menetlus, segmentOf(a.title, a.title));
       rows++;
     }
     db.prepare(`INSERT INTO hanke_sync (key,ts,rows,ok) VALUES (?, datetime('now'), ?, 1)

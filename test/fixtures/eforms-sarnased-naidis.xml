@@ -1,0 +1,3533 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><OPEN-DATA><ContractAwardNotice xmlns="urn:oasis:names:specification:ubl:schema:xsd:ContractAwardNotice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:efac="http://data.europa.eu/p27/eforms-ubl-extension-aggregate-components/1" xmlns:efbc="http://data.europa.eu/p27/eforms-ubl-extension-basic-components/1" xmlns:efext="http://data.europa.eu/p27/eforms-ubl-extensions/1" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2">
+    <ext:UBLExtensions>
+        <ext:UBLExtension>
+            <ext:ExtensionContent>
+                <efext:EformsExtension>
+                    <efbc:TransmissionDate>2026-08-03+03:00</efbc:TransmissionDate>
+                    <efbc:TransmissionTime>12:26:01.151+03:00</efbc:TransmissionTime>
+                    <efac:NoticeResult>
+                        <cbc:TotalAmount currencyID="EUR">54951.00</cbc:TotalAmount>
+                        <efac:LotResult>
+                            <cbc:ID schemeName="result">RES-0000</cbc:ID>
+                            <cbc:TenderResultCode listName="winner-selection-status">selec-w</cbc:TenderResultCode>
+                            <efac:LotTender>
+<cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            </efac:LotTender>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>1</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>1</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>1</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:SettledContract>
+<cbc:ID schemeName="contract">CON-0001</cbc:ID>
+                            </efac:SettledContract>
+                            <efac:TenderLot>
+<cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+                            </efac:TenderLot>
+                        </efac:LotResult>
+                        <efac:LotTender>
+                            <cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            <cac:LegalMonetaryTotal>
+<cbc:PayableAmount currencyID="EUR">54951.00</cbc:PayableAmount>
+                            </cac:LegalMonetaryTotal>
+                            <efac:SubcontractingTerm>
+<efbc:TermCode listName="applicability">no</efbc:TermCode>
+                            </efac:SubcontractingTerm>
+                            <efac:TenderingParty>
+<cbc:ID schemeName="tendering-party">TPA-0001</cbc:ID>
+                            </efac:TenderingParty>
+                            <efac:TenderLot>
+<cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+                            </efac:TenderLot>
+                            <efac:TenderReference>
+<cbc:ID>736894</cbc:ID>
+                            </efac:TenderReference>
+                        </efac:LotTender>
+                        <efac:SettledContract>
+                            <cbc:ID schemeName="contract">CON-0001</cbc:ID>
+                            <cbc:IssueDate>2026-07-30+03:00</cbc:IssueDate>
+                            <cbc:Title languageID="EST">Hankeleping_7-6/5623-1</cbc:Title>
+                            <efac:ContractReference>
+<cbc:ID>7-6/5623-1</cbc:ID>
+                            </efac:ContractReference>
+                            <efac:LotTender>
+<cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            </efac:LotTender>
+                        </efac:SettledContract>
+                        <efac:TenderingParty>
+                            <cbc:ID schemeName="tendering-party">TPA-0001</cbc:ID>
+                            <efac:Tenderer>
+<cbc:ID schemeName="organization">ORG-0004</cbc:ID>
+                            </efac:Tenderer>
+                        </efac:TenderingParty>
+                    </efac:NoticeResult>
+                    <efac:NoticeSubType>
+                        <cbc:SubTypeCode listName="notice-subtype">33</cbc:SubTypeCode>
+                    </efac:NoticeSubType>
+                    <efac:Organizations>
+                        <efac:Organization>
+                            <efac:Company>
+<cbc:WebsiteURI>http://www.rtk.ee</cbc:WebsiteURI>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Riigi Tugiteenuste Keskus</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Lõkke tn 4</cbc:StreetName>
+    <cbc:CityName> Tallinn</cbc:CityName>
+    <cbc:PostalZone>10122</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>70007340</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efac:Company>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Riigihangete vaidlustuskomisjon</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Tartu mnt 85</cbc:StreetName>
+    <cbc:CityName>Tallinn</cbc:CityName>
+    <cbc:PostalZone>10115</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>1000123</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efac:Company>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0003</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Riigihangete register</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Lõkke tn 4</cbc:StreetName>
+    <cbc:CityName>Tallinn</cbc:CityName>
+    <cbc:PostalZone>10122</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>TED64</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efbc:ListedOnRegulatedMarketIndicator>false</efbc:ListedOnRegulatedMarketIndicator>
+                            <efac:Company>
+<efbc:CompanySizeCode listName="economic-operator-size">micro</efbc:CompanySizeCode>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0004</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">MindShifters OÜ</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Nõva tn 4-52</cbc:StreetName>
+    <cbc:CityName> Tartu linn</cbc:CityName>
+    <cbc:PostalZone>50104</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EE008</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>16993368</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                    </efac:Organizations>
+                </efext:EformsExtension>
+            </ext:ExtensionContent>
+        </ext:UBLExtension>
+    </ext:UBLExtensions>
+    <cbc:UBLVersionID>2.3</cbc:UBLVersionID>
+    <cbc:CustomizationID>eforms-sdk-1.13</cbc:CustomizationID>
+    <cbc:ID schemeName="notice-id">0f2b8f66-a0b5-4cd7-9af2-e6a0fa054ad0</cbc:ID>
+    <cbc:ContractFolderID>af1a34f0-7178-4f37-8e66-9a01d856d74f</cbc:ContractFolderID>
+    <cbc:IssueDate>2026-08-03+03:00</cbc:IssueDate>
+    <cbc:IssueTime>12:26:01.151+03:00</cbc:IssueTime>
+    <cbc:VersionID>01</cbc:VersionID>
+    <cbc:RegulatoryDomain>32014L0024</cbc:RegulatoryDomain>
+    <cbc:NoticeTypeCode listName="result">can-social</cbc:NoticeTypeCode>
+    <cbc:NoticeLanguageCode>EST</cbc:NoticeLanguageCode>
+    <cac:ContractingParty>
+        <cbc:BuyerProfileURI>http://www.rtk.ee</cbc:BuyerProfileURI>
+        <cac:ContractingPartyType>
+            <cbc:PartyTypeCode listName="buyer-legal-type">cga</cbc:PartyTypeCode>
+        </cac:ContractingPartyType>
+        <cac:ContractingActivity>
+            <cbc:ActivityTypeCode listName="authority-activity">gen-pub</cbc:ActivityTypeCode>
+        </cac:ContractingActivity>
+        <cac:Party>
+            <cac:PartyIdentification>
+                <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+            <cac:ServiceProviderParty>
+                <cbc:ServiceTypeCode listName="organisation-role">ted-esen</cbc:ServiceTypeCode>
+                <cac:Party>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0003</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:Party>
+            </cac:ServiceProviderParty>
+        </cac:Party>
+    </cac:ContractingParty>
+    <cac:TenderingProcess>
+        <cbc:Description languageID="EST">Sotsiaal- ja eriteenuste erimenetlus</cbc:Description>
+        <cbc:ProcedureCode listName="procurement-procedure-type">oth-single</cbc:ProcedureCode>
+    </cac:TenderingProcess>
+    <cac:ProcurementProject>
+        <cbc:ID>309162-0000</cbc:ID>
+        <cbc:Name languageID="EST">Taastava õiguse e-kursus vanglateenistujatele (Justiits- ja Digiministeerium)</cbc:Name>
+        <cbc:Description languageID="EST">Taastava õiguse e-kursuse eesmärk on anda ülevaade taastava õiguse väärtustest, põhimõtetest ja meetodite - nagu vestlus (ingl restorative conversation), taastav nõupidamine (ingl conference) ja taastav ring (ingl circle) - rakendamise võimalustest vanglateenistuses, st vanglates ja kriminaalhoolduses. 
+
+Hanke tulemusena sõlmitava lepingu täitmisel töötab töövõtja välja tervikliku taastava õiguse e-kursuse, mis lähtub õppijakesksest ja kasutajasõbralikust disainist, on loogilise ülesehitusega, tehniliselt toimiv, ühtse visuaalse kujundusega. E-kursuse väljatöötamine hõlmab töövõtja poolt e-kursuse sisu koostamist, sealhulgas audiovisuaalsete, infograafiliste ja vajadusel muude õpet toetavate materjalide loomist, sobiva ülesehituse ja õpimeetodite valikut, samuti muid e-kursuse väljatöötamiseks vajalikke töid. / Kõrvaldamise alused ja kvalifitseerimistingimused: Vaata hanke alusdokumentidest</cbc:Description>
+        <cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+        <cbc:Note languageID="EST">Hankeeset ei jagata osadeks, kuna e-kursuse sisu arendamine, metoodiline kujundamine ja rakendamine moodustavad sisuliselt ühtse ja funktsionaalselt seotud terviku. Teenuse kvaliteedi, metoodilise sidususe ja toimiva lõpptulemuse tagamiseks on vajalik ühtne vastutus ja koordineeritud teostus. Osadeks jagamine suurendaks killustumise ja vastutuse hajumise riski ning tellija halduskoormust.</cbc:Note>
+        <cac:MainCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">80420000</cbc:ItemClassificationCode>
+        </cac:MainCommodityClassification>
+        <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">80400000</cbc:ItemClassificationCode>
+        </cac:AdditionalCommodityClassification>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Eesti</cbc:Description>
+            <cac:Address>
+                <cbc:Region>anyw-cou</cbc:Region>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+    </cac:ProcurementProject>
+    <cac:ProcurementProjectLot>
+        <cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+        <cac:TenderingTerms>
+            <cbc:FundingProgramCode listName="eu-funded">eu-funds</cbc:FundingProgramCode>
+            <cac:AwardingTerms>
+                <cac:AwardingCriterion>
+                    <cac:SubordinateAwardingCriterion>
+                        <ext:UBLExtensions>
+                            <ext:UBLExtension>
+<ext:ExtensionContent>
+    <efext:EformsExtension>
+        <efac:AwardCriterionParameter>
+            <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+            <efbc:ParameterNumeric>40.0</efbc:ParameterNumeric>
+        </efac:AwardCriterionParameter>
+    </efext:EformsExtension>
+</ext:ExtensionContent>
+                            </ext:UBLExtension>
+                        </ext:UBLExtensions>
+                        <cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+                        <cbc:Description languageID="EST">Vaata hanke alusdokumentidest</cbc:Description>
+                    </cac:SubordinateAwardingCriterion>
+                    <cac:SubordinateAwardingCriterion>
+                        <ext:UBLExtensions>
+                            <ext:UBLExtension>
+<ext:ExtensionContent>
+    <efext:EformsExtension>
+        <efac:AwardCriterionParameter>
+            <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+            <efbc:ParameterNumeric>60.0</efbc:ParameterNumeric>
+        </efac:AwardCriterionParameter>
+    </efext:EformsExtension>
+</ext:ExtensionContent>
+                            </ext:UBLExtension>
+                        </ext:UBLExtensions>
+                        <cbc:AwardingCriterionTypeCode listName="award-criterion-type">quality</cbc:AwardingCriterionTypeCode>
+                        <cbc:Description languageID="EST">Vaata hanke alusdokumentidest</cbc:Description>
+                    </cac:SubordinateAwardingCriterion>
+                </cac:AwardingCriterion>
+            </cac:AwardingTerms>
+            <cac:AdditionalInformationParty>
+                <cac:PartyIdentification>
+                    <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+                </cac:PartyIdentification>
+            </cac:AdditionalInformationParty>
+            <cac:AppealTerms>
+                <cac:PresentationPeriod>
+                    <cbc:Description languageID="EST">https://fin.ee/riigihanked-riigiabi-osalused/riigihanked/vaidlustusmenetlus</cbc:Description>
+                </cac:PresentationPeriod>
+                <cac:AppealReceiverParty>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:AppealReceiverParty>
+                <cac:MediationParty>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:MediationParty>
+            </cac:AppealTerms>
+        </cac:TenderingTerms>
+        <cac:TenderingProcess>
+            <cac:AuctionTerms>
+                <cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+            </cac:AuctionTerms>
+            <cac:ContractingSystem>
+                <cbc:ContractingSystemTypeCode listName="framework-agreement">none</cbc:ContractingSystemTypeCode>
+            </cac:ContractingSystem>
+            <cac:ContractingSystem>
+                <cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+            </cac:ContractingSystem>
+        </cac:TenderingProcess>
+        <cac:ProcurementProject>
+            <cbc:ID>309162-0000</cbc:ID>
+            <cbc:Name languageID="EST">Taastava õiguse e-kursus vanglateenistujatele (Justiits- ja Digiministeerium)</cbc:Name>
+            <cbc:Description languageID="EST">Taastava õiguse e-kursuse eesmärk on anda ülevaade taastava õiguse väärtustest, põhimõtetest ja meetodite - nagu vestlus (ingl restorative conversation), taastav nõupidamine (ingl conference) ja taastav ring (ingl circle) - rakendamise võimalustest vanglateenistuses, st vanglates ja kriminaalhoolduses. 
+
+Hanke tulemusena sõlmitava lepingu täitmisel töötab töövõtja välja tervikliku taastava õiguse e-kursuse, mis lähtub õppijakesksest ja kasutajasõbralikust disainist, on loogilise ülesehitusega, tehniliselt toimiv, ühtse visuaalse kujundusega. E-kursuse väljatöötamine hõlmab töövõtja poolt e-kursuse sisu koostamist, sealhulgas audiovisuaalsete, infograafiliste ja vajadusel muude õpet toetavate materjalide loomist, sobiva ülesehituse ja õpimeetodite valikut, samuti muid e-kursuse väljatöötamiseks vajalikke töid. / Kõrvaldamise alused ja kvalifitseerimistingimused: Vaata hanke alusdokumentidest</cbc:Description>
+            <cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+            <cbc:Note languageID="EST">Hankeeset ei jagata osadeks, kuna e-kursuse sisu arendamine, metoodiline kujundamine ja rakendamine moodustavad sisuliselt ühtse ja funktsionaalselt seotud terviku. Teenuse kvaliteedi, metoodilise sidususe ja toimiva lõpptulemuse tagamiseks on vajalik ühtne vastutus ja koordineeritud teostus. Osadeks jagamine suurendaks killustumise ja vastutuse hajumise riski ning tellija halduskoormust.</cbc:Note>
+            <cac:ProcurementAdditionalType>
+                <cbc:ProcurementTypeCode listName="strategic-procurement">env-imp</cbc:ProcurementTypeCode>
+                <cbc:ProcurementType languageID="EST">Sätestatud vastavustingimustes.</cbc:ProcurementType>
+            </cac:ProcurementAdditionalType>
+            <cac:ProcurementAdditionalType>
+                <cbc:ProcurementTypeCode listName="environmental-impact">other</cbc:ProcurementTypeCode>
+            </cac:ProcurementAdditionalType>
+            <cac:ProcurementAdditionalType>
+                <cbc:ProcurementTypeCode listName="accessibility">inc</cbc:ProcurementTypeCode>
+            </cac:ProcurementAdditionalType>
+            <cac:MainCommodityClassification>
+                <cbc:ItemClassificationCode listName="cpv">80420000</cbc:ItemClassificationCode>
+            </cac:MainCommodityClassification>
+            <cac:AdditionalCommodityClassification>
+                <cbc:ItemClassificationCode listName="cpv">80400000</cbc:ItemClassificationCode>
+            </cac:AdditionalCommodityClassification>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Eesti</cbc:Description>
+                <cac:Address>
+                    <cbc:Region>anyw-cou</cbc:Region>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+        </cac:ProcurementProject>
+    </cac:ProcurementProjectLot>
+    <cac:TenderResult>
+        <cbc:AwardDate>2000-01-01+02:00</cbc:AwardDate>
+    </cac:TenderResult>
+</ContractAwardNotice>
+<ContractAwardNotice xmlns="urn:oasis:names:specification:ubl:schema:xsd:ContractAwardNotice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:efac="http://data.europa.eu/p27/eforms-ubl-extension-aggregate-components/1" xmlns:efbc="http://data.europa.eu/p27/eforms-ubl-extension-basic-components/1" xmlns:efext="http://data.europa.eu/p27/eforms-ubl-extensions/1" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2">
+    <ext:UBLExtensions>
+        <ext:UBLExtension>
+            <ext:ExtensionContent>
+                <efext:EformsExtension>
+                    <efbc:TransmissionDate>2026-08-04+03:00</efbc:TransmissionDate>
+                    <efbc:TransmissionTime>09:37:30.561+03:00</efbc:TransmissionTime>
+                    <efac:NoticeResult>
+                        <efbc:OverallMaximumFrameworkContractsAmount currencyID="EUR">50000.00</efbc:OverallMaximumFrameworkContractsAmount>
+                        <efac:LotResult>
+                            <cbc:ID schemeName="result">RES-0000</cbc:ID>
+                            <cbc:TenderResultCode listName="winner-selection-status">selec-w</cbc:TenderResultCode>
+                            <efac:LotTender>
+<cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            </efac:LotTender>
+                            <efac:FrameworkAgreementValues>
+<cbc:MaximumValueAmount currencyID="EUR">50000.00</cbc:MaximumValueAmount>
+                            </efac:FrameworkAgreementValues>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>16</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>16</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>16</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:SettledContract>
+<cbc:ID schemeName="contract">CON-0001</cbc:ID>
+                            </efac:SettledContract>
+                            <efac:TenderLot>
+<cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+                            </efac:TenderLot>
+                        </efac:LotResult>
+                        <efac:LotTender>
+                            <cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            <cac:LegalMonetaryTotal>
+<cbc:PayableAmount currencyID="EUR">50000.00</cbc:PayableAmount>
+                            </cac:LegalMonetaryTotal>
+                            <efac:SubcontractingTerm>
+<efbc:TermCode listName="applicability">no</efbc:TermCode>
+                            </efac:SubcontractingTerm>
+                            <efac:TenderingParty>
+<cbc:ID schemeName="tendering-party">TPA-0001</cbc:ID>
+                            </efac:TenderingParty>
+                            <efac:TenderLot>
+<cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+                            </efac:TenderLot>
+                            <efac:TenderReference>
+<cbc:ID>728768</cbc:ID>
+                            </efac:TenderReference>
+                        </efac:LotTender>
+                        <efac:SettledContract>
+                            <cbc:ID schemeName="contract">CON-0001</cbc:ID>
+                            <cbc:IssueDate>2026-08-04+03:00</cbc:IssueDate>
+                            <cbc:Title languageID="EST">Tallinna disainisüsteemi edasiarenduste tellimine</cbc:Title>
+                            <efbc:ContractFrameworkIndicator>false</efbc:ContractFrameworkIndicator>
+                            <efac:ContractReference>
+<cbc:ID>7-2.1/122</cbc:ID>
+                            </efac:ContractReference>
+                            <efac:LotTender>
+<cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            </efac:LotTender>
+                        </efac:SettledContract>
+                        <efac:TenderingParty>
+                            <cbc:ID schemeName="tendering-party">TPA-0001</cbc:ID>
+                            <efac:Tenderer>
+<cbc:ID schemeName="organization">ORG-0004</cbc:ID>
+                            </efac:Tenderer>
+                        </efac:TenderingParty>
+                    </efac:NoticeResult>
+                    <efac:NoticeSubType>
+                        <cbc:SubTypeCode listName="notice-subtype">29</cbc:SubTypeCode>
+                    </efac:NoticeSubType>
+                    <efac:Organizations>
+                        <efac:Organization>
+                            <efac:Company>
+<cbc:WebsiteURI>https://www.tallinn.ee</cbc:WebsiteURI>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Tallinna Strateegiakeskus</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Vabaduse väljak 7</cbc:StreetName>
+    <cbc:CityName> Tallinn</cbc:CityName>
+    <cbc:PostalZone>15199</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>75023817</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efac:Company>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Riigihangete vaidlustuskomisjon</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Tartu mnt 85</cbc:StreetName>
+    <cbc:CityName>Tallinn</cbc:CityName>
+    <cbc:PostalZone>10115</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>1000123</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efac:Company>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0003</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Riigihangete register</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Lõkke tn 4</cbc:StreetName>
+    <cbc:CityName>Tallinn</cbc:CityName>
+    <cbc:PostalZone>10122</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>TED64</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efbc:ListedOnRegulatedMarketIndicator>false</efbc:ListedOnRegulatedMarketIndicator>
+                            <efac:Company>
+<efbc:CompanySizeCode listName="economic-operator-size">small</efbc:CompanySizeCode>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0004</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">VELVET OÜ</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Telliskivi tn 60a/5</cbc:StreetName>
+    <cbc:CityName> Tallinn</cbc:CityName>
+    <cbc:PostalZone>10412</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>11016984</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                    </efac:Organizations>
+                </efext:EformsExtension>
+            </ext:ExtensionContent>
+        </ext:UBLExtension>
+    </ext:UBLExtensions>
+    <cbc:UBLVersionID>2.3</cbc:UBLVersionID>
+    <cbc:CustomizationID>eforms-sdk-1.13</cbc:CustomizationID>
+    <cbc:ID schemeName="notice-id">d9f5c6ce-d8c8-41e1-a63a-029d434c0a65</cbc:ID>
+    <cbc:ContractFolderID>0ab5a0c2-2a31-4c64-b551-55efe517e7ee</cbc:ContractFolderID>
+    <cbc:IssueDate>2026-08-04+03:00</cbc:IssueDate>
+    <cbc:IssueTime>09:37:30.561+03:00</cbc:IssueTime>
+    <cbc:VersionID>01</cbc:VersionID>
+    <cbc:RegulatoryDomain>32014L0024</cbc:RegulatoryDomain>
+    <cbc:NoticeTypeCode listName="result">can-standard</cbc:NoticeTypeCode>
+    <cbc:NoticeLanguageCode>EST</cbc:NoticeLanguageCode>
+    <cac:ContractingParty>
+        <cbc:BuyerProfileURI>https://www.tallinn.ee</cbc:BuyerProfileURI>
+        <cac:ContractingPartyType>
+            <cbc:PartyTypeCode listName="buyer-legal-type">la</cbc:PartyTypeCode>
+        </cac:ContractingPartyType>
+        <cac:ContractingActivity>
+            <cbc:ActivityTypeCode listName="authority-activity">gen-pub</cbc:ActivityTypeCode>
+        </cac:ContractingActivity>
+        <cac:Party>
+            <cac:PartyIdentification>
+                <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+            <cac:ServiceProviderParty>
+                <cbc:ServiceTypeCode listName="organisation-role">ted-esen</cbc:ServiceTypeCode>
+                <cac:Party>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0003</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:Party>
+            </cac:ServiceProviderParty>
+        </cac:Party>
+    </cac:ContractingParty>
+    <cac:TenderingProcess>
+        <cbc:Description languageID="EST">Lihthange</cbc:Description>
+        <cbc:ProcedureCode listName="procurement-procedure-type">oth-single</cbc:ProcedureCode>
+    </cac:TenderingProcess>
+    <cac:ProcurementProject>
+        <cbc:ID>306243-0000</cbc:ID>
+        <cbc:Name languageID="EST">Tallinna disainisüsteemi edasiarenduste tellimine</cbc:Name>
+        <cbc:Description languageID="EST">Tallinna disainisüsteemi (disain.tallinn.ee) edasiarendused, mille vajadus on tekkinud nii olemasolevatest projektidest kui ka eelneva lepingu lõppedes õhku jäänud komponentidest. Eesmärk on sõlmida raamleping ühe pakkujaga. / Kõrvaldamise alused ja kvalifitseerimistingimused: Vaata hanke alusdokumentidest</cbc:Description>
+        <cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+        <cac:MainCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">72200000</cbc:ItemClassificationCode>
+        </cac:MainCommodityClassification>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Tallinn</cbc:Description>
+            <cac:Address>
+                <cbc:CountrySubentityCode listName="nuts">EE009</cbc:CountrySubentityCode>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Tallinn</cbc:Description>
+            <cac:Address>
+                <cbc:CountrySubentityCode listName="nuts">EE00A</cbc:CountrySubentityCode>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Tallinn</cbc:Description>
+            <cac:Address>
+                <cbc:CountrySubentityCode listName="nuts">EE004</cbc:CountrySubentityCode>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Tallinn</cbc:Description>
+            <cac:Address>
+                <cbc:CountrySubentityCode listName="nuts">EE008</cbc:CountrySubentityCode>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Tallinn</cbc:Description>
+            <cac:Address>
+                <cbc:CountrySubentityCode listName="nuts">EE001</cbc:CountrySubentityCode>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+    </cac:ProcurementProject>
+    <cac:ProcurementProjectLot>
+        <cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+        <cac:TenderingTerms>
+            <cbc:FundingProgramCode listName="eu-funded">no-eu-funds</cbc:FundingProgramCode>
+            <cac:AwardingTerms>
+                <cac:AwardingCriterion>
+                    <cac:SubordinateAwardingCriterion>
+                        <ext:UBLExtensions>
+                            <ext:UBLExtension>
+<ext:ExtensionContent>
+    <efext:EformsExtension>
+        <efac:AwardCriterionParameter>
+            <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+            <efbc:ParameterNumeric>40.0</efbc:ParameterNumeric>
+        </efac:AwardCriterionParameter>
+    </efext:EformsExtension>
+</ext:ExtensionContent>
+                            </ext:UBLExtension>
+                        </ext:UBLExtensions>
+                        <cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+                        <cbc:Description languageID="EST">Vaata hanke alusdokumentidest</cbc:Description>
+                    </cac:SubordinateAwardingCriterion>
+                    <cac:SubordinateAwardingCriterion>
+                        <ext:UBLExtensions>
+                            <ext:UBLExtension>
+<ext:ExtensionContent>
+    <efext:EformsExtension>
+        <efac:AwardCriterionParameter>
+            <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+            <efbc:ParameterNumeric>60.0</efbc:ParameterNumeric>
+        </efac:AwardCriterionParameter>
+    </efext:EformsExtension>
+</ext:ExtensionContent>
+                            </ext:UBLExtension>
+                        </ext:UBLExtensions>
+                        <cbc:AwardingCriterionTypeCode listName="award-criterion-type">quality</cbc:AwardingCriterionTypeCode>
+                        <cbc:Description languageID="EST">Vaata hanke alusdokumentidest</cbc:Description>
+                    </cac:SubordinateAwardingCriterion>
+                </cac:AwardingCriterion>
+            </cac:AwardingTerms>
+            <cac:AdditionalInformationParty>
+                <cac:PartyIdentification>
+                    <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+                </cac:PartyIdentification>
+            </cac:AdditionalInformationParty>
+            <cac:AppealTerms>
+                <cac:PresentationPeriod>
+                    <cbc:Description languageID="EST">https://fin.ee/riigihanked-riigiabi-osalused/riigihanked/vaidlustusmenetlus</cbc:Description>
+                </cac:PresentationPeriod>
+                <cac:AppealReceiverParty>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:AppealReceiverParty>
+                <cac:MediationParty>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:MediationParty>
+            </cac:AppealTerms>
+        </cac:TenderingTerms>
+        <cac:TenderingProcess>
+            <cbc:GovernmentAgreementConstraintIndicator>false</cbc:GovernmentAgreementConstraintIndicator>
+            <cac:AuctionTerms>
+                <cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+            </cac:AuctionTerms>
+            <cac:ContractingSystem>
+                <cbc:ContractingSystemTypeCode listName="framework-agreement">fa-wo-rc</cbc:ContractingSystemTypeCode>
+            </cac:ContractingSystem>
+            <cac:ContractingSystem>
+                <cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+            </cac:ContractingSystem>
+        </cac:TenderingProcess>
+        <cac:ProcurementProject>
+            <cbc:ID>306243-0000</cbc:ID>
+            <cbc:Name languageID="EST">Tallinna disainisüsteemi edasiarenduste tellimine</cbc:Name>
+            <cbc:Description languageID="EST">Tallinna disainisüsteemi (disain.tallinn.ee) edasiarendused, mille vajadus on tekkinud nii olemasolevatest projektidest kui ka eelneva lepingu lõppedes õhku jäänud komponentidest. Eesmärk on sõlmida raamleping ühe pakkujaga. / Kõrvaldamise alused ja kvalifitseerimistingimused: Vaata hanke alusdokumentidest</cbc:Description>
+            <cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+            <cac:ProcurementAdditionalType>
+                <cbc:ProcurementTypeCode listName="accessibility">n-inc-just</cbc:ProcurementTypeCode>
+                <cbc:ProcurementType languageID="EST">Hanke ese ei kuulu seaduse kohaldamise alla</cbc:ProcurementType>
+            </cac:ProcurementAdditionalType>
+            <cac:MainCommodityClassification>
+                <cbc:ItemClassificationCode listName="cpv">72200000</cbc:ItemClassificationCode>
+            </cac:MainCommodityClassification>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Tallinn</cbc:Description>
+                <cac:Address>
+                    <cbc:CountrySubentityCode listName="nuts">EE009</cbc:CountrySubentityCode>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Tallinn</cbc:Description>
+                <cac:Address>
+                    <cbc:CountrySubentityCode listName="nuts">EE00A</cbc:CountrySubentityCode>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Tallinn</cbc:Description>
+                <cac:Address>
+                    <cbc:CountrySubentityCode listName="nuts">EE004</cbc:CountrySubentityCode>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Tallinn</cbc:Description>
+                <cac:Address>
+                    <cbc:CountrySubentityCode listName="nuts">EE008</cbc:CountrySubentityCode>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Tallinn</cbc:Description>
+                <cac:Address>
+                    <cbc:CountrySubentityCode listName="nuts">EE001</cbc:CountrySubentityCode>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+        </cac:ProcurementProject>
+    </cac:ProcurementProjectLot>
+    <cac:TenderResult>
+        <cbc:AwardDate>2000-01-01+02:00</cbc:AwardDate>
+    </cac:TenderResult>
+</ContractAwardNotice>
+<ContractAwardNotice xmlns="urn:oasis:names:specification:ubl:schema:xsd:ContractAwardNotice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:efac="http://data.europa.eu/p27/eforms-ubl-extension-aggregate-components/1" xmlns:efbc="http://data.europa.eu/p27/eforms-ubl-extension-basic-components/1" xmlns:efext="http://data.europa.eu/p27/eforms-ubl-extensions/1" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2">
+    <ext:UBLExtensions>
+        <ext:UBLExtension>
+            <ext:ExtensionContent>
+                <efext:EformsExtension>
+                    <efbc:TransmissionDate>2026-08-05+03:00</efbc:TransmissionDate>
+                    <efbc:TransmissionTime>13:00:18.512+03:00</efbc:TransmissionTime>
+                    <efac:NoticeResult>
+                        <efbc:OverallMaximumFrameworkContractsAmount currencyID="EUR">2000000.00</efbc:OverallMaximumFrameworkContractsAmount>
+                        <efac:LotResult>
+                            <cbc:ID schemeName="result">RES-0000</cbc:ID>
+                            <cbc:TenderResultCode listName="winner-selection-status">selec-w</cbc:TenderResultCode>
+                            <cac:FinancingParty>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0005</cbc:ID>
+</cac:PartyIdentification>
+                            </cac:FinancingParty>
+                            <efac:LotTender>
+<cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            </efac:LotTender>
+                            <efac:FrameworkAgreementValues>
+<cbc:MaximumValueAmount currencyID="EUR">2000000.00</cbc:MaximumValueAmount>
+                            </efac:FrameworkAgreementValues>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>4</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>4</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>4</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:SettledContract>
+<cbc:ID schemeName="contract">CON-0001</cbc:ID>
+                            </efac:SettledContract>
+                            <efac:TenderLot>
+<cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+                            </efac:TenderLot>
+                        </efac:LotResult>
+                        <efac:LotTender>
+                            <cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            <cac:LegalMonetaryTotal>
+<cbc:PayableAmount currencyID="EUR">2000000.00</cbc:PayableAmount>
+                            </cac:LegalMonetaryTotal>
+                            <efac:SubcontractingTerm>
+<efbc:TermCode listName="applicability">no</efbc:TermCode>
+                            </efac:SubcontractingTerm>
+                            <efac:TenderingParty>
+<cbc:ID schemeName="tendering-party">TPA-0001</cbc:ID>
+                            </efac:TenderingParty>
+                            <efac:TenderLot>
+<cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+                            </efac:TenderLot>
+                            <efac:TenderReference>
+<cbc:ID>734371</cbc:ID>
+                            </efac:TenderReference>
+                        </efac:LotTender>
+                        <efac:SettledContract>
+                            <cbc:ID schemeName="contract">CON-0001</cbc:ID>
+                            <cbc:IssueDate>2026-07-30+03:00</cbc:IssueDate>
+                            <cbc:Title languageID="EST">Raamleping</cbc:Title>
+                            <efbc:ContractFrameworkIndicator>false</efbc:ContractFrameworkIndicator>
+                            <efac:ContractReference>
+<cbc:ID>2.1-4/26/00041</cbc:ID>
+                            </efac:ContractReference>
+                            <efac:LotTender>
+<cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            </efac:LotTender>
+                        </efac:SettledContract>
+                        <efac:TenderingParty>
+                            <cbc:ID schemeName="tendering-party">TPA-0001</cbc:ID>
+                            <efac:Tenderer>
+<cbc:ID schemeName="organization">ORG-0004</cbc:ID>
+                            </efac:Tenderer>
+                        </efac:TenderingParty>
+                    </efac:NoticeResult>
+                    <efac:NoticeSubType>
+                        <cbc:SubTypeCode listName="notice-subtype">29</cbc:SubTypeCode>
+                    </efac:NoticeSubType>
+                    <efac:Organizations>
+                        <efac:Organization>
+                            <efac:Company>
+<cbc:WebsiteURI>http://www.rtk.ee</cbc:WebsiteURI>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Riigi Tugiteenuste Keskus</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Lõkke tn 4</cbc:StreetName>
+    <cbc:CityName> Tallinn</cbc:CityName>
+    <cbc:PostalZone>10122</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>70007340</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efac:Company>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Riigihangete vaidlustuskomisjon</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Tartu mnt 85</cbc:StreetName>
+    <cbc:CityName>Tallinn</cbc:CityName>
+    <cbc:PostalZone>10115</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>1000123</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efac:Company>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0003</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Riigihangete register</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Lõkke tn 4</cbc:StreetName>
+    <cbc:CityName>Tallinn</cbc:CityName>
+    <cbc:PostalZone>10122</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>TED64</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efbc:ListedOnRegulatedMarketIndicator>false</efbc:ListedOnRegulatedMarketIndicator>
+                            <efac:Company>
+<efbc:CompanySizeCode listName="economic-operator-size">medium</efbc:CompanySizeCode>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0004</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Askend Estonia OÜ</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Tartu mnt 80f</cbc:StreetName>
+    <cbc:CityName>Tallinn</cbc:CityName>
+    <cbc:PostalZone>10112</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>14133207</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efac:Company>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0005</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Maksu- ja Tolliamet</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Lõõtsa tn 8a</cbc:StreetName>
+    <cbc:CityName> Tallinn</cbc:CityName>
+    <cbc:PostalZone>15176</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>70000349</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                    </efac:Organizations>
+                </efext:EformsExtension>
+            </ext:ExtensionContent>
+        </ext:UBLExtension>
+    </ext:UBLExtensions>
+    <cbc:UBLVersionID>2.3</cbc:UBLVersionID>
+    <cbc:CustomizationID>eforms-sdk-1.13</cbc:CustomizationID>
+    <cbc:ID schemeName="notice-id">7f3ed627-221d-4504-bd9f-3fb5f32d96bd</cbc:ID>
+    <cbc:ContractFolderID>fa228103-7ce3-46dc-bfec-811e6e2e0ffc</cbc:ContractFolderID>
+    <cbc:IssueDate>2026-08-05+03:00</cbc:IssueDate>
+    <cbc:IssueTime>11:04:33.108+03:00</cbc:IssueTime>
+    <cbc:VersionID>01</cbc:VersionID>
+    <cbc:RegulatoryDomain>32014L0024</cbc:RegulatoryDomain>
+    <cbc:NoticeTypeCode listName="result">can-standard</cbc:NoticeTypeCode>
+    <cbc:NoticeLanguageCode>EST</cbc:NoticeLanguageCode>
+    <cac:ContractingParty>
+        <cbc:BuyerProfileURI>http://www.rtk.ee</cbc:BuyerProfileURI>
+        <cac:ContractingPartyType>
+            <cbc:PartyTypeCode listName="buyer-legal-type">cga</cbc:PartyTypeCode>
+        </cac:ContractingPartyType>
+        <cac:ContractingActivity>
+            <cbc:ActivityTypeCode listName="authority-activity">gen-pub</cbc:ActivityTypeCode>
+        </cac:ContractingActivity>
+        <cac:Party>
+            <cac:PartyIdentification>
+                <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+            <cac:ServiceProviderParty>
+                <cbc:ServiceTypeCode listName="organisation-role">ted-esen</cbc:ServiceTypeCode>
+                <cac:Party>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0003</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:Party>
+            </cac:ServiceProviderParty>
+        </cac:Party>
+    </cac:ContractingParty>
+    <cac:TenderingProcess>
+        <cbc:Description languageID="EST">Avatud hankemenetlus</cbc:Description>
+        <cbc:ProcedureCode listName="procurement-procedure-type">open</cbc:ProcedureCode>
+        <cac:ProcessJustification>
+            <cbc:ProcessReasonCode listName="accelerated-procedure">false</cbc:ProcessReasonCode>
+        </cac:ProcessJustification>
+    </cac:TenderingProcess>
+    <cac:ProcurementProject>
+        <cbc:ID>306471-0000</cbc:ID>
+        <cbc:Name languageID="EST">e-MTA iseteenindusportaali arendus- ja hooldustööd</cbc:Name>
+        <cbc:Description languageID="EST">Hanke eesmärgiks on raamlepingu sõlmimine ühe pakkujaga e-MTA iseteenindusportaali arendus- ja tarkvara hooldustöödeks. Raamlepingu kehtivuse jooksul tellitavad tööd peavad olema kooskõlas kehtivate siseriiklike ja rahvusvaheliste õigusaktide ja regulatsioonidega ning toetama organisatsiooni äriprotsesse.
+Hanke objektiks olevate infosüsteemide puhul kasutatakse RmIT IT profiilile vastavaid tehnoloogiaid (näiteks Java, SQL, PL/SQL). / Kõrvaldamise alused ja kvalifitseerimistingimused: Vaata hanke alusdokumentidest</cbc:Description>
+        <cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+        <cbc:Note languageID="EST">Hankija jätab hanke osadeks jaotamata ja sõlmib teenuse osutamiseks raamlepingu ühe pakkujaga, kuna tegemist on olemuslikult ühe infosüsteemi arendus- ja hooldustöödega, mistõttu ei ole selle osadeks jaotamine sisuliselt otstarbekas, sest vajadus kooskõlastada erinevate töölõikude töövõtjate tegevust võib tõsiselt ohustada lepingu nõuetekohast täitmist. Samuti raskendaks erinevate lepingupartnerite vahel arendus- ja hooldustööde jagamine tellija jaoks garantiiga seonduvaid küsimusi, kuna ei pruugi olla võimalik tuvastada vastutuse jaotust samas töölõigus eri lepingupartnerite vahel.</cbc:Note>
+        <cac:MainCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">72262000</cbc:ItemClassificationCode>
+        </cac:MainCommodityClassification>
+        <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">72267000</cbc:ItemClassificationCode>
+        </cac:AdditionalCommodityClassification>
+        <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">72250000</cbc:ItemClassificationCode>
+        </cac:AdditionalCommodityClassification>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Eesti</cbc:Description>
+            <cac:Address>
+                <cbc:CountrySubentityCode listName="nuts">EE009</cbc:CountrySubentityCode>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Eesti</cbc:Description>
+            <cac:Address>
+                <cbc:CountrySubentityCode listName="nuts">EE00A</cbc:CountrySubentityCode>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Eesti</cbc:Description>
+            <cac:Address>
+                <cbc:CountrySubentityCode listName="nuts">EE004</cbc:CountrySubentityCode>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Eesti</cbc:Description>
+            <cac:Address>
+                <cbc:CountrySubentityCode listName="nuts">EE008</cbc:CountrySubentityCode>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Eesti</cbc:Description>
+            <cac:Address>
+                <cbc:CountrySubentityCode listName="nuts">EE001</cbc:CountrySubentityCode>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+    </cac:ProcurementProject>
+    <cac:ProcurementProjectLot>
+        <cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+        <cac:TenderingTerms>
+            <cbc:FundingProgramCode listName="eu-funded">eu-funds</cbc:FundingProgramCode>
+            <cac:AwardingTerms>
+                <cac:AwardingCriterion>
+                    <cac:SubordinateAwardingCriterion>
+                        <ext:UBLExtensions>
+                            <ext:UBLExtension>
+<ext:ExtensionContent>
+    <efext:EformsExtension>
+        <efac:AwardCriterionParameter>
+            <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+            <efbc:ParameterNumeric>40.0</efbc:ParameterNumeric>
+        </efac:AwardCriterionParameter>
+    </efext:EformsExtension>
+</ext:ExtensionContent>
+                            </ext:UBLExtension>
+                        </ext:UBLExtensions>
+                        <cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+                        <cbc:Description languageID="EST">Vaata hanke alusdokumentidest</cbc:Description>
+                    </cac:SubordinateAwardingCriterion>
+                    <cac:SubordinateAwardingCriterion>
+                        <ext:UBLExtensions>
+                            <ext:UBLExtension>
+<ext:ExtensionContent>
+    <efext:EformsExtension>
+        <efac:AwardCriterionParameter>
+            <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+            <efbc:ParameterNumeric>60.0</efbc:ParameterNumeric>
+        </efac:AwardCriterionParameter>
+    </efext:EformsExtension>
+</ext:ExtensionContent>
+                            </ext:UBLExtension>
+                        </ext:UBLExtensions>
+                        <cbc:AwardingCriterionTypeCode listName="award-criterion-type">quality</cbc:AwardingCriterionTypeCode>
+                        <cbc:Description languageID="EST">Vaata hanke alusdokumentidest</cbc:Description>
+                    </cac:SubordinateAwardingCriterion>
+                </cac:AwardingCriterion>
+            </cac:AwardingTerms>
+            <cac:AdditionalInformationParty>
+                <cac:PartyIdentification>
+                    <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+                </cac:PartyIdentification>
+            </cac:AdditionalInformationParty>
+            <cac:AppealTerms>
+                <cac:PresentationPeriod>
+                    <cbc:Description languageID="EST">https://fin.ee/riigihanked-riigiabi-osalused/riigihanked/vaidlustusmenetlus</cbc:Description>
+                </cac:PresentationPeriod>
+                <cac:AppealReceiverParty>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:AppealReceiverParty>
+                <cac:MediationParty>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:MediationParty>
+            </cac:AppealTerms>
+        </cac:TenderingTerms>
+        <cac:TenderingProcess>
+            <cbc:GovernmentAgreementConstraintIndicator>true</cbc:GovernmentAgreementConstraintIndicator>
+            <cac:AuctionTerms>
+                <cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+            </cac:AuctionTerms>
+            <cac:ContractingSystem>
+                <cbc:ContractingSystemTypeCode listName="framework-agreement">fa-wo-rc</cbc:ContractingSystemTypeCode>
+            </cac:ContractingSystem>
+            <cac:ContractingSystem>
+                <cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+            </cac:ContractingSystem>
+        </cac:TenderingProcess>
+        <cac:ProcurementProject>
+            <cbc:ID>306471-0000</cbc:ID>
+            <cbc:Name languageID="EST">e-MTA iseteenindusportaali arendus- ja hooldustööd</cbc:Name>
+            <cbc:Description languageID="EST">Hanke eesmärgiks on raamlepingu sõlmimine ühe pakkujaga e-MTA iseteenindusportaali arendus- ja tarkvara hooldustöödeks. Raamlepingu kehtivuse jooksul tellitavad tööd peavad olema kooskõlas kehtivate siseriiklike ja rahvusvaheliste õigusaktide ja regulatsioonidega ning toetama organisatsiooni äriprotsesse.
+Hanke objektiks olevate infosüsteemide puhul kasutatakse RmIT IT profiilile vastavaid tehnoloogiaid (näiteks Java, SQL, PL/SQL). / Kõrvaldamise alused ja kvalifitseerimistingimused: Vaata hanke alusdokumentidest</cbc:Description>
+            <cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+            <cbc:Note languageID="EST">Hankija jätab hanke osadeks jaotamata ja sõlmib teenuse osutamiseks raamlepingu ühe pakkujaga, kuna tegemist on olemuslikult ühe infosüsteemi arendus- ja hooldustöödega, mistõttu ei ole selle osadeks jaotamine sisuliselt otstarbekas, sest vajadus kooskõlastada erinevate töölõikude töövõtjate tegevust võib tõsiselt ohustada lepingu nõuetekohast täitmist. Samuti raskendaks erinevate lepingupartnerite vahel arendus- ja hooldustööde jagamine tellija jaoks garantiiga seonduvaid küsimusi, kuna ei pruugi olla võimalik tuvastada vastutuse jaotust samas töölõigus eri lepingupartnerite vahel.</cbc:Note>
+            <cac:ProcurementAdditionalType>
+                <cbc:ProcurementTypeCode listName="strategic-procurement">env-imp</cbc:ProcurementTypeCode>
+                <cbc:ProcurementType languageID="EST">Keskkonnahoidlik nõue esitatud vastavustingimustes.</cbc:ProcurementType>
+            </cac:ProcurementAdditionalType>
+            <cac:ProcurementAdditionalType>
+                <cbc:ProcurementTypeCode listName="environmental-impact">other</cbc:ProcurementTypeCode>
+            </cac:ProcurementAdditionalType>
+            <cac:ProcurementAdditionalType>
+                <cbc:ProcurementTypeCode listName="accessibility">n-inc-just</cbc:ProcurementTypeCode>
+                <cbc:ProcurementType languageID="EST">Tegemist ei ole avalikuks kasutamiseks ette nähtud teenusega.</cbc:ProcurementType>
+            </cac:ProcurementAdditionalType>
+            <cac:MainCommodityClassification>
+                <cbc:ItemClassificationCode listName="cpv">72262000</cbc:ItemClassificationCode>
+            </cac:MainCommodityClassification>
+            <cac:AdditionalCommodityClassification>
+                <cbc:ItemClassificationCode listName="cpv">72267000</cbc:ItemClassificationCode>
+            </cac:AdditionalCommodityClassification>
+            <cac:AdditionalCommodityClassification>
+                <cbc:ItemClassificationCode listName="cpv">72250000</cbc:ItemClassificationCode>
+            </cac:AdditionalCommodityClassification>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Eesti</cbc:Description>
+                <cac:Address>
+                    <cbc:CountrySubentityCode listName="nuts">EE009</cbc:CountrySubentityCode>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Eesti</cbc:Description>
+                <cac:Address>
+                    <cbc:CountrySubentityCode listName="nuts">EE00A</cbc:CountrySubentityCode>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Eesti</cbc:Description>
+                <cac:Address>
+                    <cbc:CountrySubentityCode listName="nuts">EE004</cbc:CountrySubentityCode>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Eesti</cbc:Description>
+                <cac:Address>
+                    <cbc:CountrySubentityCode listName="nuts">EE008</cbc:CountrySubentityCode>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Eesti</cbc:Description>
+                <cac:Address>
+                    <cbc:CountrySubentityCode listName="nuts">EE001</cbc:CountrySubentityCode>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+        </cac:ProcurementProject>
+    </cac:ProcurementProjectLot>
+    <cac:TenderResult>
+        <cbc:AwardDate>2000-01-01+02:00</cbc:AwardDate>
+    </cac:TenderResult>
+</ContractAwardNotice>
+<ContractAwardNotice xmlns="urn:oasis:names:specification:ubl:schema:xsd:ContractAwardNotice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:efac="http://data.europa.eu/p27/eforms-ubl-extension-aggregate-components/1" xmlns:efbc="http://data.europa.eu/p27/eforms-ubl-extension-basic-components/1" xmlns:efext="http://data.europa.eu/p27/eforms-ubl-extensions/1" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2">
+    <ext:UBLExtensions>
+        <ext:UBLExtension>
+            <ext:ExtensionContent>
+                <efext:EformsExtension>
+                    <efbc:TransmissionDate>2026-08-06+03:00</efbc:TransmissionDate>
+                    <efbc:TransmissionTime>15:51:21.294+03:00</efbc:TransmissionTime>
+                    <efac:NoticeResult>
+                        <cbc:TotalAmount currencyID="EUR">21500.00</cbc:TotalAmount>
+                        <efac:LotResult>
+                            <cbc:ID schemeName="result">RES-0000</cbc:ID>
+                            <cbc:TenderResultCode listName="winner-selection-status">selec-w</cbc:TenderResultCode>
+                            <efac:LotTender>
+<cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            </efac:LotTender>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>2</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>2</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>2</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:SettledContract>
+<cbc:ID schemeName="contract">CON-0001</cbc:ID>
+                            </efac:SettledContract>
+                            <efac:TenderLot>
+<cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+                            </efac:TenderLot>
+                        </efac:LotResult>
+                        <efac:LotTender>
+                            <cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            <cac:LegalMonetaryTotal>
+<cbc:PayableAmount currencyID="EUR">21500.00</cbc:PayableAmount>
+                            </cac:LegalMonetaryTotal>
+                            <efac:SubcontractingTerm>
+<efbc:TermCode listName="applicability">no</efbc:TermCode>
+                            </efac:SubcontractingTerm>
+                            <efac:TenderingParty>
+<cbc:ID schemeName="tendering-party">TPA-0001</cbc:ID>
+                            </efac:TenderingParty>
+                            <efac:TenderLot>
+<cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+                            </efac:TenderLot>
+                            <efac:TenderReference>
+<cbc:ID>735951</cbc:ID>
+                            </efac:TenderReference>
+                        </efac:LotTender>
+                        <efac:SettledContract>
+                            <cbc:ID schemeName="contract">CON-0001</cbc:ID>
+                            <cbc:IssueDate>2026-07-22+03:00</cbc:IssueDate>
+                            <cbc:Title languageID="EST">TÖÖVÕTULEPING</cbc:Title>
+                            <efac:ContractReference>
+<cbc:ID>4-2/26-21-1</cbc:ID>
+                            </efac:ContractReference>
+                            <efac:LotTender>
+<cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            </efac:LotTender>
+                        </efac:SettledContract>
+                        <efac:TenderingParty>
+                            <cbc:ID schemeName="tendering-party">TPA-0001</cbc:ID>
+                            <efac:Tenderer>
+<cbc:ID schemeName="organization">ORG-0004</cbc:ID>
+                            </efac:Tenderer>
+                        </efac:TenderingParty>
+                    </efac:NoticeResult>
+                    <efac:NoticeSubType>
+                        <cbc:SubTypeCode listName="notice-subtype">29</cbc:SubTypeCode>
+                    </efac:NoticeSubType>
+                    <efac:Organizations>
+                        <efac:Organization>
+                            <efac:Company>
+<cbc:WebsiteURI>http://www.polva.ee</cbc:WebsiteURI>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Põlva Vallavalitsus</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Maarja tn 2</cbc:StreetName>
+    <cbc:CityName> Põlva vald</cbc:CityName>
+    <cbc:PostalZone>63307</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>75038581</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efac:Company>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Riigihangete vaidlustuskomisjon</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Tartu mnt 85</cbc:StreetName>
+    <cbc:CityName>Tallinn</cbc:CityName>
+    <cbc:PostalZone>10115</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>1000123</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efac:Company>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0003</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Riigihangete register</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Lõkke tn 4</cbc:StreetName>
+    <cbc:CityName>Tallinn</cbc:CityName>
+    <cbc:PostalZone>10122</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>TED64</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efbc:ListedOnRegulatedMarketIndicator>false</efbc:ListedOnRegulatedMarketIndicator>
+                            <efac:Company>
+<efbc:CompanySizeCode listName="economic-operator-size">small</efbc:CompanySizeCode>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0004</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">INFRASTAR OÜ</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Tähe tn 106</cbc:StreetName>
+    <cbc:CityName> Tartu linn</cbc:CityName>
+    <cbc:PostalZone>50107</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>14748133</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                    </efac:Organizations>
+                </efext:EformsExtension>
+            </ext:ExtensionContent>
+        </ext:UBLExtension>
+    </ext:UBLExtensions>
+    <cbc:UBLVersionID>2.3</cbc:UBLVersionID>
+    <cbc:CustomizationID>eforms-sdk-1.13</cbc:CustomizationID>
+    <cbc:ID schemeName="notice-id">3665ffd7-bcfe-4986-b8fa-b0eb697f8d8f</cbc:ID>
+    <cbc:ContractFolderID>71652bb4-c5dd-43a2-a96e-0557229f6a45</cbc:ContractFolderID>
+    <cbc:IssueDate>2026-08-06+03:00</cbc:IssueDate>
+    <cbc:IssueTime>15:51:21.294+03:00</cbc:IssueTime>
+    <cbc:VersionID>01</cbc:VersionID>
+    <cbc:RegulatoryDomain>32014L0024</cbc:RegulatoryDomain>
+    <cbc:NoticeTypeCode listName="result">can-standard</cbc:NoticeTypeCode>
+    <cbc:NoticeLanguageCode>EST</cbc:NoticeLanguageCode>
+    <cac:ContractingParty>
+        <cbc:BuyerProfileURI>http://www.polva.ee</cbc:BuyerProfileURI>
+        <cac:ContractingPartyType>
+            <cbc:PartyTypeCode listName="buyer-legal-type">la</cbc:PartyTypeCode>
+        </cac:ContractingPartyType>
+        <cac:ContractingActivity>
+            <cbc:ActivityTypeCode listName="authority-activity">gen-pub</cbc:ActivityTypeCode>
+        </cac:ContractingActivity>
+        <cac:Party>
+            <cac:PartyIdentification>
+                <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+            <cac:ServiceProviderParty>
+                <cbc:ServiceTypeCode listName="organisation-role">ted-esen</cbc:ServiceTypeCode>
+                <cac:Party>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0003</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:Party>
+            </cac:ServiceProviderParty>
+        </cac:Party>
+    </cac:ContractingParty>
+    <cac:TenderingProcess>
+        <cbc:Description languageID="EST">Väikehange</cbc:Description>
+        <cbc:ProcedureCode listName="procurement-procedure-type">oth-single</cbc:ProcedureCode>
+    </cac:TenderingProcess>
+    <cac:ProcurementProject>
+        <cbc:ID>310685-0000</cbc:ID>
+        <cbc:Name languageID="EST">Põlva valla ühistranspordi ligipääsetavuse parandamine 2</cbc:Name>
+        <cbc:Description languageID="EST">Kliimaministeeriumi poolt koostatud transpordi ja tehiskeskkonna ligipääsetavuse analüüsi lõppraporti ettepanekutetest tulenevalt Põlva valla kolmes bussipeatuses ja kahel ülekäigurajal meetmete rakendamine, mis aitavad kaasa liikumis- ja nägemispuuetega inimeste ligipääsetavuse parandamisele ja liikluskeskonnas toimetulemisele. Muu hulgas kavandatakse rajada bussipeatuste ja ülekäiguradade juurde kõnniteele taktiilset(kombatavat) tähistust, samuti rajada bussipeatuse ootekoda ja täiendavat bussipeatuste valgustust. / Kõrvaldamise alused ja kvalifitseerimistingimused: Vaata hanke alusdokumentidest</cbc:Description>
+        <cbc:ProcurementTypeCode listName="contract-nature">works</cbc:ProcurementTypeCode>
+        <cbc:Note languageID="EST">Tööd on väikesemahulised ja sarnase iseloomuga</cbc:Note>
+        <cac:MainCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">45233262</cbc:ItemClassificationCode>
+        </cac:MainCommodityClassification>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Põlva vald</cbc:Description>
+            <cac:Address>
+                <cbc:CountrySubentityCode listName="nuts">EE008</cbc:CountrySubentityCode>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+    </cac:ProcurementProject>
+    <cac:ProcurementProjectLot>
+        <cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+        <cac:TenderingTerms>
+            <cbc:FundingProgramCode listName="eu-funded">no-eu-funds</cbc:FundingProgramCode>
+            <cac:AwardingTerms>
+                <cac:AwardingCriterion>
+                    <cac:SubordinateAwardingCriterion>
+                        <ext:UBLExtensions>
+                            <ext:UBLExtension>
+<ext:ExtensionContent>
+    <efext:EformsExtension>
+        <efac:AwardCriterionParameter>
+            <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+            <efbc:ParameterNumeric>100.0</efbc:ParameterNumeric>
+        </efac:AwardCriterionParameter>
+    </efext:EformsExtension>
+</ext:ExtensionContent>
+                            </ext:UBLExtension>
+                        </ext:UBLExtensions>
+                        <cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+                        <cbc:Description languageID="EST">Vaata hanke alusdokumentidest</cbc:Description>
+                    </cac:SubordinateAwardingCriterion>
+                </cac:AwardingCriterion>
+            </cac:AwardingTerms>
+            <cac:AdditionalInformationParty>
+                <cac:PartyIdentification>
+                    <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+                </cac:PartyIdentification>
+            </cac:AdditionalInformationParty>
+            <cac:AppealTerms>
+                <cac:PresentationPeriod>
+                    <cbc:Description languageID="EST">https://fin.ee/riigihanked-riigiabi-osalused/riigihanked/vaidlustusmenetlus</cbc:Description>
+                </cac:PresentationPeriod>
+                <cac:AppealReceiverParty>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:AppealReceiverParty>
+                <cac:MediationParty>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:MediationParty>
+            </cac:AppealTerms>
+        </cac:TenderingTerms>
+        <cac:TenderingProcess>
+            <cbc:GovernmentAgreementConstraintIndicator>false</cbc:GovernmentAgreementConstraintIndicator>
+            <cac:AuctionTerms>
+                <cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+            </cac:AuctionTerms>
+            <cac:ContractingSystem>
+                <cbc:ContractingSystemTypeCode listName="framework-agreement">none</cbc:ContractingSystemTypeCode>
+            </cac:ContractingSystem>
+            <cac:ContractingSystem>
+                <cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+            </cac:ContractingSystem>
+        </cac:TenderingProcess>
+        <cac:ProcurementProject>
+            <cbc:ID>310685-0000</cbc:ID>
+            <cbc:Name languageID="EST">Põlva valla ühistranspordi ligipääsetavuse parandamine 2</cbc:Name>
+            <cbc:Description languageID="EST">Kliimaministeeriumi poolt koostatud transpordi ja tehiskeskkonna ligipääsetavuse analüüsi lõppraporti ettepanekutetest tulenevalt Põlva valla kolmes bussipeatuses ja kahel ülekäigurajal meetmete rakendamine, mis aitavad kaasa liikumis- ja nägemispuuetega inimeste ligipääsetavuse parandamisele ja liikluskeskonnas toimetulemisele. Muu hulgas kavandatakse rajada bussipeatuste ja ülekäiguradade juurde kõnniteele taktiilset(kombatavat) tähistust, samuti rajada bussipeatuse ootekoda ja täiendavat bussipeatuste valgustust. / Kõrvaldamise alused ja kvalifitseerimistingimused: Vaata hanke alusdokumentidest</cbc:Description>
+            <cbc:ProcurementTypeCode listName="contract-nature">works</cbc:ProcurementTypeCode>
+            <cbc:Note languageID="EST">Tööd on väikesemahulised ja sarnase iseloomuga</cbc:Note>
+            <cac:ProcurementAdditionalType>
+                <cbc:ProcurementTypeCode listName="accessibility">inc</cbc:ProcurementTypeCode>
+            </cac:ProcurementAdditionalType>
+            <cac:MainCommodityClassification>
+                <cbc:ItemClassificationCode listName="cpv">45233262</cbc:ItemClassificationCode>
+            </cac:MainCommodityClassification>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Põlva vald</cbc:Description>
+                <cac:Address>
+                    <cbc:CountrySubentityCode listName="nuts">EE008</cbc:CountrySubentityCode>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+        </cac:ProcurementProject>
+    </cac:ProcurementProjectLot>
+    <cac:TenderResult>
+        <cbc:AwardDate>2000-01-01+02:00</cbc:AwardDate>
+    </cac:TenderResult>
+</ContractAwardNotice>
+<ContractAwardNotice xmlns="urn:oasis:names:specification:ubl:schema:xsd:ContractAwardNotice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:efac="http://data.europa.eu/p27/eforms-ubl-extension-aggregate-components/1" xmlns:efbc="http://data.europa.eu/p27/eforms-ubl-extension-basic-components/1" xmlns:efext="http://data.europa.eu/p27/eforms-ubl-extensions/1" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2">
+    <ext:UBLExtensions>
+        <ext:UBLExtension>
+            <ext:ExtensionContent>
+                <efext:EformsExtension>
+                    <efbc:TransmissionDate>2026-08-13+03:00</efbc:TransmissionDate>
+                    <efbc:TransmissionTime>15:00:00.357+03:00</efbc:TransmissionTime>
+                    <efac:NoticeResult>
+                        <cbc:TotalAmount currencyID="EUR">14140.00</cbc:TotalAmount>
+                        <efac:LotResult>
+                            <cbc:ID schemeName="result">RES-0000</cbc:ID>
+                            <cbc:TenderResultCode listName="winner-selection-status">selec-w</cbc:TenderResultCode>
+                            <efbc:DPSTerminationIndicator>false</efbc:DPSTerminationIndicator>
+                            <efac:LotTender>
+<cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            </efac:LotTender>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>1</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>1</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>1</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:SettledContract>
+<cbc:ID schemeName="contract">CON-0001</cbc:ID>
+                            </efac:SettledContract>
+                            <efac:TenderLot>
+<cbc:ID schemeName="Lot">LOT-0001</cbc:ID>
+                            </efac:TenderLot>
+                        </efac:LotResult>
+                        <efac:LotTender>
+                            <cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            <cac:LegalMonetaryTotal>
+<cbc:PayableAmount currencyID="EUR">14140.00</cbc:PayableAmount>
+                            </cac:LegalMonetaryTotal>
+                            <efac:SubcontractingTerm>
+<efbc:TermCode listName="applicability">no</efbc:TermCode>
+                            </efac:SubcontractingTerm>
+                            <efac:TenderingParty>
+<cbc:ID schemeName="tendering-party">TPA-0001</cbc:ID>
+                            </efac:TenderingParty>
+                            <efac:TenderLot>
+<cbc:ID schemeName="Lot">LOT-0001</cbc:ID>
+                            </efac:TenderLot>
+                            <efac:TenderReference>
+<cbc:ID>745128</cbc:ID>
+                            </efac:TenderReference>
+                        </efac:LotTender>
+                        <efac:SettledContract>
+                            <cbc:ID schemeName="contract">CON-0001</cbc:ID>
+                            <cbc:IssueDate>2026-08-12+03:00</cbc:IssueDate>
+                            <cbc:Title languageID="EST">DHS HL, FOB Solutions OÜ, Encrypted DNS — Kotlin Multiplatform mobiilirakenduse arendus</cbc:Title>
+                            <efac:ContractReference>
+<cbc:ID>4.2-3/26/159-1</cbc:ID>
+                            </efac:ContractReference>
+                            <efac:LotTender>
+<cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            </efac:LotTender>
+                        </efac:SettledContract>
+                        <efac:TenderingParty>
+                            <cbc:ID schemeName="tendering-party">TPA-0001</cbc:ID>
+                            <efac:Tenderer>
+<cbc:ID schemeName="organization">ORG-0004</cbc:ID>
+                            </efac:Tenderer>
+                        </efac:TenderingParty>
+                    </efac:NoticeResult>
+                    <efac:NoticeSubType>
+                        <cbc:SubTypeCode listName="notice-subtype">29</cbc:SubTypeCode>
+                    </efac:NoticeSubType>
+                    <efac:Organizations>
+                        <efac:Organization>
+                            <efac:Company>
+<cbc:WebsiteURI>http://www.ria.ee</cbc:WebsiteURI>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Riigi Infosüsteemi Amet</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Pärnu mnt 139a</cbc:StreetName>
+    <cbc:CityName> Tallinn</cbc:CityName>
+    <cbc:PostalZone>15169</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>70006317</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efac:Company>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Riigihangete vaidlustuskomisjon</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Tartu mnt 85</cbc:StreetName>
+    <cbc:CityName>Tallinn</cbc:CityName>
+    <cbc:PostalZone>10115</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>1000123</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efac:Company>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0003</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Riigihangete register</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Lõkke tn 4</cbc:StreetName>
+    <cbc:CityName>Tallinn</cbc:CityName>
+    <cbc:PostalZone>10122</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>TED64</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efbc:ListedOnRegulatedMarketIndicator>false</efbc:ListedOnRegulatedMarketIndicator>
+                            <efac:Company>
+<efbc:CompanySizeCode listName="economic-operator-size">small</efbc:CompanySizeCode>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0004</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">FOB Solutions OÜ</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Valukoja tn 8/1</cbc:StreetName>
+    <cbc:CityName> Tallinn</cbc:CityName>
+    <cbc:PostalZone>11415</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>12449455</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                    </efac:Organizations>
+                </efext:EformsExtension>
+            </ext:ExtensionContent>
+        </ext:UBLExtension>
+    </ext:UBLExtensions>
+    <cbc:UBLVersionID>2.3</cbc:UBLVersionID>
+    <cbc:CustomizationID>eforms-sdk-1.13</cbc:CustomizationID>
+    <cbc:ID schemeName="notice-id">32c89610-a301-4d64-afab-96046f7ddafc</cbc:ID>
+    <cbc:ContractFolderID>e7828340-89f1-4343-8e94-1fc2b2952e63</cbc:ContractFolderID>
+    <cbc:IssueDate>2026-08-13+03:00</cbc:IssueDate>
+    <cbc:IssueTime>14:41:02.659+03:00</cbc:IssueTime>
+    <cbc:VersionID>01</cbc:VersionID>
+    <cbc:RegulatoryDomain>32014L0024</cbc:RegulatoryDomain>
+    <cbc:NoticeTypeCode listName="result">can-standard</cbc:NoticeTypeCode>
+    <cbc:NoticeLanguageCode>EST</cbc:NoticeLanguageCode>
+    <cac:ContractingParty>
+        <cbc:BuyerProfileURI>http://www.ria.ee</cbc:BuyerProfileURI>
+        <cac:ContractingPartyType>
+            <cbc:PartyTypeCode listName="buyer-legal-type">cga</cbc:PartyTypeCode>
+        </cac:ContractingPartyType>
+        <cac:ContractingActivity>
+            <cbc:ActivityTypeCode listName="authority-activity">gen-pub</cbc:ActivityTypeCode>
+        </cac:ContractingActivity>
+        <cac:Party>
+            <cac:PartyIdentification>
+                <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+            <cac:ServiceProviderParty>
+                <cbc:ServiceTypeCode listName="organisation-role">ted-esen</cbc:ServiceTypeCode>
+                <cac:Party>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0003</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:Party>
+            </cac:ServiceProviderParty>
+        </cac:Party>
+    </cac:ContractingParty>
+    <cac:TenderingProcess>
+        <cbc:Description languageID="EST">Piiratud hankemenetlus</cbc:Description>
+        <cbc:ProcedureCode listName="procurement-procedure-type">restricted</cbc:ProcedureCode>
+        <cbc:TerminatedIndicator>false</cbc:TerminatedIndicator>
+        <cac:ProcessJustification>
+            <cbc:ProcessReasonCode listName="accelerated-procedure">false</cbc:ProcessReasonCode>
+        </cac:ProcessJustification>
+        <cac:ProcessJustification>
+            <cbc:Description>e7828340-89f1-4343-8e94-1fc2b2952e63</cbc:Description>
+        </cac:ProcessJustification>
+    </cac:TenderingProcess>
+    <cac:ProcurementProject>
+        <cbc:ID>313251-0000</cbc:ID>
+        <cbc:Name languageID="EST">Encrypted DNS — Kotlin Multiplatform mobiilirakenduse arendus</cbc:Name>
+        <cbc:Description languageID="EST">Tellija eesmärk on tellida Kotlin Multiplatform lahendusena arendatud turvaline ja hallatav Encrypted DNS kliendirakendus (Android + iOS). Rakenduse eesmärk on suunata seadme DNS-päringud läbi RIA hallatavate nimeserverite (dns.cert.ee).
+Täpsus: Hanke raames tellitakse ainult kliendirakenduse arendus — taustsüsteemi (nimeserverid, blokeerimisreeglid ja https://blocked.cert.ee leht ) arendus ja haldus ei kuulu hanke skoopi. / Kõrvaldamise alused ja kvalifitseerimistingimused: Vaata hanke alusdokumentidest</cbc:Description>
+        <cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+        <cac:MainCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">72200000</cbc:ItemClassificationCode>
+        </cac:MainCommodityClassification>
+        <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">72267000</cbc:ItemClassificationCode>
+        </cac:AdditionalCommodityClassification>
+        <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">72250000</cbc:ItemClassificationCode>
+        </cac:AdditionalCommodityClassification>
+        <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">72240000</cbc:ItemClassificationCode>
+        </cac:AdditionalCommodityClassification>
+        <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">72254000</cbc:ItemClassificationCode>
+        </cac:AdditionalCommodityClassification>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Täpne piirkond määramata</cbc:Description>
+            <cac:Address>
+                <cbc:CountrySubentityCode listName="nuts">EE001</cbc:CountrySubentityCode>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Täpne piirkond määramata</cbc:Description>
+            <cac:Address>
+                <cbc:CountrySubentityCode listName="nuts">EE008</cbc:CountrySubentityCode>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Täpne piirkond määramata</cbc:Description>
+            <cac:Address>
+                <cbc:CountrySubentityCode listName="nuts">EE004</cbc:CountrySubentityCode>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Täpne piirkond määramata</cbc:Description>
+            <cac:Address>
+                <cbc:CountrySubentityCode listName="nuts">EE00A</cbc:CountrySubentityCode>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Täpne piirkond määramata</cbc:Description>
+            <cac:Address>
+                <cbc:CountrySubentityCode listName="nuts">EE009</cbc:CountrySubentityCode>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+    </cac:ProcurementProject>
+    <cac:ProcurementProjectLot>
+        <cbc:ID schemeName="Lot">LOT-0001</cbc:ID>
+        <cac:TenderingTerms>
+            <cbc:FundingProgramCode listName="eu-funded">no-eu-funds</cbc:FundingProgramCode>
+            <cac:AwardingTerms>
+                <cac:AwardingCriterion>
+                    <cac:SubordinateAwardingCriterion>
+                        <ext:UBLExtensions>
+                            <ext:UBLExtension>
+<ext:ExtensionContent>
+    <efext:EformsExtension>
+        <efac:AwardCriterionParameter>
+            <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+            <efbc:ParameterNumeric>100.0</efbc:ParameterNumeric>
+        </efac:AwardCriterionParameter>
+    </efext:EformsExtension>
+</ext:ExtensionContent>
+                            </ext:UBLExtension>
+                        </ext:UBLExtensions>
+                        <cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+                        <cbc:Description languageID="EST">Vaata hanke alusdokumentidest</cbc:Description>
+                    </cac:SubordinateAwardingCriterion>
+                </cac:AwardingCriterion>
+            </cac:AwardingTerms>
+            <cac:AdditionalInformationParty>
+                <cac:PartyIdentification>
+                    <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+                </cac:PartyIdentification>
+            </cac:AdditionalInformationParty>
+            <cac:AppealTerms>
+                <cac:PresentationPeriod>
+                    <cbc:Description languageID="EST">https://fin.ee/riigihanked-riigiabi-osalused/riigihanked/vaidlustusmenetlus</cbc:Description>
+                </cac:PresentationPeriod>
+                <cac:AppealReceiverParty>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:AppealReceiverParty>
+                <cac:MediationParty>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:MediationParty>
+            </cac:AppealTerms>
+        </cac:TenderingTerms>
+        <cac:TenderingProcess>
+            <cbc:GovernmentAgreementConstraintIndicator>true</cbc:GovernmentAgreementConstraintIndicator>
+            <cac:AuctionTerms>
+                <cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+            </cac:AuctionTerms>
+            <cac:ContractingSystem>
+                <cbc:ContractingSystemTypeCode listName="framework-agreement">none</cbc:ContractingSystemTypeCode>
+            </cac:ContractingSystem>
+            <cac:ContractingSystem>
+                <cbc:ContractingSystemTypeCode listName="dps-usage">dps-list</cbc:ContractingSystemTypeCode>
+            </cac:ContractingSystem>
+        </cac:TenderingProcess>
+        <cac:ProcurementProject>
+            <cbc:ID>313251-0001</cbc:ID>
+            <cbc:Name languageID="EST">Encrypted DNS — Kotlin Multiplatform mobiilirakenduse arendus</cbc:Name>
+            <cbc:Description languageID="EST">Tellija eesmärk on tellida Kotlin Multiplatform lahendusena arendatud turvaline ja hallatav Encrypted DNS kliendirakendus (Android + iOS). Rakenduse eesmärk on suunata seadme DNS-päringud läbi RIA hallatavate nimeserverite (dns.cert.ee).
+Encrypted DNS on Riigi Infosüsteemi Ameti (RIA) ning selle CERT-EE osakonna poolt pakutav tasuta mobiilirakendus, mille eesmärk on kaitsta nutiseadmeid õngitsuse, pahavara ja pahatahtlike linkide eest. Rakendus muudab üksnes DNS serveri ja suunab päringud läbi krüpteeritud ühenduse RIA hallatavatesse nimeserveritesse, mis blokeerivad nimelahenduse selliste domeenide puhul.
+Rakendus töötab iOS (14.0+) ning Android (9+) seadmetel.
+Hanke raames tellitakse ainult kliendirakenduse arendus — taustsüsteemi (nimeserverid, blokeerimisreeglid ja https://blocked.cert.ee leht ) arendus ja haldus ei kuulu hanke skoopi. / Kõrvaldamise alused ja kvalifitseerimistingimused: Vaata hanke alusdokumentidest</cbc:Description>
+            <cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+            <cac:ProcurementAdditionalType>
+                <cbc:ProcurementTypeCode listName="accessibility">n-inc</cbc:ProcurementTypeCode>
+            </cac:ProcurementAdditionalType>
+            <cac:MainCommodityClassification>
+                <cbc:ItemClassificationCode listName="cpv">72200000</cbc:ItemClassificationCode>
+            </cac:MainCommodityClassification>
+            <cac:AdditionalCommodityClassification>
+                <cbc:ItemClassificationCode listName="cpv">72240000</cbc:ItemClassificationCode>
+            </cac:AdditionalCommodityClassification>
+            <cac:AdditionalCommodityClassification>
+                <cbc:ItemClassificationCode listName="cpv">72267000</cbc:ItemClassificationCode>
+            </cac:AdditionalCommodityClassification>
+            <cac:AdditionalCommodityClassification>
+                <cbc:ItemClassificationCode listName="cpv">72254000</cbc:ItemClassificationCode>
+            </cac:AdditionalCommodityClassification>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Täpne piirkond määramata</cbc:Description>
+                <cac:Address>
+                    <cbc:CountrySubentityCode listName="nuts">EE001</cbc:CountrySubentityCode>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Täpne piirkond määramata</cbc:Description>
+                <cac:Address>
+                    <cbc:CountrySubentityCode listName="nuts">EE008</cbc:CountrySubentityCode>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Täpne piirkond määramata</cbc:Description>
+                <cac:Address>
+                    <cbc:CountrySubentityCode listName="nuts">EE004</cbc:CountrySubentityCode>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Täpne piirkond määramata</cbc:Description>
+                <cac:Address>
+                    <cbc:CountrySubentityCode listName="nuts">EE00A</cbc:CountrySubentityCode>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Täpne piirkond määramata</cbc:Description>
+                <cac:Address>
+                    <cbc:CountrySubentityCode listName="nuts">EE009</cbc:CountrySubentityCode>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+        </cac:ProcurementProject>
+    </cac:ProcurementProjectLot>
+    <cac:TenderResult>
+        <cbc:AwardDate>2000-01-01+02:00</cbc:AwardDate>
+    </cac:TenderResult>
+</ContractAwardNotice>
+<ContractAwardNotice xmlns="urn:oasis:names:specification:ubl:schema:xsd:ContractAwardNotice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:efac="http://data.europa.eu/p27/eforms-ubl-extension-aggregate-components/1" xmlns:efbc="http://data.europa.eu/p27/eforms-ubl-extension-basic-components/1" xmlns:efext="http://data.europa.eu/p27/eforms-ubl-extensions/1" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2">
+    <ext:UBLExtensions>
+        <ext:UBLExtension>
+            <ext:ExtensionContent>
+                <efext:EformsExtension>
+                    <efbc:TransmissionDate>2026-08-14+03:00</efbc:TransmissionDate>
+                    <efbc:TransmissionTime>12:24:41.473+03:00</efbc:TransmissionTime>
+                    <efac:NoticeResult>
+                        <cbc:TotalAmount currencyID="EUR">161978.00</cbc:TotalAmount>
+                        <efac:LotResult>
+                            <cbc:ID schemeName="result">RES-0000</cbc:ID>
+                            <cbc:TenderResultCode listName="winner-selection-status">selec-w</cbc:TenderResultCode>
+                            <efac:LotTender>
+<cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            </efac:LotTender>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>2</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>2</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>2</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:SettledContract>
+<cbc:ID schemeName="contract">CON-0001</cbc:ID>
+                            </efac:SettledContract>
+                            <efac:TenderLot>
+<cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+                            </efac:TenderLot>
+                        </efac:LotResult>
+                        <efac:LotTender>
+                            <cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            <cac:LegalMonetaryTotal>
+<cbc:PayableAmount currencyID="EUR">161978.00</cbc:PayableAmount>
+                            </cac:LegalMonetaryTotal>
+                            <efac:SubcontractingTerm>
+<efbc:TermCode listName="applicability">no</efbc:TermCode>
+                            </efac:SubcontractingTerm>
+                            <efac:TenderingParty>
+<cbc:ID schemeName="tendering-party">TPA-0001</cbc:ID>
+                            </efac:TenderingParty>
+                            <efac:TenderLot>
+<cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+                            </efac:TenderLot>
+                            <efac:TenderReference>
+<cbc:ID>737467</cbc:ID>
+                            </efac:TenderReference>
+                        </efac:LotTender>
+                        <efac:SettledContract>
+                            <cbc:ID schemeName="contract">CON-0001</cbc:ID>
+                            <cbc:IssueDate>2026-07-31+03:00</cbc:IssueDate>
+                            <cbc:Title languageID="EST">TÖÖVÕTULEPING nr 7-6/5645-1</cbc:Title>
+                            <efac:ContractReference>
+<cbc:ID>7-6/5645-1</cbc:ID>
+                            </efac:ContractReference>
+                            <efac:LotTender>
+<cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            </efac:LotTender>
+                        </efac:SettledContract>
+                        <efac:TenderingParty>
+                            <cbc:ID schemeName="tendering-party">TPA-0001</cbc:ID>
+                            <efac:Tenderer>
+<cbc:ID schemeName="organization">ORG-0004</cbc:ID>
+<efbc:GroupLeadIndicator>true</efbc:GroupLeadIndicator>
+                            </efac:Tenderer>
+                            <efac:Tenderer>
+<cbc:ID schemeName="organization">ORG-0005</cbc:ID>
+<efbc:GroupLeadIndicator>false</efbc:GroupLeadIndicator>
+                            </efac:Tenderer>
+                        </efac:TenderingParty>
+                    </efac:NoticeResult>
+                    <efac:NoticeSubType>
+                        <cbc:SubTypeCode listName="notice-subtype">33</cbc:SubTypeCode>
+                    </efac:NoticeSubType>
+                    <efac:Organizations>
+                        <efac:Organization>
+                            <efac:Company>
+<cbc:WebsiteURI>http://www.rtk.ee</cbc:WebsiteURI>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Riigi Tugiteenuste Keskus</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Lõkke tn 4</cbc:StreetName>
+    <cbc:CityName> Tallinn</cbc:CityName>
+    <cbc:PostalZone>10122</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>70007340</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efac:Company>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Riigihangete vaidlustuskomisjon</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Tartu mnt 85</cbc:StreetName>
+    <cbc:CityName>Tallinn</cbc:CityName>
+    <cbc:PostalZone>10115</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>1000123</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efac:Company>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0003</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Riigihangete register</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Lõkke tn 4</cbc:StreetName>
+    <cbc:CityName>Tallinn</cbc:CityName>
+    <cbc:PostalZone>10122</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>TED64</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efbc:ListedOnRegulatedMarketIndicator>false</efbc:ListedOnRegulatedMarketIndicator>
+                            <efac:Company>
+<efbc:CompanySizeCode listName="economic-operator-size">medium</efbc:CompanySizeCode>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0004</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Sihtasutus Estonian Business School</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>A. Lauteri tn 3</cbc:StreetName>
+    <cbc:CityName> Tallinn</cbc:CityName>
+    <cbc:PostalZone>10114</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>90013934</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efbc:ListedOnRegulatedMarketIndicator>false</efbc:ListedOnRegulatedMarketIndicator>
+                            <efac:Company>
+<efbc:CompanySizeCode listName="economic-operator-size">small</efbc:CompanySizeCode>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0005</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Mittetulundusühing Tuleviku Tehnoloogiaharidus</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>2. Tartu põik 5</cbc:StreetName>
+    <cbc:CityName> Jõhvi vald</cbc:CityName>
+    <cbc:PostalZone>41537</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>80583085</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                    </efac:Organizations>
+                </efext:EformsExtension>
+            </ext:ExtensionContent>
+        </ext:UBLExtension>
+    </ext:UBLExtensions>
+    <cbc:UBLVersionID>2.3</cbc:UBLVersionID>
+    <cbc:CustomizationID>eforms-sdk-1.13</cbc:CustomizationID>
+    <cbc:ID schemeName="notice-id">d0059f41-1cdb-480a-a2d3-25a5ecacb277</cbc:ID>
+    <cbc:ContractFolderID>208cc2fd-736f-4fba-8059-2079a3cc2e2e</cbc:ContractFolderID>
+    <cbc:IssueDate>2026-08-14+03:00</cbc:IssueDate>
+    <cbc:IssueTime>12:24:41.473+03:00</cbc:IssueTime>
+    <cbc:VersionID>01</cbc:VersionID>
+    <cbc:RegulatoryDomain>32014L0024</cbc:RegulatoryDomain>
+    <cbc:NoticeTypeCode listName="result">can-social</cbc:NoticeTypeCode>
+    <cbc:NoticeLanguageCode>EST</cbc:NoticeLanguageCode>
+    <cac:ContractingParty>
+        <cbc:BuyerProfileURI>http://www.rtk.ee</cbc:BuyerProfileURI>
+        <cac:ContractingPartyType>
+            <cbc:PartyTypeCode listName="buyer-legal-type">cga</cbc:PartyTypeCode>
+        </cac:ContractingPartyType>
+        <cac:ContractingActivity>
+            <cbc:ActivityTypeCode listName="authority-activity">gen-pub</cbc:ActivityTypeCode>
+        </cac:ContractingActivity>
+        <cac:Party>
+            <cac:PartyIdentification>
+                <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+            <cac:ServiceProviderParty>
+                <cbc:ServiceTypeCode listName="organisation-role">ted-esen</cbc:ServiceTypeCode>
+                <cac:Party>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0003</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:Party>
+            </cac:ServiceProviderParty>
+        </cac:Party>
+    </cac:ContractingParty>
+    <cac:TenderingProcess>
+        <cbc:Description languageID="EST">Väikehange</cbc:Description>
+        <cbc:ProcedureCode listName="procurement-procedure-type">oth-single</cbc:ProcedureCode>
+    </cac:TenderingProcess>
+    <cac:ProcurementProject>
+        <cbc:ID>309231-0000</cbc:ID>
+        <cbc:Name languageID="EST">Andmete ja tehisaru valikaine ainekavade, õppematerjalide ja metoodiliste juhendmaterjalide tellimine (Justiits- ja Digiministeerium)</cbc:Name>
+        <cbc:Description languageID="EST">Riigihanke eesmärgiks on tellida põhikooli I ja II kooliastmele andmete ja tehisaru valikaine õppekava, õppematerjalide ja õpetajale suunatud metoodiliste materjalide koostamine.
+
+Hankelepingu alguskuupäev on eeldatav st hankelepingu täitmine algab alates lepingu sõlmimisest arvestusega, et lepingu täitmise tähtaeg on väikehanke alusdokumentides sätestatud lõpptähtaeg 15.12.2026. / Kõrvaldamise alused ja kvalifitseerimistingimused: Vaata hanke alusdokumentidest</cbc:Description>
+        <cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+        <cac:MainCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">80100000</cbc:ItemClassificationCode>
+        </cac:MainCommodityClassification>
+        <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">92312212</cbc:ItemClassificationCode>
+        </cac:AdditionalCommodityClassification>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Eesti</cbc:Description>
+            <cac:Address>
+                <cbc:Region>anyw-cou</cbc:Region>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+    </cac:ProcurementProject>
+    <cac:ProcurementProjectLot>
+        <cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+        <cac:TenderingTerms>
+            <cbc:FundingProgramCode listName="eu-funded">eu-funds</cbc:FundingProgramCode>
+            <cac:AwardingTerms>
+                <cac:AwardingCriterion>
+                    <cac:SubordinateAwardingCriterion>
+                        <ext:UBLExtensions>
+                            <ext:UBLExtension>
+<ext:ExtensionContent>
+    <efext:EformsExtension>
+        <efac:AwardCriterionParameter>
+            <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+            <efbc:ParameterNumeric>30.0</efbc:ParameterNumeric>
+        </efac:AwardCriterionParameter>
+    </efext:EformsExtension>
+</ext:ExtensionContent>
+                            </ext:UBLExtension>
+                        </ext:UBLExtensions>
+                        <cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+                        <cbc:Description languageID="EST">Vaata hanke alusdokumentidest</cbc:Description>
+                    </cac:SubordinateAwardingCriterion>
+                    <cac:SubordinateAwardingCriterion>
+                        <ext:UBLExtensions>
+                            <ext:UBLExtension>
+<ext:ExtensionContent>
+    <efext:EformsExtension>
+        <efac:AwardCriterionParameter>
+            <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+            <efbc:ParameterNumeric>70.0</efbc:ParameterNumeric>
+        </efac:AwardCriterionParameter>
+    </efext:EformsExtension>
+</ext:ExtensionContent>
+                            </ext:UBLExtension>
+                        </ext:UBLExtensions>
+                        <cbc:AwardingCriterionTypeCode listName="award-criterion-type">quality</cbc:AwardingCriterionTypeCode>
+                        <cbc:Description languageID="EST">Vaata hanke alusdokumentidest</cbc:Description>
+                    </cac:SubordinateAwardingCriterion>
+                </cac:AwardingCriterion>
+            </cac:AwardingTerms>
+            <cac:AdditionalInformationParty>
+                <cac:PartyIdentification>
+                    <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+                </cac:PartyIdentification>
+            </cac:AdditionalInformationParty>
+            <cac:AppealTerms>
+                <cac:PresentationPeriod>
+                    <cbc:Description languageID="EST">https://fin.ee/riigihanked-riigiabi-osalused/riigihanked/vaidlustusmenetlus</cbc:Description>
+                </cac:PresentationPeriod>
+                <cac:AppealReceiverParty>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:AppealReceiverParty>
+                <cac:MediationParty>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:MediationParty>
+            </cac:AppealTerms>
+        </cac:TenderingTerms>
+        <cac:TenderingProcess>
+            <cac:AuctionTerms>
+                <cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+            </cac:AuctionTerms>
+            <cac:ContractingSystem>
+                <cbc:ContractingSystemTypeCode listName="framework-agreement">none</cbc:ContractingSystemTypeCode>
+            </cac:ContractingSystem>
+            <cac:ContractingSystem>
+                <cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+            </cac:ContractingSystem>
+        </cac:TenderingProcess>
+        <cac:ProcurementProject>
+            <cbc:ID>309231-0000</cbc:ID>
+            <cbc:Name languageID="EST">Andmete ja tehisaru valikaine ainekavade, õppematerjalide ja metoodiliste juhendmaterjalide tellimine (Justiits- ja Digiministeerium)</cbc:Name>
+            <cbc:Description languageID="EST">Riigihanke eesmärgiks on tellida põhikooli I ja II kooliastmele andmete ja tehisaru valikaine õppekava, õppematerjalide ja õpetajale suunatud metoodiliste materjalide koostamine.
+
+Hankelepingu alguskuupäev on eeldatav st hankelepingu täitmine algab alates lepingu sõlmimisest arvestusega, et lepingu täitmise tähtaeg on väikehanke alusdokumentides sätestatud lõpptähtaeg 15.12.2026. / Kõrvaldamise alused ja kvalifitseerimistingimused: Vaata hanke alusdokumentidest</cbc:Description>
+            <cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+            <cac:ProcurementAdditionalType>
+                <cbc:ProcurementTypeCode listName="strategic-procurement">soc-obj</cbc:ProcurementTypeCode>
+                <cbc:ProcurementType languageID="EST">Loodavad materjalid peavad vastama WCAG 2.0 standardile või sellega samaväärsele.</cbc:ProcurementType>
+            </cac:ProcurementAdditionalType>
+            <cac:ProcurementAdditionalType>
+                <cbc:ProcurementTypeCode listName="social-objective">acc-all</cbc:ProcurementTypeCode>
+            </cac:ProcurementAdditionalType>
+            <cac:ProcurementAdditionalType>
+                <cbc:ProcurementTypeCode listName="strategic-procurement">env-imp</cbc:ProcurementTypeCode>
+                <cbc:ProcurementType languageID="EST">Esitatud vastavustingimustes.</cbc:ProcurementType>
+            </cac:ProcurementAdditionalType>
+            <cac:ProcurementAdditionalType>
+                <cbc:ProcurementTypeCode listName="environmental-impact">other</cbc:ProcurementTypeCode>
+            </cac:ProcurementAdditionalType>
+            <cac:ProcurementAdditionalType>
+                <cbc:ProcurementTypeCode listName="accessibility">inc</cbc:ProcurementTypeCode>
+            </cac:ProcurementAdditionalType>
+            <cac:MainCommodityClassification>
+                <cbc:ItemClassificationCode listName="cpv">80100000</cbc:ItemClassificationCode>
+            </cac:MainCommodityClassification>
+            <cac:AdditionalCommodityClassification>
+                <cbc:ItemClassificationCode listName="cpv">92312212</cbc:ItemClassificationCode>
+            </cac:AdditionalCommodityClassification>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Eesti</cbc:Description>
+                <cac:Address>
+                    <cbc:Region>anyw-cou</cbc:Region>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+        </cac:ProcurementProject>
+    </cac:ProcurementProjectLot>
+    <cac:TenderResult>
+        <cbc:AwardDate>2000-01-01+02:00</cbc:AwardDate>
+    </cac:TenderResult>
+</ContractAwardNotice>
+<ContractAwardNotice xmlns="urn:oasis:names:specification:ubl:schema:xsd:ContractAwardNotice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:efac="http://data.europa.eu/p27/eforms-ubl-extension-aggregate-components/1" xmlns:efbc="http://data.europa.eu/p27/eforms-ubl-extension-basic-components/1" xmlns:efext="http://data.europa.eu/p27/eforms-ubl-extensions/1" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2">
+    <ext:UBLExtensions>
+        <ext:UBLExtension>
+            <ext:ExtensionContent>
+                <efext:EformsExtension>
+                    <efbc:TransmissionDate>2026-08-17+03:00</efbc:TransmissionDate>
+                    <efbc:TransmissionTime>13:47:45.818+03:00</efbc:TransmissionTime>
+                    <efac:NoticeResult>
+                        <cbc:TotalAmount currencyID="EUR">39054.00</cbc:TotalAmount>
+                        <efac:LotResult>
+                            <cbc:ID schemeName="result">RES-0000</cbc:ID>
+                            <cbc:TenderResultCode listName="winner-selection-status">selec-w</cbc:TenderResultCode>
+                            <efac:LotTender>
+<cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            </efac:LotTender>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>3</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>3</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>3</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:SettledContract>
+<cbc:ID schemeName="contract">CON-0001</cbc:ID>
+                            </efac:SettledContract>
+                            <efac:TenderLot>
+<cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+                            </efac:TenderLot>
+                        </efac:LotResult>
+                        <efac:LotTender>
+                            <cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            <cac:LegalMonetaryTotal>
+<cbc:PayableAmount currencyID="EUR">39054.00</cbc:PayableAmount>
+                            </cac:LegalMonetaryTotal>
+                            <efac:SubcontractingTerm>
+<efbc:TermCode listName="applicability">no</efbc:TermCode>
+                            </efac:SubcontractingTerm>
+                            <efac:TenderingParty>
+<cbc:ID schemeName="tendering-party">TPA-0001</cbc:ID>
+                            </efac:TenderingParty>
+                            <efac:TenderLot>
+<cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+                            </efac:TenderLot>
+                            <efac:TenderReference>
+<cbc:ID>741639</cbc:ID>
+                            </efac:TenderReference>
+                        </efac:LotTender>
+                        <efac:SettledContract>
+                            <cbc:ID schemeName="contract">CON-0001</cbc:ID>
+                            <cbc:IssueDate>2026-08-17+03:00</cbc:IssueDate>
+                            <cbc:Title languageID="EST">Hankeleping</cbc:Title>
+                            <efac:ContractReference>
+<cbc:ID>11-21.3/45</cbc:ID>
+                            </efac:ContractReference>
+                            <efac:LotTender>
+<cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            </efac:LotTender>
+                        </efac:SettledContract>
+                        <efac:TenderingParty>
+                            <cbc:ID schemeName="tendering-party">TPA-0001</cbc:ID>
+                            <efac:Tenderer>
+<cbc:ID schemeName="organization">ORG-0004</cbc:ID>
+                            </efac:Tenderer>
+                        </efac:TenderingParty>
+                    </efac:NoticeResult>
+                    <efac:NoticeSubType>
+                        <cbc:SubTypeCode listName="notice-subtype">29</cbc:SubTypeCode>
+                    </efac:NoticeSubType>
+                    <efac:Organizations>
+                        <efac:Organization>
+                            <efac:Company>
+<cbc:WebsiteURI>http://www.torivald.ee</cbc:WebsiteURI>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Tori Vallavalitsus</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Pärnu mnt 12</cbc:StreetName>
+    <cbc:CityName> Tori vald</cbc:CityName>
+    <cbc:PostalZone>86705</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>77000341</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efac:Company>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Riigihangete vaidlustuskomisjon</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Tartu mnt 85</cbc:StreetName>
+    <cbc:CityName>Tallinn</cbc:CityName>
+    <cbc:PostalZone>10115</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>1000123</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efac:Company>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0003</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Riigihangete register</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Lõkke tn 4</cbc:StreetName>
+    <cbc:CityName>Tallinn</cbc:CityName>
+    <cbc:PostalZone>10122</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>TED64</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efbc:ListedOnRegulatedMarketIndicator>false</efbc:ListedOnRegulatedMarketIndicator>
+                            <efac:Company>
+<efbc:CompanySizeCode listName="economic-operator-size">small</efbc:CompanySizeCode>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0004</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">IDsys OÜ</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Keemia tn 4</cbc:StreetName>
+    <cbc:CityName>Tallinn</cbc:CityName>
+    <cbc:PostalZone>10616</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>11716262</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                    </efac:Organizations>
+                </efext:EformsExtension>
+            </ext:ExtensionContent>
+        </ext:UBLExtension>
+    </ext:UBLExtensions>
+    <cbc:UBLVersionID>2.3</cbc:UBLVersionID>
+    <cbc:CustomizationID>eforms-sdk-1.13</cbc:CustomizationID>
+    <cbc:ID schemeName="notice-id">35f04b06-9785-49d1-af00-2892fa302327</cbc:ID>
+    <cbc:ContractFolderID>d9443625-fa41-4e5a-9a8b-92f00a4c70a8</cbc:ContractFolderID>
+    <cbc:IssueDate>2026-08-17+03:00</cbc:IssueDate>
+    <cbc:IssueTime>13:47:45.818+03:00</cbc:IssueTime>
+    <cbc:VersionID>01</cbc:VersionID>
+    <cbc:RegulatoryDomain>32014L0024</cbc:RegulatoryDomain>
+    <cbc:NoticeTypeCode listName="result">can-standard</cbc:NoticeTypeCode>
+    <cbc:NoticeLanguageCode>EST</cbc:NoticeLanguageCode>
+    <cac:ContractingParty>
+        <cbc:BuyerProfileURI>http://www.torivald.ee</cbc:BuyerProfileURI>
+        <cac:ContractingPartyType>
+            <cbc:PartyTypeCode listName="buyer-legal-type">la</cbc:PartyTypeCode>
+        </cac:ContractingPartyType>
+        <cac:ContractingActivity>
+            <cbc:ActivityTypeCode listName="authority-activity">rcr</cbc:ActivityTypeCode>
+        </cac:ContractingActivity>
+        <cac:Party>
+            <cac:PartyIdentification>
+                <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+            <cac:ServiceProviderParty>
+                <cbc:ServiceTypeCode listName="organisation-role">ted-esen</cbc:ServiceTypeCode>
+                <cac:Party>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0003</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:Party>
+            </cac:ServiceProviderParty>
+        </cac:Party>
+    </cac:ContractingParty>
+    <cac:TenderingProcess>
+        <cbc:Description languageID="EST">Lihthange</cbc:Description>
+        <cbc:ProcedureCode listName="procurement-procedure-type">oth-single</cbc:ProcedureCode>
+    </cac:TenderingProcess>
+    <cac:ProcurementProject>
+        <cbc:ID>312615-0000</cbc:ID>
+        <cbc:Name languageID="EST">Tori valla raamatukogu RFID teavikute tuvastus- ja jälgimislahenduse ning iseteenindusseadmete hankimine</cbc:Name>
+        <cbc:Description languageID="EST">Käesolevaga hangitakse RFID (radio frequency identification) toega elektroonilise kapi (pakiautomaadi) koos tarkvaraga, mis võimaldab teavikute laenutamist ja tagastamist. Pakkumine peab vastama tehnilises kirjelduses toodud nõuetele ja tingimustele ning hõlmama seadmete ja tarkvara ostu, transporti, paigaldamist, seadistamist, garantiid, hooldust ja kasutajakoolitust. Hankeobjekt moodustab ühtse terviku, mistõttu ei ole selle osadeks jaotamine hanke eesmärki silmas pidades mõistlik. / Kõrvaldamise alused ja kvalifitseerimistingimused: Vaata hanke alusdokumentidest</cbc:Description>
+        <cbc:ProcurementTypeCode listName="contract-nature">supplies</cbc:ProcurementTypeCode>
+        <cbc:Note languageID="EST">Hange ei ole jaotatud osadeks, kuna hanke objektiks on funktsionaalselt ja tehniliselt terviklik lahendus, mille kõik komponendid (RFID-toega pakiautomaat, tarkvara, paigaldus, seadistus, hooldus ja kasutajakoolitus) on omavahel tihedalt integreeritud ning sõltuvad üksteise nõuetekohasest toimimisest.</cbc:Note>
+        <cac:MainCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">39155100</cbc:ItemClassificationCode>
+        </cac:MainCommodityClassification>
+        <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">48160000</cbc:ItemClassificationCode>
+        </cac:AdditionalCommodityClassification>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Tori vald</cbc:Description>
+            <cac:Address>
+                <cbc:CountrySubentityCode listName="nuts">EE004</cbc:CountrySubentityCode>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+    </cac:ProcurementProject>
+    <cac:ProcurementProjectLot>
+        <cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+        <cac:TenderingTerms>
+            <cbc:FundingProgramCode listName="eu-funded">no-eu-funds</cbc:FundingProgramCode>
+            <cac:AwardingTerms>
+                <cac:AwardingCriterion>
+                    <cac:SubordinateAwardingCriterion>
+                        <ext:UBLExtensions>
+                            <ext:UBLExtension>
+<ext:ExtensionContent>
+    <efext:EformsExtension>
+        <efac:AwardCriterionParameter>
+            <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+            <efbc:ParameterNumeric>100.0</efbc:ParameterNumeric>
+        </efac:AwardCriterionParameter>
+    </efext:EformsExtension>
+</ext:ExtensionContent>
+                            </ext:UBLExtension>
+                        </ext:UBLExtensions>
+                        <cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+                        <cbc:Description languageID="EST">Vaata hanke alusdokumentidest</cbc:Description>
+                    </cac:SubordinateAwardingCriterion>
+                </cac:AwardingCriterion>
+            </cac:AwardingTerms>
+            <cac:AdditionalInformationParty>
+                <cac:PartyIdentification>
+                    <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+                </cac:PartyIdentification>
+            </cac:AdditionalInformationParty>
+            <cac:AppealTerms>
+                <cac:PresentationPeriod>
+                    <cbc:Description languageID="EST">https://fin.ee/riigihanked-riigiabi-osalused/riigihanked/vaidlustusmenetlus</cbc:Description>
+                </cac:PresentationPeriod>
+                <cac:AppealReceiverParty>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:AppealReceiverParty>
+                <cac:MediationParty>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:MediationParty>
+            </cac:AppealTerms>
+        </cac:TenderingTerms>
+        <cac:TenderingProcess>
+            <cbc:GovernmentAgreementConstraintIndicator>false</cbc:GovernmentAgreementConstraintIndicator>
+            <cac:AuctionTerms>
+                <cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+            </cac:AuctionTerms>
+            <cac:ContractingSystem>
+                <cbc:ContractingSystemTypeCode listName="framework-agreement">none</cbc:ContractingSystemTypeCode>
+            </cac:ContractingSystem>
+            <cac:ContractingSystem>
+                <cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+            </cac:ContractingSystem>
+        </cac:TenderingProcess>
+        <cac:ProcurementProject>
+            <cbc:ID>312615-0000</cbc:ID>
+            <cbc:Name languageID="EST">Tori valla raamatukogu RFID teavikute tuvastus- ja jälgimislahenduse ning iseteenindusseadmete hankimine</cbc:Name>
+            <cbc:Description languageID="EST">Käesolevaga hangitakse RFID (radio frequency identification) toega elektroonilise kapi (pakiautomaadi) koos tarkvaraga, mis võimaldab teavikute laenutamist ja tagastamist. Pakkumine peab vastama tehnilises kirjelduses toodud nõuetele ja tingimustele ning hõlmama seadmete ja tarkvara ostu, transporti, paigaldamist, seadistamist, garantiid, hooldust ja kasutajakoolitust. Hankeobjekt moodustab ühtse terviku, mistõttu ei ole selle osadeks jaotamine hanke eesmärki silmas pidades mõistlik. / Kõrvaldamise alused ja kvalifitseerimistingimused: Vaata hanke alusdokumentidest</cbc:Description>
+            <cbc:ProcurementTypeCode listName="contract-nature">supplies</cbc:ProcurementTypeCode>
+            <cbc:Note languageID="EST">Hange ei ole jaotatud osadeks, kuna hanke objektiks on funktsionaalselt ja tehniliselt terviklik lahendus, mille kõik komponendid (RFID-toega pakiautomaat, tarkvara, paigaldus, seadistus, hooldus ja kasutajakoolitus) on omavahel tihedalt integreeritud ning sõltuvad üksteise nõuetekohasest toimimisest.</cbc:Note>
+            <cac:ProcurementAdditionalType>
+                <cbc:ProcurementTypeCode listName="accessibility">n-inc-just</cbc:ProcurementTypeCode>
+                <cbc:ProcurementType languageID="EST">Hankija poolt teostatud tooteuuringust ei nähtu puuetega inimeste juurdepääsukriteeriumide lisamise võimalust, sest turul olevad tooted teadaolevalt ei suuda neid tingimusi täita.</cbc:ProcurementType>
+            </cac:ProcurementAdditionalType>
+            <cac:MainCommodityClassification>
+                <cbc:ItemClassificationCode listName="cpv">39155100</cbc:ItemClassificationCode>
+            </cac:MainCommodityClassification>
+            <cac:AdditionalCommodityClassification>
+                <cbc:ItemClassificationCode listName="cpv">48160000</cbc:ItemClassificationCode>
+            </cac:AdditionalCommodityClassification>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Tori vald</cbc:Description>
+                <cac:Address>
+                    <cbc:CountrySubentityCode listName="nuts">EE004</cbc:CountrySubentityCode>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+        </cac:ProcurementProject>
+    </cac:ProcurementProjectLot>
+    <cac:TenderResult>
+        <cbc:AwardDate>2000-01-01+02:00</cbc:AwardDate>
+    </cac:TenderResult>
+</ContractAwardNotice>
+<ContractAwardNotice xmlns="urn:oasis:names:specification:ubl:schema:xsd:ContractAwardNotice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:efac="http://data.europa.eu/p27/eforms-ubl-extension-aggregate-components/1" xmlns:efbc="http://data.europa.eu/p27/eforms-ubl-extension-basic-components/1" xmlns:efext="http://data.europa.eu/p27/eforms-ubl-extensions/1" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2">
+    <ext:UBLExtensions>
+        <ext:UBLExtension>
+            <ext:ExtensionContent>
+                <efext:EformsExtension>
+                    <efbc:TransmissionDate>2026-08-19+03:00</efbc:TransmissionDate>
+                    <efbc:TransmissionTime>14:00:07.351+03:00</efbc:TransmissionTime>
+                    <efac:NoticeResult>
+                        <cbc:TotalAmount currencyID="EUR">4389920.00</cbc:TotalAmount>
+                        <efac:LotResult>
+                            <cbc:ID schemeName="result">RES-0000</cbc:ID>
+                            <cbc:TenderResultCode listName="winner-selection-status">selec-w</cbc:TenderResultCode>
+                            <efbc:DPSTerminationIndicator>false</efbc:DPSTerminationIndicator>
+                            <efac:LotTender>
+<cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            </efac:LotTender>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>2</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>2</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>2</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:SettledContract>
+<cbc:ID schemeName="contract">CON-0001</cbc:ID>
+                            </efac:SettledContract>
+                            <efac:TenderLot>
+<cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+                            </efac:TenderLot>
+                        </efac:LotResult>
+                        <efac:LotTender>
+                            <cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            
+                            <cac:LegalMonetaryTotal>
+<cbc:PayableAmount currencyID="EUR">4389920.00</cbc:PayableAmount>
+                            </cac:LegalMonetaryTotal>
+                            <efac:SubcontractingTerm>
+<efbc:TermCode listName="applicability">no</efbc:TermCode>
+                            </efac:SubcontractingTerm>
+                            <efac:TenderingParty>
+<cbc:ID schemeName="tendering-party">TPA-0001</cbc:ID>
+                            </efac:TenderingParty>
+                            <efac:TenderLot>
+<cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+                            </efac:TenderLot>
+                            <efac:TenderReference>
+<cbc:ID>730147</cbc:ID>
+                            </efac:TenderReference>
+                        </efac:LotTender>
+                        <efac:SettledContract>
+                            <cbc:ID schemeName="contract">CON-0001</cbc:ID>
+                            <cbc:IssueDate>2026-08-04+03:00</cbc:IssueDate>
+                            <cbc:Title languageID="EST">Töövõtuleping_307142_AS INF Ehitus_Kunda jõutrafo</cbc:Title>
+                            <efac:ContractReference>
+<cbc:ID>307142</cbc:ID>
+                            </efac:ContractReference>
+                            <efac:LotTender>
+<cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            </efac:LotTender>
+                        </efac:SettledContract>
+                        <efac:TenderingParty>
+                            <cbc:ID schemeName="tendering-party">TPA-0001</cbc:ID>
+                            <efac:Tenderer>
+<cbc:ID schemeName="organization">ORG-0004</cbc:ID>
+                            </efac:Tenderer>
+                        </efac:TenderingParty>
+                    </efac:NoticeResult>
+                    <efac:NoticeSubType>
+                        <cbc:SubTypeCode listName="notice-subtype">30</cbc:SubTypeCode>
+                    </efac:NoticeSubType>
+                    <efac:Organizations>
+                        <efac:Organization>
+                            <efac:Company>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Elektrilevi OÜ</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Veskiposti tn 2</cbc:StreetName>
+    <cbc:CityName> Tallinn</cbc:CityName>
+    <cbc:PostalZone>10138</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>11050857</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efac:Company>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Riigihangete vaidlustuskomisjon</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Tartu mnt 85</cbc:StreetName>
+    <cbc:CityName>Tallinn</cbc:CityName>
+    <cbc:PostalZone>10115</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>1000123</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efac:Company>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0003</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Riigihangete register</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Lõkke tn 4</cbc:StreetName>
+    <cbc:CityName>Tallinn</cbc:CityName>
+    <cbc:PostalZone>10122</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>TED64</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efbc:ListedOnRegulatedMarketIndicator>false</efbc:ListedOnRegulatedMarketIndicator>
+                            <efac:Company>
+<efbc:CompanySizeCode listName="economic-operator-size">medium</efbc:CompanySizeCode>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0004</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">AS INF Ehitus</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Radisti tee 7</cbc:StreetName>
+    <cbc:CityName> Rae vald</cbc:CityName>
+    <cbc:PostalZone>75322</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EE001</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>11097051</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                    </efac:Organizations>
+                </efext:EformsExtension>
+            </ext:ExtensionContent>
+        </ext:UBLExtension>
+    </ext:UBLExtensions>
+    <cbc:UBLVersionID>2.3</cbc:UBLVersionID>
+    <cbc:CustomizationID>eforms-sdk-1.13</cbc:CustomizationID>
+    <cbc:ID schemeName="notice-id">1f05c8eb-dca7-437a-b3a9-655475f2d914</cbc:ID>
+    <cbc:ContractFolderID>a34a454b-2773-4321-8b2b-c27e4ff96bcb</cbc:ContractFolderID>
+    <cbc:IssueDate>2026-08-19+03:00</cbc:IssueDate>
+    <cbc:IssueTime>13:42:01.138+03:00</cbc:IssueTime>
+    <cbc:VersionID>01</cbc:VersionID>
+    <cbc:RegulatoryDomain>32014L0025</cbc:RegulatoryDomain>
+    <cbc:NoticeTypeCode listName="result">can-standard</cbc:NoticeTypeCode>
+    <cbc:NoticeLanguageCode>EST</cbc:NoticeLanguageCode>
+    <cac:ContractingParty>
+        <cac:ContractingPartyType>
+            <cbc:PartyTypeCode listName="buyer-legal-type">pub-undert</cbc:PartyTypeCode>
+        </cac:ContractingPartyType>
+        <cac:ContractingActivity>
+            <cbc:ActivityTypeCode listName="entity-activity">electricity</cbc:ActivityTypeCode>
+        </cac:ContractingActivity>
+        <cac:Party>
+            <cac:PartyIdentification>
+                <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+            <cac:ServiceProviderParty>
+                <cbc:ServiceTypeCode listName="organisation-role">ted-esen</cbc:ServiceTypeCode>
+                <cac:Party>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0003</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:Party>
+            </cac:ServiceProviderParty>
+        </cac:Party>
+    </cac:ContractingParty>
+    <cac:TenderingProcess>
+        <cbc:Description languageID="EST">Piiratud hankemenetlus</cbc:Description>
+        <cbc:ProcedureCode listName="procurement-procedure-type">restricted</cbc:ProcedureCode>
+        <cbc:TerminatedIndicator>false</cbc:TerminatedIndicator>
+        <cac:ProcessJustification>
+            <cbc:ProcessReasonCode listName="accelerated-procedure">false</cbc:ProcessReasonCode>
+        </cac:ProcessJustification>
+        <cac:ProcessJustification>
+            <cbc:Description>a34a454b-2773-4321-8b2b-c27e4ff96bcb</cbc:Description>
+        </cac:ProcessJustification>
+    </cac:TenderingProcess>
+    <cac:ProcurementProject>
+        <cbc:ID>307142-0000</cbc:ID>
+        <cbc:Name languageID="EST">Kunda alajaama 110kV jõutrafode C1T ja C2T ost</cbc:Name>
+        <cbc:Name languageID="ENG">Power Transformers 110 kV C1T and C2T for Kunda substation</cbc:Name>
+        <cbc:Description languageID="EST">Hanke eesmärk on osta Kunda alajaama 110 kV C1T ja C2T jõutrafo.
+
+
+Dünaamilise hankesüsteemi alusel hangitakse Elektrilevi poolt heakskiidetud piirkonna alajaama trafosid 35kV ja 110kV ja nende komponente.
+Heakskiidetud tootjate nimekiri ja juhised heakskiidu saamiseks on leitavad Elektrilevi veebilehelt hangete avalike dokumentide alt. / Kõrvaldamise alused ja kvalifitseerimistingimused: Vaata hanke alusdokumentidest</cbc:Description>
+        <cbc:Description languageID="ENG">The purpose of the procurement is to purchase power transformers 110 kV C1T and C2T for the Kunda substation.
+
+
+Under the dynamic purchasing system, transformers of regional substations (35kV and 110kV) and their components approved by Elektrilevi will be procured.
+The list of approved manufacturers and instructions for obtaining approval can be found on Elektrilevi’s website under the public procurement documents section.</cbc:Description>
+        <cbc:ProcurementTypeCode listName="contract-nature">supplies</cbc:ProcurementTypeCode>
+        <cac:MainCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">31210000</cbc:ItemClassificationCode>
+        </cac:MainCommodityClassification>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Eesti</cbc:Description>
+            <cac:Address>
+                <cbc:CountrySubentityCode listName="nuts">EE009</cbc:CountrySubentityCode>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Eesti</cbc:Description>
+            <cac:Address>
+                <cbc:CountrySubentityCode listName="nuts">EE00A</cbc:CountrySubentityCode>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Eesti</cbc:Description>
+            <cac:Address>
+                <cbc:CountrySubentityCode listName="nuts">EE004</cbc:CountrySubentityCode>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Eesti</cbc:Description>
+            <cac:Address>
+                <cbc:CountrySubentityCode listName="nuts">EE008</cbc:CountrySubentityCode>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Eesti</cbc:Description>
+            <cac:Address>
+                <cbc:CountrySubentityCode listName="nuts">EE001</cbc:CountrySubentityCode>
+                <cac:Country>
+                    <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                </cac:Country>
+            </cac:Address>
+        </cac:RealizedLocation>
+    </cac:ProcurementProject>
+    <cac:ProcurementProjectLot>
+        <cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+        <cac:TenderingTerms>
+            <cbc:FundingProgramCode listName="eu-funded">no-eu-funds</cbc:FundingProgramCode>
+            <cac:AwardingTerms>
+                <cac:AwardingCriterion>
+                    <cac:SubordinateAwardingCriterion>
+                        <ext:UBLExtensions>
+                            <ext:UBLExtension>
+<ext:ExtensionContent>
+    <efext:EformsExtension>
+        <efac:AwardCriterionParameter>
+            <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+            <efbc:ParameterNumeric>100.0</efbc:ParameterNumeric>
+        </efac:AwardCriterionParameter>
+    </efext:EformsExtension>
+</ext:ExtensionContent>
+                            </ext:UBLExtension>
+                        </ext:UBLExtensions>
+                        <cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+                        <cbc:Description languageID="EST">Vaata hanke alusdokumentidest</cbc:Description>
+                    </cac:SubordinateAwardingCriterion>
+                </cac:AwardingCriterion>
+            </cac:AwardingTerms>
+            <cac:AdditionalInformationParty>
+                <cac:PartyIdentification>
+                    <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+                </cac:PartyIdentification>
+            </cac:AdditionalInformationParty>
+            <cac:AppealTerms>
+                <cac:PresentationPeriod>
+                    <cbc:Description languageID="EST">https://fin.ee/riigihanked-riigiabi-osalused/riigihanked/vaidlustusmenetlus</cbc:Description>
+                </cac:PresentationPeriod>
+                <cac:AppealReceiverParty>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:AppealReceiverParty>
+                <cac:MediationParty>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:MediationParty>
+            </cac:AppealTerms>
+        </cac:TenderingTerms>
+        <cac:TenderingProcess>
+            <cbc:GovernmentAgreementConstraintIndicator>false</cbc:GovernmentAgreementConstraintIndicator>
+            <cac:AuctionTerms>
+                <cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+            </cac:AuctionTerms>
+            <cac:ContractingSystem>
+                <cbc:ContractingSystemTypeCode listName="framework-agreement">none</cbc:ContractingSystemTypeCode>
+            </cac:ContractingSystem>
+            <cac:ContractingSystem>
+                <cbc:ContractingSystemTypeCode listName="dps-usage">dps-list</cbc:ContractingSystemTypeCode>
+            </cac:ContractingSystem>
+        </cac:TenderingProcess>
+        <cac:ProcurementProject>
+            <cbc:ID>307142-0000</cbc:ID>
+            <cbc:Name languageID="EST">Kunda alajaama 110kV jõutrafode C1T ja C2T ost</cbc:Name>
+            <cbc:Name languageID="ENG">Power Transformers 110 kV C1T and C2T for Kunda substation</cbc:Name>
+            <cbc:Description languageID="EST">Hanke eesmärk on osta Kunda alajaama 110 kV C1T ja C2T jõutrafo.
+
+
+Dünaamilise hankesüsteemi alusel hangitakse Elektrilevi poolt heakskiidetud piirkonna alajaama trafosid 35kV ja 110kV ja nende komponente.
+Heakskiidetud tootjate nimekiri ja juhised heakskiidu saamiseks on leitavad Elektrilevi veebilehelt hangete avalike dokumentide alt. / Kõrvaldamise alused ja kvalifitseerimistingimused: Vaata hanke alusdokumentidest</cbc:Description>
+            <cbc:Description languageID="ENG">The purpose of the procurement is to purchase power transformers 110 kV C1T and C2T for the Kunda substation.
+
+
+Under the dynamic purchasing system, transformers of regional substations (35kV and 110kV) and their components approved by Elektrilevi will be procured.
+The list of approved manufacturers and instructions for obtaining approval can be found on Elektrilevi’s website under the public procurement documents section.</cbc:Description>
+            <cbc:ProcurementTypeCode listName="contract-nature">supplies</cbc:ProcurementTypeCode>
+            <cac:ProcurementAdditionalType>
+                <cbc:ProcurementTypeCode listName="accessibility">n-inc</cbc:ProcurementTypeCode>
+            </cac:ProcurementAdditionalType>
+            <cac:MainCommodityClassification>
+                <cbc:ItemClassificationCode listName="cpv">31210000</cbc:ItemClassificationCode>
+            </cac:MainCommodityClassification>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Eesti</cbc:Description>
+                <cac:Address>
+                    <cbc:CountrySubentityCode listName="nuts">EE009</cbc:CountrySubentityCode>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Eesti</cbc:Description>
+                <cac:Address>
+                    <cbc:CountrySubentityCode listName="nuts">EE00A</cbc:CountrySubentityCode>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Eesti</cbc:Description>
+                <cac:Address>
+                    <cbc:CountrySubentityCode listName="nuts">EE004</cbc:CountrySubentityCode>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Eesti</cbc:Description>
+                <cac:Address>
+                    <cbc:CountrySubentityCode listName="nuts">EE008</cbc:CountrySubentityCode>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Eesti</cbc:Description>
+                <cac:Address>
+                    <cbc:CountrySubentityCode listName="nuts">EE001</cbc:CountrySubentityCode>
+                    <cac:Country>
+                        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+                    </cac:Country>
+                </cac:Address>
+            </cac:RealizedLocation>
+        </cac:ProcurementProject>
+    </cac:ProcurementProjectLot>
+    <cac:TenderResult>
+        <cbc:AwardDate>2000-01-01+02:00</cbc:AwardDate>
+    </cac:TenderResult>
+</ContractAwardNotice>
+<ContractAwardNotice xmlns="urn:oasis:names:specification:ubl:schema:xsd:ContractAwardNotice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:efac="http://data.europa.eu/p27/eforms-ubl-extension-aggregate-components/1" xmlns:efbc="http://data.europa.eu/p27/eforms-ubl-extension-basic-components/1" xmlns:efext="http://data.europa.eu/p27/eforms-ubl-extensions/1" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2">
+    <ext:UBLExtensions>
+        <ext:UBLExtension>
+            <ext:ExtensionContent>
+                <efext:EformsExtension>
+                    <efbc:TransmissionDate>2026-08-31+03:00</efbc:TransmissionDate>
+                    <efbc:TransmissionTime>10:22:23.603+03:00</efbc:TransmissionTime>
+                    <efac:NoticeResult>
+                        <cbc:TotalAmount currencyID="EUR">28500.00</cbc:TotalAmount>
+                        <efac:LotResult>
+                            <cbc:ID schemeName="result">RES-0000</cbc:ID>
+                            <cbc:TenderResultCode listName="winner-selection-status">selec-w</cbc:TenderResultCode>
+                            <efac:LotTender>
+<cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            </efac:LotTender>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>2</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>2</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:ReceivedSubmissionsStatistics>
+
+<efbc:StatisticsNumeric>2</efbc:StatisticsNumeric>
+                            </efac:ReceivedSubmissionsStatistics>
+                            <efac:SettledContract>
+<cbc:ID schemeName="contract">CON-0001</cbc:ID>
+                            </efac:SettledContract>
+                            <efac:TenderLot>
+<cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+                            </efac:TenderLot>
+                        </efac:LotResult>
+                        <efac:LotTender>
+                            <cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            <cac:LegalMonetaryTotal>
+<cbc:PayableAmount currencyID="EUR">28500.00</cbc:PayableAmount>
+                            </cac:LegalMonetaryTotal>
+                            <efac:SubcontractingTerm>
+<efbc:TermCode listName="applicability">no</efbc:TermCode>
+                            </efac:SubcontractingTerm>
+                            <efac:TenderingParty>
+<cbc:ID schemeName="tendering-party">TPA-0001</cbc:ID>
+                            </efac:TenderingParty>
+                            <efac:TenderLot>
+<cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+                            </efac:TenderLot>
+                            <efac:TenderReference>
+<cbc:ID>743112</cbc:ID>
+                            </efac:TenderReference>
+                        </efac:LotTender>
+                        <efac:SettledContract>
+                            <cbc:ID schemeName="contract">CON-0001</cbc:ID>
+                            <cbc:IssueDate>2026-08-28+03:00</cbc:IssueDate>
+                            <cbc:Title languageID="EST">Hankeleping</cbc:Title>
+                            <efac:ContractReference>
+<cbc:ID>2-14/20280-1</cbc:ID>
+                            </efac:ContractReference>
+                            <efac:LotTender>
+<cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                            </efac:LotTender>
+                        </efac:SettledContract>
+                        <efac:TenderingParty>
+                            <cbc:ID schemeName="tendering-party">TPA-0001</cbc:ID>
+                            <efac:Tenderer>
+<cbc:ID schemeName="organization">ORG-0004</cbc:ID>
+                            </efac:Tenderer>
+                        </efac:TenderingParty>
+                    </efac:NoticeResult>
+                    <efac:NoticeSubType>
+                        <cbc:SubTypeCode listName="notice-subtype">33</cbc:SubTypeCode>
+                    </efac:NoticeSubType>
+                    <efac:Organizations>
+                        <efac:Organization>
+                            <efac:Company>
+<cbc:WebsiteURI>http://www.sotsiaalkindlustusamet.ee</cbc:WebsiteURI>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Sotsiaalkindlustusamet</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Paldiski mnt 80</cbc:StreetName>
+    <cbc:CityName> Tallinn</cbc:CityName>
+    <cbc:PostalZone>15092</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>70001975</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efac:Company>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Riigihangete vaidlustuskomisjon</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Tartu mnt 85</cbc:StreetName>
+    <cbc:CityName>Tallinn</cbc:CityName>
+    <cbc:PostalZone>10115</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>1000123</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efac:Company>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0003</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Riigihangete register</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Lõkke tn 4</cbc:StreetName>
+    <cbc:CityName>Tallinn</cbc:CityName>
+    <cbc:PostalZone>10122</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>TED64</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                        <efac:Organization>
+                            <efbc:ListedOnRegulatedMarketIndicator>false</efbc:ListedOnRegulatedMarketIndicator>
+                            <efac:Company>
+<efbc:CompanySizeCode listName="economic-operator-size">large</efbc:CompanySizeCode>
+<cac:PartyIdentification>
+    <cbc:ID schemeName="organization">ORG-0004</cbc:ID>
+</cac:PartyIdentification>
+<cac:PartyName>
+    <cbc:Name languageID="EST">Tartu Ülikool</cbc:Name>
+</cac:PartyName>
+<cac:PostalAddress>
+    <cbc:StreetName>Ülikooli tn 18</cbc:StreetName>
+    <cbc:CityName> Tartu linn</cbc:CityName>
+    <cbc:PostalZone>50090</cbc:PostalZone>
+    <cbc:CountrySubentityCode listName="nuts">EEZZZ</cbc:CountrySubentityCode>
+    <cac:Country>
+        <cbc:IdentificationCode listName="country">EST</cbc:IdentificationCode>
+    </cac:Country>
+</cac:PostalAddress>
+<cac:PartyLegalEntity>
+    <cbc:CompanyID>74001073</cbc:CompanyID>
+</cac:PartyLegalEntity>
+<cac:Contact>
+    
+    
+</cac:Contact>
+                            </efac:Company>
+                        </efac:Organization>
+                    </efac:Organizations>
+                </efext:EformsExtension>
+            </ext:ExtensionContent>
+        </ext:UBLExtension>
+    </ext:UBLExtensions>
+    <cbc:UBLVersionID>2.3</cbc:UBLVersionID>
+    <cbc:CustomizationID>eforms-sdk-1.13</cbc:CustomizationID>
+    <cbc:ID schemeName="notice-id">3d2bd7e4-f68a-497b-bbf6-a9375f96fc38</cbc:ID>
+    <cbc:ContractFolderID>a53086b9-4226-4344-8e75-2dc80d10abfb</cbc:ContractFolderID>
+    <cbc:IssueDate>2026-08-31+03:00</cbc:IssueDate>
+    <cbc:IssueTime>10:22:23.603+03:00</cbc:IssueTime>
+    <cbc:VersionID>01</cbc:VersionID>
+    <cbc:RegulatoryDomain>32014L0024</cbc:RegulatoryDomain>
+    <cbc:NoticeTypeCode listName="result">can-social</cbc:NoticeTypeCode>
+    <cbc:NoticeLanguageCode>EST</cbc:NoticeLanguageCode>
+    <cac:ContractingParty>
+        <cbc:BuyerProfileURI>http://www.sotsiaalkindlustusamet.ee</cbc:BuyerProfileURI>
+        <cac:ContractingPartyType>
+            <cbc:PartyTypeCode listName="buyer-legal-type">cga</cbc:PartyTypeCode>
+        </cac:ContractingPartyType>
+        <cac:ContractingActivity>
+            <cbc:ActivityTypeCode listName="authority-activity">soc-pro</cbc:ActivityTypeCode>
+        </cac:ContractingActivity>
+        <cac:Party>
+            <cac:PartyIdentification>
+                <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+            <cac:ServiceProviderParty>
+                <cbc:ServiceTypeCode listName="organisation-role">ted-esen</cbc:ServiceTypeCode>
+                <cac:Party>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0003</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:Party>
+            </cac:ServiceProviderParty>
+        </cac:Party>
+    </cac:ContractingParty>
+    <cac:TenderingProcess>
+        <cbc:Description languageID="EST">Väikehange</cbc:Description>
+        <cbc:ProcedureCode listName="procurement-procedure-type">oth-single</cbc:ProcedureCode>
+    </cac:TenderingProcess>
+    <cac:ProcurementProject>
+        <cbc:ID>312119-0000</cbc:ID>
+        <cbc:Name languageID="EST">Lähisuhtevägivalla ohumärkide märkamise e-kursuse loomine</cbc:Name>
+        <cbc:Description languageID="EST">Hanke eesmärk on leida partner, kellega välja arendada interaktiivne e-õppe kursus, mis tõstab sotsiaal-, tervishoiu- ja teiste valdkondade spetsialistide oskusi lähisuhtevägivalla varajases märkamises, riskide hindamises ja asjakohases tegutsemises. E-kursus toetab ohvrite abistamist ja suunamist, seadusest tuleneva teavitamiskohustuse täitmist ning traumateadliku ja taasohvristamist vältiva lähenemise rakendamist. Samuti aitab see ennetada korduvvägivalda ja tugevdada võrgustikutööd. / Kõrvaldamise alused ja kvalifitseerimistingimused: Vaata hanke alusdokumentidest</cbc:Description>
+        <cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+        <cac:MainCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">80420000</cbc:ItemClassificationCode>
+        </cac:MainCommodityClassification>
+        <cac:RealizedLocation>
+            <cbc:Description languageID="EST">Asukoht täpsustamata</cbc:Description>
+            <cac:Address>
+                <cbc:Region>anyw</cbc:Region>
+            </cac:Address>
+        </cac:RealizedLocation>
+    </cac:ProcurementProject>
+    <cac:ProcurementProjectLot>
+        <cbc:ID schemeName="Lot">LOT-0000</cbc:ID>
+        <cac:TenderingTerms>
+            <cbc:FundingProgramCode listName="eu-funded">eu-funds</cbc:FundingProgramCode>
+            <cac:AwardingTerms>
+                <cac:AwardingCriterion>
+                    <cac:SubordinateAwardingCriterion>
+                        <ext:UBLExtensions>
+                            <ext:UBLExtension>
+<ext:ExtensionContent>
+    <efext:EformsExtension>
+        <efac:AwardCriterionParameter>
+            <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+            <efbc:ParameterNumeric>20.0</efbc:ParameterNumeric>
+        </efac:AwardCriterionParameter>
+    </efext:EformsExtension>
+</ext:ExtensionContent>
+                            </ext:UBLExtension>
+                        </ext:UBLExtensions>
+                        <cbc:AwardingCriterionTypeCode listName="award-criterion-type">quality</cbc:AwardingCriterionTypeCode>
+                        <cbc:Description languageID="EST">Vaata hanke alusdokumentidest</cbc:Description>
+                    </cac:SubordinateAwardingCriterion>
+                    <cac:SubordinateAwardingCriterion>
+                        <ext:UBLExtensions>
+                            <ext:UBLExtension>
+<ext:ExtensionContent>
+    <efext:EformsExtension>
+        <efac:AwardCriterionParameter>
+            <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+            <efbc:ParameterNumeric>20.0</efbc:ParameterNumeric>
+        </efac:AwardCriterionParameter>
+    </efext:EformsExtension>
+</ext:ExtensionContent>
+                            </ext:UBLExtension>
+                        </ext:UBLExtensions>
+                        <cbc:AwardingCriterionTypeCode listName="award-criterion-type">quality</cbc:AwardingCriterionTypeCode>
+                        <cbc:Description languageID="EST">Vaata hanke alusdokumentidest</cbc:Description>
+                    </cac:SubordinateAwardingCriterion>
+                    <cac:SubordinateAwardingCriterion>
+                        <ext:UBLExtensions>
+                            <ext:UBLExtension>
+<ext:ExtensionContent>
+    <efext:EformsExtension>
+        <efac:AwardCriterionParameter>
+            <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+            <efbc:ParameterNumeric>20.0</efbc:ParameterNumeric>
+        </efac:AwardCriterionParameter>
+    </efext:EformsExtension>
+</ext:ExtensionContent>
+                            </ext:UBLExtension>
+                        </ext:UBLExtensions>
+                        <cbc:AwardingCriterionTypeCode listName="award-criterion-type">quality</cbc:AwardingCriterionTypeCode>
+                        <cbc:Description languageID="EST">Vaata hanke alusdokumentidest</cbc:Description>
+                    </cac:SubordinateAwardingCriterion>
+                    <cac:SubordinateAwardingCriterion>
+                        <ext:UBLExtensions>
+                            <ext:UBLExtension>
+<ext:ExtensionContent>
+    <efext:EformsExtension>
+        <efac:AwardCriterionParameter>
+            <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+            <efbc:ParameterNumeric>40.0</efbc:ParameterNumeric>
+        </efac:AwardCriterionParameter>
+    </efext:EformsExtension>
+</ext:ExtensionContent>
+                            </ext:UBLExtension>
+                        </ext:UBLExtensions>
+                        <cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+                        <cbc:Description languageID="EST">Vaata hanke alusdokumentidest</cbc:Description>
+                    </cac:SubordinateAwardingCriterion>
+                </cac:AwardingCriterion>
+            </cac:AwardingTerms>
+            <cac:AdditionalInformationParty>
+                <cac:PartyIdentification>
+                    <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+                </cac:PartyIdentification>
+            </cac:AdditionalInformationParty>
+            <cac:AppealTerms>
+                <cac:PresentationPeriod>
+                    <cbc:Description languageID="EST">https://fin.ee/riigihanked-riigiabi-osalused/riigihanked/vaidlustusmenetlus</cbc:Description>
+                </cac:PresentationPeriod>
+                <cac:AppealReceiverParty>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:AppealReceiverParty>
+                <cac:MediationParty>
+                    <cac:PartyIdentification>
+                        <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+                    </cac:PartyIdentification>
+                </cac:MediationParty>
+            </cac:AppealTerms>
+        </cac:TenderingTerms>
+        <cac:TenderingProcess>
+            <cac:AuctionTerms>
+                <cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+            </cac:AuctionTerms>
+            <cac:ContractingSystem>
+                <cbc:ContractingSystemTypeCode listName="framework-agreement">none</cbc:ContractingSystemTypeCode>
+            </cac:ContractingSystem>
+            <cac:ContractingSystem>
+                <cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+            </cac:ContractingSystem>
+        </cac:TenderingProcess>
+        <cac:ProcurementProject>
+            <cbc:ID>312119-0000</cbc:ID>
+            <cbc:Name languageID="EST">Lähisuhtevägivalla ohumärkide märkamise e-kursuse loomine</cbc:Name>
+            <cbc:Description languageID="EST">Hanke eesmärk on leida partner, kellega välja arendada interaktiivne e-õppe kursus, mis tõstab sotsiaal-, tervishoiu- ja teiste valdkondade spetsialistide oskusi lähisuhtevägivalla varajases märkamises, riskide hindamises ja asjakohases tegutsemises. E-kursus toetab ohvrite abistamist ja suunamist, seadusest tuleneva teavitamiskohustuse täitmist ning traumateadliku ja taasohvristamist vältiva lähenemise rakendamist. Samuti aitab see ennetada korduvvägivalda ja tugevdada võrgustikutööd. / Kõrvaldamise alused ja kvalifitseerimistingimused: Vaata hanke alusdokumentidest</cbc:Description>
+            <cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+            <cac:ProcurementAdditionalType>
+                <cbc:ProcurementTypeCode listName="strategic-procurement">env-imp</cbc:ProcurementTypeCode>
+                <cbc:ProcurementType languageID="EST">Pakkuja peab hankelepingu täitmisel eelistama keskkonnahoidlikke lahendusi, näiteks:
+1. Töökoosolekud ja muud kohtumised viiakse võimalusel läbi veebi vahendusel, et vähendada eelkõige liigsest transpordikasutusest tulenevat süsiniku jalajälge.
+2. Täitja peab vältima tarbetut dokumentide välja trükkimist ning võimalusel eelistama digitaalsel kujul olevaid materjale.
+3. Digitaalsel kujul edastatavad materjalid salvestatakse ja edastatakse optimaalse mahuga, et vältida otstarbetult suuri andmefaile ning vähendada digireostust.
+4. Lepingu täitmise järgselt kustutatakse üleliigsed digimaterjalid, näiteks mustandfailid, säilitamiseks mittevajalikud töödokumendid jms, kuna IT-serverites failide otstarbetu hoidmine on keskkonda kurnava mõjuga ning suurendab digireostust.</cbc:ProcurementType>
+            </cac:ProcurementAdditionalType>
+            <cac:ProcurementAdditionalType>
+                <cbc:ProcurementTypeCode listName="environmental-impact">clim-mitig</cbc:ProcurementTypeCode>
+            </cac:ProcurementAdditionalType>
+            <cac:ProcurementAdditionalType>
+                <cbc:ProcurementTypeCode listName="accessibility">n-inc</cbc:ProcurementTypeCode>
+            </cac:ProcurementAdditionalType>
+            <cac:MainCommodityClassification>
+                <cbc:ItemClassificationCode listName="cpv">80420000</cbc:ItemClassificationCode>
+            </cac:MainCommodityClassification>
+            <cac:RealizedLocation>
+                <cbc:Description languageID="EST">Asukoht täpsustamata</cbc:Description>
+                <cac:Address>
+                    <cbc:Region>anyw</cbc:Region>
+                </cac:Address>
+            </cac:RealizedLocation>
+        </cac:ProcurementProject>
+    </cac:ProcurementProjectLot>
+    <cac:TenderResult>
+        <cbc:AwardDate>2000-01-01+02:00</cbc:AwardDate>
+    </cac:TenderResult>
+</ContractAwardNotice>
+</OPEN-DATA>

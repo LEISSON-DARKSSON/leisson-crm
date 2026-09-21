@@ -10,3 +10,11 @@
 # välja — alles värske worktree checkout Windowsis tõi selle nähtavale (14 viga claims.mjs-is).
 *.mdx text eol=lf
 *.md text eol=lf
+# Sama pohjus, aga uks aste rangem: crm/test/fixtures/*.xml on PARIS RHR-i andmete
+# loige ja test/gate-pariteet.mjs vordleb tema BAITIDE ARVU kommititud ootusega.
+# CRLF-i taasistutamine checkout'il muudaks baidiarvu ja varav laheks vardses
+# kloonis punaseks ilma et koodis oleks midagi katki.
+*.xml text eol=lf
+# rhr_tools jooksevad ka Linuxis (fetch.sh shebang) - CRLF lohuks need katki.
+*.sh text eol=lf
+*.py text eol=lf

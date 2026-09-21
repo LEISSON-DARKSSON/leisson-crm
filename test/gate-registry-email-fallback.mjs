@@ -54,11 +54,17 @@ console.log('PASS email-fallback: decide on KINDEL ainult ühe oma-domeeni vaste
   db.prepare("INSERT INTO companies(id,name,status,listid,updated) VALUES('x','Firma X','ootel','parnu',?)").run(new Date().toISOString());
   assert.equal(db.prepare('SELECT email FROM companies WHERE id=?').get('x').email, null);
 
-  const dir = new URL('./fixtures-email-fallback/', import.meta.url);
-  const { mkdirSync, writeFileSync, rmSync } = await import('node:fs');
-  const { fileURLToPath } = await import('node:url');
-  const dirPath = fileURLToPath(dir);
-  mkdirSync(dirPath, { recursive: true });
+  // Fikstuurikaust laheb AJUTISSE kausta, mitte repo sisse. Varem kirjutas see
+  // varav failid `test/fixtures-email-fallback/` alla ja koristas need rmSync-iga.
+  // Monteeritud kettal (Cowork VM) on kustutamine keelatud, seega rmSync viskas
+  // EPERM-i PARAST seda, kui koik neli vaidet olid labitud: varav oli igavesti
+  // punane pohjusel, millel ei ole koodiga mingit pistmist, ja see opetab
+  // varavajooksja tulemust eirama. Ajutine kaust on ka niikuinii oigem koht -
+  // katkenud jooks ei jata repo sisse rooptaid.
+  const { mkdirSync, writeFileSync, rmSync, mkdtempSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join, sep } = await import('node:path');
+  const dirPath = mkdtempSync(join(tmpdir(), 'crm-email-fallback-')) + sep;
   writeFileSync(dirPath + 'parnu.json', JSON.stringify({ companies: [{ id: 'x', name: 'Firma X', email: 'info@firma-x.ee', listid: 'parnu' }] }));
   writeFileSync(dirPath + 'plaan.json', JSON.stringify({ companies: [] }));
   writeFileSync(dirPath + 'parnu2.json', JSON.stringify({ companies: [] }));
@@ -71,7 +77,9 @@ console.log('PASS email-fallback: decide on KINDEL ainult ühe oma-domeeni vaste
   seed(db, { seedDir: dirPath });
   assert.equal(db.prepare('SELECT email FROM companies WHERE id=?').get('x').email, 'kasitsi@parandatud.ee', 'seed() EI kirjuta üle juba olemasolevat (ka käsitsi parandatud) e-posti');
 
-  rmSync(dirPath, { recursive: true, force: true });
+  // Ajutise kausta koristamine ei tohi VARAVAT maha votta, kui keskkond ei luba
+  // kustutada - vaited on selleks hetkeks juba labitud.
+  try { rmSync(dirPath, { recursive: true, force: true }); } catch { /* ajutine kaust jaab OS-i hooleks */ }
   db.close();
 }
 console.log('PASS email-fallback: lib/db.mjs seed() täidab tühja e-posti, aga ei kirjuta olemasolevat üle');
