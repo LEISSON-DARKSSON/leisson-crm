@@ -128,6 +128,36 @@ Alles jääb ainult see, et keegi selle päriselt ära teeks.
 
 Allpool on valiku põhjendus alles, et hilisem lugeja teaks, MIKS.
 
+### LAHTINE: e-posti aadress – tee see SAMAL sisselogimisel
+
+Kolm allikat ütlevad kahte eri asja:
+
+| Allikas | Aadress |
+|---|---|
+| äriregistri kaart, <https://ariregister.rik.ee/est/company/16952932> (21.09.2026) | `leisson@leisson.eu` |
+| projekti juhend, `claude/project-instructions.md` | `leisson@leisson.eu` |
+| sait – 25+ kohta, sh `site/content/legal/privacy.mdx` ja `site/app/[lang]/contact/actions.ts` | **`gert@leisson.eu`** |
+
+Soovitasin 21.09.2026 esmalt saidi muutmist. **See soovitus oli vale ja ma
+võtan selle tagasi** – olin vaadanud ainult `JsonLd.tsx` üht välja. Mõõtmine
+näitas, et `gert@leisson.eu` on saidil vähemalt 25 kohas, sh:
+
+- `site/content/legal/privacy.mdx` – **vastutava töötleja aadress**, GDPR-tekst
+- `site/app/[lang]/contact/actions.ts` – `CONTACT_TO` vaikeväärtus, ehk
+  **päringute tegelik kohalejõudmine**
+- footer, kontaktivorm, `llms.txt`, asutajaleht, stuudioleht, i18n-stringid
+
+**Soovitan nüüd vastupidist: muuda REGISTRI aadress `gert@leisson.eu` peale.**
+Põhjendus: üks rida samas vormis, kus sa niikuinii axondeck.com maha võtad,
+sama digiallkiri, null lisakulu – versus 25 faili muutmine, mille hulgas on
+juriidiline tekst ja päringute marsruutimine. Kui `leisson@leisson.eu` ei ole
+päriselt töötav postkast, murrab saidi muutmine lisaks kogu selle sprindi
+ROI-mõõdiku ära. Kiirus, puhtus ja risk osutavad kõik samasse suunda.
+
+**Enne kinnitust vasta endale ühele küsimusele:** kas `leisson@leisson.eu`
+postkast on olemas ja loetav? Kui jah ja sa eelistad seda, siis on saidi
+muutmine tehtav, aga see on omaette viil, mitte selle voo osa.
+
 ### Kaalutud valikud
 
 **Valik A – võta maha, jäta ainult leisson.eu.**
