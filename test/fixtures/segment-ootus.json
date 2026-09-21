@@ -1,0 +1,1148 @@
+{
+  "paare": 163,
+  "paarid": [
+    {
+      "allikas": "FIT",
+      "haru": "veebileh",
+      "title": "Hange veebileh soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "veebileh",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: veebileh ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "veebikeskkon",
+      "title": "Hange veebikeskkon soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "veebikeskkon",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: veebikeskkon ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "veebiportaal",
+      "title": "Hange veebiportaal soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "veebiportaal",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: veebiportaal ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "veebisait",
+      "title": "Hange veebisait soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "veebisait",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: veebisait ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "veebilahend",
+      "title": "Hange veebilahend soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "veebilahend",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: veebilahend ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "veebiarendus",
+      "title": "Hange veebiarendus soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "veebiarendus",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: veebiarendus ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "koduleh",
+      "title": "Hange koduleh soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "koduleh",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: koduleh ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "web",
+      "title": "Hange web soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "web",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: web ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "portaal",
+      "title": "Hange portaal soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "portaal",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: portaal ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "kasutajakogemus",
+      "title": "Hange kasutajakogemus soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "kasutajakogemus",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: kasutajakogemus ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "user experience",
+      "title": "Hange user experience soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "user experience",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: user experience ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "kasutajaliides",
+      "title": "Hange kasutajaliides soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "kasutajaliides",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: kasutajaliides ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "ux",
+      "title": "Hange ux soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "ux",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: ux ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "ui",
+      "title": "Hange ui soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "ui",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: ui ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "teenusedisain",
+      "title": "Hange teenusedisain soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "teenusedisain",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: teenusedisain ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "disainisüsteem",
+      "title": "Hange disainisüsteem soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "disainisüsteem",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: disainisüsteem ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "disainisusteem",
+      "title": "Hange disainisusteem soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "disainisusteem",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: disainisusteem ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "design system",
+      "title": "Hange design system soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "design system",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: design system ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "kasutajauuring",
+      "title": "Hange kasutajauuring soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "kasutajauuring",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: kasutajauuring ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "kasutatavus",
+      "title": "Hange kasutatavus soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "kasutatavus",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: kasutatavus ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "prototüüp",
+      "title": "Hange prototüüp soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "prototüüp",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: prototüüp ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "prototüup",
+      "title": "Hange prototüup soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "prototüup",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: prototüup ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "prototuüp",
+      "title": "Hange prototuüp soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "prototuüp",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: prototuüp ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "prototuup",
+      "title": "Hange prototuup soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "prototuup",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: prototuup ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "ligipääsetavus",
+      "title": "Hange ligipääsetavus soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "ligipääsetavus",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: ligipääsetavus ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "accessibility",
+      "title": "Hange accessibility soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "accessibility",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: accessibility ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "wcag",
+      "title": "Hange wcag soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "wcag",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: wcag ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "tehisaru",
+      "title": "Hange tehisaru soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "tehisaru",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: tehisaru ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "tehisintellekt",
+      "title": "Hange tehisintellekt soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "tehisintellekt",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: tehisintellekt ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "ai",
+      "title": "Hange ai soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "ai",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: ai ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "keelemudel",
+      "title": "Hange keelemudel soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "keelemudel",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: keelemudel ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "vestlusrobot",
+      "title": "Hange vestlusrobot soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "vestlusrobot",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: vestlusrobot ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "juturobot",
+      "title": "Hange juturobot soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "juturobot",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: juturobot ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "chatbot",
+      "title": "Hange chatbot soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "chatbot",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: chatbot ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "visuaalne identiteet",
+      "title": "Hange visuaalne identiteet soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "visuaalne identiteet",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: visuaalne identiteet ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "cvi",
+      "title": "Hange cvi soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "cvi",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: cvi ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "brändi",
+      "title": "Hange brändi soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "brändi",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: brändi ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "brandi",
+      "title": "Hange brandi soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "brandi",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: brandi ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "kujundustöö",
+      "title": "Hange kujundustöö soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "kujundustöö",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: kujundustöö ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "kujundustöo",
+      "title": "Hange kujundustöo soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "kujundustöo",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: kujundustöo ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "kujundustoö",
+      "title": "Hange kujundustoö soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "kujundustoö",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: kujundustoö ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "kujundustoo",
+      "title": "Hange kujundustoo soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "kujundustoo",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: kujundustoo ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "graafiline disain",
+      "title": "Hange graafiline disain soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "graafiline disain",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: graafiline disain ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "digiturundus",
+      "title": "Hange digiturundus soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "digiturundus",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: digiturundus ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "sotsiaalmeedia",
+      "title": "Hange sotsiaalmeedia soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "sotsiaalmeedia",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: sotsiaalmeedia ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "e-teenus",
+      "title": "Hange e-teenus soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "e-teenus",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: e-teenus ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "iseteenindus",
+      "title": "Hange iseteenindus soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "iseteenindus",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: iseteenindus ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "rakenduse arendus",
+      "title": "Hange rakenduse arendus soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "rakenduse arendus",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: rakenduse arendus ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "mobiilirakendus",
+      "title": "Hange mobiilirakendus soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "mobiilirakendus",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: mobiilirakendus ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "digilahendus",
+      "title": "Hange digilahendus soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "digilahendus",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: digilahendus ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "digitaalse eneseabi",
+      "title": "Hange digitaalse eneseabi soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "digitaalse eneseabi",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: digitaalse eneseabi ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "e-kursus",
+      "title": "Hange e-kursus soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "e-kursus",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: e-kursus ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT",
+      "haru": "veebikoolitus",
+      "title": "Hange veebikoolitus soetamine",
+      "kirjeldus": "Hanke ese on kirjelduses lahti kirjutatud.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "FIT-kirjeldusest",
+      "haru": "veebikoolitus",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; sisu: veebikoolitus ja sellega seonduv.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "EXCL",
+      "haru": "ehitus",
+      "title": "ehitus ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; veebileht.",
+      "ootus": null
+    },
+    {
+      "allikas": "EXCL-kirjeldusest",
+      "haru": "ehitus",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; tööde hulgas on ka ehitus.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "EXCL",
+      "haru": "projekteeri",
+      "title": "projekteeri ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; veebileht.",
+      "ootus": null
+    },
+    {
+      "allikas": "EXCL-kirjeldusest",
+      "haru": "projekteeri",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; tööde hulgas on ka projekteeri.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "EXCL",
+      "haru": "planeering",
+      "title": "planeering ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; veebileht.",
+      "ootus": null
+    },
+    {
+      "allikas": "EXCL-kirjeldusest",
+      "haru": "planeering",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; tööde hulgas on ka planeering.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "EXCL",
+      "haru": "kinnisvara",
+      "title": "kinnisvara ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; veebileht.",
+      "ootus": null
+    },
+    {
+      "allikas": "EXCL-kirjeldusest",
+      "haru": "kinnisvara",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; tööde hulgas on ka kinnisvara.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "EXCL",
+      "haru": "keskkonnamõju",
+      "title": "keskkonnamõju ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; veebileht.",
+      "ootus": null
+    },
+    {
+      "allikas": "EXCL-kirjeldusest",
+      "haru": "keskkonnamõju",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; tööde hulgas on ka keskkonnamõju.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "EXCL",
+      "haru": "keskkonnamoju",
+      "title": "keskkonnamoju ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; veebileht.",
+      "ootus": null
+    },
+    {
+      "allikas": "EXCL-kirjeldusest",
+      "haru": "keskkonnamoju",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; tööde hulgas on ka keskkonnamoju.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "EXCL",
+      "haru": "arhitekt",
+      "title": "arhitekt ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; veebileht.",
+      "ootus": null
+    },
+    {
+      "allikas": "EXCL-kirjeldusest",
+      "haru": "arhitekt",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; tööde hulgas on ka arhitekt.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "EXCL",
+      "haru": "ühistransport",
+      "title": "ühistransport ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; veebileht.",
+      "ootus": null
+    },
+    {
+      "allikas": "EXCL-kirjeldusest",
+      "haru": "ühistransport",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; tööde hulgas on ka ühistransport.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "EXCL",
+      "haru": "uhistransport",
+      "title": "uhistransport ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; veebileht.",
+      "ootus": null
+    },
+    {
+      "allikas": "EXCL-kirjeldusest",
+      "haru": "uhistransport",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; tööde hulgas on ka uhistransport.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "EXCL",
+      "haru": "bussipeat",
+      "title": "bussipeat ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; veebileht.",
+      "ootus": null
+    },
+    {
+      "allikas": "EXCL-kirjeldusest",
+      "haru": "bussipeat",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; tööde hulgas on ka bussipeat.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "EXCL",
+      "haru": "puude",
+      "title": "puude ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; veebileht.",
+      "ootus": null
+    },
+    {
+      "allikas": "EXCL-kirjeldusest",
+      "haru": "puude",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; tööde hulgas on ka puude.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "EXCL",
+      "haru": "jõuluvalg",
+      "title": "jõuluvalg ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; veebileht.",
+      "ootus": null
+    },
+    {
+      "allikas": "EXCL-kirjeldusest",
+      "haru": "jõuluvalg",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; tööde hulgas on ka jõuluvalg.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "EXCL",
+      "haru": "jouluvalg",
+      "title": "jouluvalg ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; veebileht.",
+      "ootus": null
+    },
+    {
+      "allikas": "EXCL-kirjeldusest",
+      "haru": "jouluvalg",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; tööde hulgas on ka jouluvalg.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "EXCL",
+      "haru": "sisekujundus",
+      "title": "sisekujundus ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; veebileht.",
+      "ootus": null
+    },
+    {
+      "allikas": "EXCL-kirjeldusest",
+      "haru": "sisekujundus",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; tööde hulgas on ka sisekujundus.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "EXCL",
+      "haru": "trükis",
+      "title": "trükis ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; veebileht.",
+      "ootus": null
+    },
+    {
+      "allikas": "EXCL-kirjeldusest",
+      "haru": "trükis",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; tööde hulgas on ka trükis.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "EXCL",
+      "haru": "trukis",
+      "title": "trukis ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; veebileht.",
+      "ootus": null
+    },
+    {
+      "allikas": "EXCL-kirjeldusest",
+      "haru": "trukis",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; tööde hulgas on ka trukis.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "EXCL",
+      "haru": "meene",
+      "title": "meene ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; veebileht.",
+      "ootus": null
+    },
+    {
+      "allikas": "EXCL-kirjeldusest",
+      "haru": "meene",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; tööde hulgas on ka meene.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "EXCL",
+      "haru": "litsents",
+      "title": "litsents ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; veebileht.",
+      "ootus": null
+    },
+    {
+      "allikas": "EXCL-kirjeldusest",
+      "haru": "litsents",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; tööde hulgas on ka litsents.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "EXCL",
+      "haru": "videovalve",
+      "title": "videovalve ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; veebileht.",
+      "ootus": null
+    },
+    {
+      "allikas": "EXCL-kirjeldusest",
+      "haru": "videovalve",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine ja veebilehe uuendamine",
+      "kirjeldus": "Teenused; tööde hulgas on ka videovalve.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "SMALLWEB",
+      "haru": "veebileh",
+      "title": "veebileh uuendamine",
+      "kirjeldus": "Teenused.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "SMALLWEB-kirjeldusest",
+      "haru": "veebileh",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine, kasutajakogemus",
+      "kirjeldus": "Teenused; osana valmib ka veebileh.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "SMALLWEB",
+      "haru": "koduleh",
+      "title": "koduleh uuendamine",
+      "kirjeldus": "Teenused.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "SMALLWEB-kirjeldusest",
+      "haru": "koduleh",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine, kasutajakogemus",
+      "kirjeldus": "Teenused; osana valmib ka koduleh.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "SMALLWEB",
+      "haru": "veebilahendus",
+      "title": "veebilahendus uuendamine",
+      "kirjeldus": "Teenused.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "SMALLWEB-kirjeldusest",
+      "haru": "veebilahendus",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine, kasutajakogemus",
+      "kirjeldus": "Teenused; osana valmib ka veebilahendus.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "SMALLWEB",
+      "haru": "veebisait",
+      "title": "veebisait uuendamine",
+      "kirjeldus": "Teenused.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "SMALLWEB-kirjeldusest",
+      "haru": "veebisait",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine, kasutajakogemus",
+      "kirjeldus": "Teenused; osana valmib ka veebisait.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "SMALLWEB",
+      "haru": "veebikeskkon",
+      "title": "veebikeskkon uuendamine",
+      "kirjeldus": "Teenused.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "SMALLWEB-kirjeldusest",
+      "haru": "veebikeskkon",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine, kasutajakogemus",
+      "kirjeldus": "Teenused; osana valmib ka veebikeskkon.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "SMALLWEB",
+      "haru": "veebilehtede",
+      "title": "veebilehtede uuendamine",
+      "kirjeldus": "Teenused.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "SMALLWEB-kirjeldusest",
+      "haru": "veebilehtede",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine, kasutajakogemus",
+      "kirjeldus": "Teenused; osana valmib ka veebilehtede.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "SMALLWEB",
+      "haru": "kodulehe",
+      "title": "kodulehe uuendamine",
+      "kirjeldus": "Teenused.",
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "SMALLWEB-kirjeldusest",
+      "haru": "kodulehe",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine, kasutajakogemus",
+      "kirjeldus": "Teenused; osana valmib ka kodulehe.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "päris-310983",
+      "haru": "310983",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "Teenused; veebirakenduste loomiseks ja arendamiseks, sh prototüüpimine ja kasutajatestid.",
+      "ootus": "nišš"
+    },
+    {
+      "allikas": "äär",
+      "haru": "tühi pealkiri",
+      "title": "",
+      "kirjeldus": "veebileht",
+      "ootus": null
+    },
+    {
+      "allikas": "äär",
+      "haru": "null pealkiri",
+      "title": null,
+      "kirjeldus": "veebileht",
+      "ootus": null
+    },
+    {
+      "allikas": "äär",
+      "haru": "üks argument",
+      "title": "Veebilehe uuendamine",
+      "kirjeldus": "",
+      "uheArgumendiga": true,
+      "ootus": "väike veebileht"
+    },
+    {
+      "allikas": "äär",
+      "haru": "üks argument, FIT ainult kirjelduses",
+      "title": "OsKus ühtse infosüsteemi ja analüüsikeskkonna loomine",
+      "kirjeldus": "",
+      "uheArgumendiga": true,
+      "ootus": null
+    }
+  ]
+}
