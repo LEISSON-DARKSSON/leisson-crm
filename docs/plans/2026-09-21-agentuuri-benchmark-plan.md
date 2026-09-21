@@ -759,7 +759,7 @@ git push origin origin/main:release/production
 
 ## Task 17 (O2): Wikidata kirje — 3 h
 
-LEISSON OÜ + Gert Leisson. **WD:N kriteerium 2 lubab kirje ilma tähelepanuväärsuseta.** Allikad: ariregister, leisson.eu, GitHub. **et.wikipedia artiklit EI tehta** — tähelepanuväärsus ei ole täidetud ja kustutamisarutelu jääb indeksisse.
+**OTSUSTATUD 21.09.2026: ainult LEISSON OÜ, isikukirjet EI tehta.** WD:N kriteerium 2 lubab ettevõtte kirje ilma tähelepanuväärsuseta; elava inimese kirje mikroettevõtte juhatuse liikmena ilma sõltumatu allikata on kustutamisarutelu kandidaat. Allikas: <https://ariregister.rik.ee/est/company/16952932> (21.09.2026) — kontrollitud kirje, millele Wikidata omadus P6518 otse osutab. **et.wikipedia artiklit EI tehta** — tähelepanuväärsus ei ole täidetud ja kustutamisarutelu jääb indeksisse. Valmis QuickStatements-plokk: `docs/plans/voor5-pakett-2026-09.md`.
 Lisa Wikidata URI `JsonLd` `sameAs` hulka (ariregister ja GitHub on juba seal) — see on ainus koodimuudatus selles vooros.
 
 ## Task 18 (O3): LinkedIn — 4 h
@@ -776,6 +776,30 @@ Pitch = Task 14 artikkel. Kontaktid `project_revenue_strategy`-s: indrek.kald@ar
 disainikeskus.ee andmebaas (Trinidad ja Velvet on mõlemad seal) + Eesti ettevõtete kataloogid. **Clutch/G2/Trustpilot EI** — ei esine üheski AI-tsitaatide top-25 nimekirjas.
 
 ---
+
+# Väljalaskejärjekord (fikseeritud 21.09.2026)
+
+**1. crm-offline parandus enne kõike muud.** `crm-offline` ei ole „eelnevalt
+punane" — ta on **ebastabiilne**. `nextApprovedCampaign` sortis ainult
+`ORDER BY c.approved_at`; kahe sama sekundi kinnitusaja korral jäi järjestus
+viiki ja võitja otsustas päringuplaan (väiksem `randomUUID`), mitte
+kinnitusaeg. Mõõdetud kõrvalaknas: **10 jooksust 4 punast (~40 %)**.
+Parandus `ORDER BY c.approved_at, c.rowid, i.position` on harul
+`feat/crm-riigihanked` (commit 50f301e), **mitte `main`-il** — kontrollitud
+`git show origin/main:crm/lib/campaign.mjs` real 202, 21.09.2026.
+
+**Tagajärg meie PR-idele:** iga „crm-offline roheline" enne selle parandust
+on ~60 % kulli-ja-kirja, mitte tõend. PR #12 ja #14 said rohelise just nii.
+Ära loe seda värava läbimiseks.
+
+**2. PR #13** (Orbit tüpograafia) — punane snapshot teadlikult vastu võttes.
+`main`-i jooks uuendab baasjoone ise.
+
+**3. PR #12** (Voor 4) ja **4. PR #14** (Voor 5) — alles siis on nende
+roheline päris.
+
+Vastupidine järjekord tähendab, et #12 snapshot läheb pärast #13 merge'i
+uuesti punaseks ja sama tsükkel kordub.
 
 # Mõõtmine kuu pärast
 
