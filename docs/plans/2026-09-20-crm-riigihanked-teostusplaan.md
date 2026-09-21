@@ -991,8 +991,18 @@ Get-ScheduledTask -TaskName "LEISSON — hanked*" | Format-Table TaskName, State
 > kirjeldust; otsusta, kas anda teine argument `cbc:Description`-ist või teadvustada, et
 > ajaloo segment on kitsam kui elava hanke oma. Praegune rida on ainult kohahoidja.
 >
-> **OTSUS ENNE 24 KUU LAADIMIST:** 113 teatel on üle ühe võitja ja 17-l on osade tulemused
-> erinevad. `hanke_lepingud` hoiab praegu ÜHT rida teate kohta, seega `winner` ja `tenders`
+> **OTSUS TEHTUD (21.09.2026): rida OSA kohta, mitte teate kohta.**
+> Konkurentide pingerida on selle tabeli ainus mõte, ja teatepõhine rida annab
+> süstemaatiliselt vale vastuse just seal, kus raha on — suured mitmeosalised hanked on
+> täpselt need, kus alltöövõtu partnerid välja paistavad. Skeemi muutmine praegu maksab ühe
+> additiivse migratsiooni; pärast 24 kuu laadimist maksab ta uuesti laadimise. Tabel on veel
+> tühi, seega arenduskiirusele see midagi ei maksa.
+>
+> Mõõdetud taust (august 2026, 956 lepinguteadet): **54 teatel on nii mitu osa kui mitu
+> võitjat** (`osi > 1 && winner_arv > 1`), **17-l on osade tulemused erinevad** (`segu`) ja
+> **137 on võitjata** (`clos-nw`). NB: ülesandes 6 nimetati arve 113 ja 143 — need tulid
+> laiemast definitsioonist („mitu võitjat kokku, sõltumata osade arvust"). Kehtivad ülemised,
+> sest need on mõõdetud pariteedifikstuuri ehitamisel sama failiga. `hanke_lepingud` hoiab praegu ÜHT rida teate kohta, seega `winner` ja `tenders`
 > kirjeldavad esimest osa. Rida OSA kohta on ainus kuju, mis annab õige konkurentide
 > pingerea. Vaata ka: eForms annab `nature`/`menetlus` ingliskeelsete koodidena
 > (`services`, `open`), RSS-i tee annab eestikeelsed sõnad (`Teenused`, `Avatud
