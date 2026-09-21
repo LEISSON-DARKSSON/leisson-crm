@@ -1107,7 +1107,11 @@ URL-ide nimekiri laienes 7 → 9 (uus case-leht ja üks insights-leht) nii runne
 
 Uus kaar on monotoonne: `display 72 → -0.015em · h1 56 → -0.012em · stat 40 → -0.01em · h2 44 → -0.008em · h3 28 → -0.003em · h4 20 → 0em · lede 19 → +0.005em · body 16 → +0.01em`.
 
-**Tagajärg:** see liigutab DS-lehe visuaalset snapshot-baasjoont. CI teeb `--update` ainult main-i push'i peal, seega **PR-is läheb snapshot-värav punaseks**. See on tahtlik disainimuudatus, mitte regressioon, ja paraneb ise merge'i järel.
+**Tagajärg oli halvem, kui ma ennustasin — ja see on mõõdetud.** PR #12 jooksus kukkus `gates` ainult nende kahe snapshot-võrdluse peale (390-dark 2,86 %, 390-light 6,45 %), aga **`site-gates` jäi seetõttu täiesti vahele** (`skipped`, sest ta sõltub `gates`-ist). See tähendab, et artikkel ja käsitööpass ei oleks saanud axe'i, Lighthouse'i ega kimbueelarve kontrolli.
+
+**Parandus:** tüpograafia tõsteti omaette harusse `feat/orbit-typography` (PR #13) ja Voor 4 harust revertiti (`0c48f60`). Nii saab sisu täieliku kontrolli ja tüpograafia oma punase snapshot'i eraldi, kus ta midagi muud ei blokeeri.
+
+**Õppetund plaani jaoks:** selles repos ei ole punane snapshot „lihtsalt diff" — ta peatab kogu saidipoolse kontrolliahela. Iga tokenimuudatus läheb edaspidi omaette PR-i ja enne sisu-PR-e.
 
 ## Task 14 — hinnavõrdlusartikkel (ET-ainus)
 
