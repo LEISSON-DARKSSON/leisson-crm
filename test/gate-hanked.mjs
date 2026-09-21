@@ -7,6 +7,7 @@ import { mkdtempSync, readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { migrateHanked, upsertHange, listHanked, setState, setNote, markExpired, HANKE_STATES,
   segmentOf, parseRss, FIT, score } from '../lib/hanked.mjs';
+import { leiaVaravad, VALJAJATED } from '../tools/varav.mjs';
 
 function testDb() {
   const dir = mkdtempSync(join(tmpdir(), 'hanked-'));
@@ -197,14 +198,21 @@ function testDb() {
   console.log('PASS hanked: vahemalu taastub parast baasi taasavamist');
 }
 
-// P8: varav on npm-ahelas - muidu ei jookse teda keegi.
+// P8: varav on ahelas - muidu ei jookse teda keegi. Ahel ei ole enam kasitsi
+// hoitav string package.json-is, vaid tuletatakse kettalt (tools/varav.mjs), nii et
+// kontrollime avastamist ja seda, et keegi ei ole seda varavat valjajatete hulka lisanud.
 {
   const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
   assert.equal(pkg.scripts['hanked:gate'], 'node test/gate-hanked.mjs',
     'package.json vajab skripti hanked:gate');
-  assert.ok(pkg.scripts['test:offline'].includes('node test/gate-hanked.mjs'),
-    'gate-hanked peab olema test:offline ahelas');
-  console.log('PASS hanked: varav on test:offline ahelas');
+  assert.equal(pkg.scripts['test:offline'], 'node tools/varav.mjs',
+    'test:offline peab kaima labi varavajooksja, mitte kasitsi hoitava stringi');
+
+  assert.ok(!VALJAJATED.has('gate-hanked.mjs'),
+    'gate-hanked.mjs ei tohi olla varavajooksja valjajatete nimekirjas');
+  assert.ok(leiaVaravad().varavad.includes('gate-hanked.mjs'),
+    'varavajooksja peab gate-hanked.mjs ahelas avastama');
+  console.log('PASS hanked: varavajooksja avastab selle varava ja ta ei ole valjas');
 }
 
 // Migratsioon on lisav ja kordusjooks on ohutu.
