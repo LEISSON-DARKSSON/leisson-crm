@@ -128,7 +128,26 @@ Alles jääb ainult see, et keegi selle päriselt ära teeks.
 
 Allpool on valiku põhjendus alles, et hilisem lugeja teaks, MIKS.
 
-### LAHTINE: e-posti aadress – tee see SAMAL sisselogimisel
+### SULETUD 21.09.2026: e-posti aadress – ei muudeta kusagil
+
+**Otsus: sait jääb `gert@leisson.eu`, register jääb `leisson@leisson.eu`,
+väljapoole minev uus tekst (Wikidata P968, kirjad, LinkedIn) kannab
+`leisson@leisson.eu`.** Koodi ei puutu, registrit ei puutu.
+
+**Fakt, mis selle sulges:** `leisson@leisson.eu` on töötav alias, suunatud
+`gert@leisson.eu` peale. Mõlemad toimivad.
+
+**Ja ma eksisin siin kaks korda järjest, mõlemal korral valjult.** Esmalt
+soovitasin saidi muutmist (olin vaadanud üht välja 25-st). Siis soovitasin
+registri muutmist (olin nüüd mõõtnud saidi, aga mitte küsinud, kas alias
+töötab). Kolmas ja õige vastus on, et **siin ei ole probleemi, mida lahendada**:
+entiteedi kannavad nimi, domeen ja registrikood, mitte postkasti eesliide. Kaks
+aadressi samal domeenil ei aja ühtegi masinat segadusse.
+
+Allpool on eelmiste kaalutluste tõendid alles – need on endiselt tõsi, ainult
+järeldus oli vale.
+
+### Mõõdetud lahknevus (miks see üldse üles kerkis)
 
 Kolm allikat ütlevad kahte eri asja:
 
@@ -147,16 +166,15 @@ näitas, et `gert@leisson.eu` on saidil vähemalt 25 kohas, sh:
   **päringute tegelik kohalejõudmine**
 - footer, kontaktivorm, `llms.txt`, asutajaleht, stuudioleht, i18n-stringid
 
-**Soovitan nüüd vastupidist: muuda REGISTRI aadress `gert@leisson.eu` peale.**
-Põhjendus: üks rida samas vormis, kus sa niikuinii axondeck.com maha võtad,
-sama digiallkiri, null lisakulu – versus 25 faili muutmine, mille hulgas on
-juriidiline tekst ja päringute marsruutimine. Kui `leisson@leisson.eu` ei ole
-päriselt töötav postkast, murrab saidi muutmine lisaks kogu selle sprindi
-ROI-mõõdiku ära. Kiirus, puhtus ja risk osutavad kõik samasse suunda.
+Seejärel soovitasin registri muutmist. **Ka see oli vale** – küsimus, mida ma
+ei esitanud, oli lihtsalt „kas alias töötab". Töötab. Vt otsust ülal.
 
-**Enne kinnitust vasta endale ühele küsimusele:** kas `leisson@leisson.eu`
-postkast on olemas ja loetav? Kui jah ja sa eelistad seda, siis on saidi
-muutmine tehtav, aga see on omaette viil, mitte selle voo osa.
+**Õppetund, mis on laiem kui e-post:** kaks korda järjest soovitasin muudatust
+enne, kui olin kogu pinna üle mõõtnud. Esimesel korral nägin üht välja ja
+arvasin, et neid ongi üks. Teisel korral mõõtsin koodi, aga ei küsinud
+kasutuses olevat fakti. **Enne kui soovitad midagi muuta, mõõda kogu pind ja
+küsi see üks fakt, mida kood ei ütle.** See on sama reegel, mis on
+`leisson-valise-allika-moot` skillis, ainult seestpoolt.
 
 ### Kaalutud valikud
 
