@@ -2073,3 +2073,38 @@ function pyya(too) {
   db.close();
   console.log('PASS hanked: kiireloomuliste loendur annab serveris ja kliendis sama arvu');
 }
+
+// X1: markExpired ja kiireidLoend peavad kasutama SAMA kuupaevavalvet. Varem olid
+// kaks koopiat ja markExpired oma oli lodvem: '2026-09-2400:00' (eraldajata) luges
+// tema 24. septembriks, klient ja mark aga viskasid rea valja. Uks rida, kaks eri
+// vastust - tapselt see vaikne lahkuminek, mida see projekt korduvalt on maksnud.
+{
+  const db = testDb();
+  const today = '2026-09-21';
+  const katsed = [
+    ['eraldajata',      '2026-09-2400:00'],  // SQLite loeks 24.09, kuju on vale
+    ['olematu kuupaev', '2026-02-31'],       // SQLite teeb temast 2026-03-03
+    ['paljas aasta',    '2026'],             // Juliuse paev -4707-11-22
+    ['paljas arv',      '45000'],            // Juliuse paev 0121-08-17
+    ['eesti kuju',      '13.10.2026'],
+  ];
+  for (const [nimi, deadline] of katsed) {
+    upsertHange(db, { ref: 'X-' + nimi.replace(/\s/g, ''), title: 'Veebilehe arendus', deadline });
+  }
+  // Uks TERVE rida, et valve ei oleks lihtsalt "ei luba midagi".
+  upsertHange(db, { ref: 'X-terve', title: 'Veebilehe arendus', deadline: '2026-09-23' });
+
+  assert.equal(kiireidLoend(db, today), 1, 'ainult terve kuupaevaga rida on kiireloomuline');
+  assert.equal(markExpired(db, today), 0, 'ukski vigane kuju ei tohi aeguda');
+
+  // Ja vastupidi: terve, moodunud kuupaev peab aeguma.
+  upsertHange(db, { ref: 'X-moodas', title: 'Veebilehe arendus', deadline: '2026-09-01' });
+  assert.equal(markExpired(db, today), 1, 'terve moodunud kuupaev aegub');
+
+  for (const [nimi, deadline] of katsed) {
+    const rida = db.prepare('SELECT state FROM hanked WHERE ref = ?').get('X-' + nimi.replace(/\s/g, ''));
+    assert.equal(rida.state, 'uus', nimi + ' (' + deadline + ') peab jaama seisu uus, mitte aeguma vaikselt');
+  }
+  db.close();
+  console.log('PASS hanked: aegumine ja kiireloomulisus kasutavad sama kuupaevavalvet');
+}
