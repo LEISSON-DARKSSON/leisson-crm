@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import { ROOT } from '../lib/env.mjs';
 import { open } from '../lib/db.mjs';
 
-const require = createRequire(join(ROOT, '..', 'package.json'));
+const require = createRequire(join(ROOT, 'package.json'));
 let chromium;
 try { ({ chromium } = require('playwright')); }
 catch { console.error('Playwright puudub. Jooksuta: npm i -D playwright && npx playwright install chromium'); process.exit(1); }

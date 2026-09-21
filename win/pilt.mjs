@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { readFileSync, existsSync, mkdirSync } from 'node:fs';
 import { ROOT } from '../lib/env.mjs';
 
-const require = createRequire(join(ROOT, '..', 'package.json'));
+const require = createRequire(join(ROOT, 'package.json'));
 const { chromium } = require('playwright');
 
 let port = 4310;
