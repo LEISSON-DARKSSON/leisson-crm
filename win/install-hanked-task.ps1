@@ -97,7 +97,8 @@ function PaigaldaUlesanne {
     $Seaded,
     $Peaosa,
     [string]$Kirjeldus,
-    [string]$Ajakava
+    [string]$Ajakava,
+    [string]$Xml
   )
 
   # PUUDUVA SKRIPTIGA ULESANNET EI REGISTREERITA. agent\hanked-history.mjs valmib
@@ -123,8 +124,12 @@ function PaigaldaUlesanne {
     return $true
   }
 
-  Register-ScheduledTask -TaskName $Nimi -Action $Kaiviti[0] -Trigger $Kaiviti[1] `
-    -Settings $Seaded -Principal $Peaosa -Description $Kirjeldus -Force | Out-Null
+  if ($Xml) {
+    Register-ScheduledTask -TaskName $Nimi -Xml $Xml -Force | Out-Null
+  } else {
+    Register-ScheduledTask -TaskName $Nimi -Action $Kaiviti[0] -Trigger $Kaiviti[1] `
+      -Settings $Seaded -Principal $Peaosa -Description $Kirjeldus -Force | Out-Null
+  }
   Write-Host ("Paigaldatud: " + $Nimi + " - " + $Ajakava)
   return $true
 }
@@ -174,28 +179,67 @@ PaigaldaUlesanne -Nimi $nimed[0] -Skript 'agent\hanked-sync.mjs' `
   -Ajakava 'iga paev 07:40' | Out-Null
 
 # --- 2. kuine ajalugu ------------------------------------------------------
-# New-ScheduledTaskTrigger EI TUNNE kuist kaivitit (-Once/-Daily/-Weekly/
-# -AtLogOn/-AtStartup on koik, mis tal on) - teostusplaani koodiloige oleks
-# kukkunud parameetrivea peale. Kuine kaiviti tuleb CIM-klassist.
-# DaysOfMonth on BITIMASK: bitt 0 = kuu 1. paev, seega 3. paev = 4.
-# MonthsOfYear 4095 = koik 12 kuud (0xFFF).
-$kuuAlgus = [datetime]::Today.AddHours(5)
-$kuuKaiviti = New-CimInstance -ClassName MSFT_TaskMonthlyTrigger `
-  -Namespace Root/Microsoft/Windows/TaskScheduler -ClientOnly -Property @{
-    StartBoundary = $kuuAlgus.ToString('yyyy-MM-ddTHH:mm:ss')
-    DaysOfMonth   = [uint32]4
-    MonthsOfYear  = [uint16]4095
-    Enabled       = $true
-  }
-$kuuTegevus = New-ScheduledTaskAction -Execute $node -Argument 'agent\hanked-history.mjs --kuud=1' -WorkingDirectory $juur
-# Ajaloo import kestab kumneid minuteid (eForms XML kuu kaupa), seega 4 tundi.
-$kuuSeaded = New-ScheduledTaskSettingsSet -StartWhenAvailable -DontStopIfGoingOnBatteries `
-  -AllowStartIfOnBatteries -ExecutionTimeLimit (New-TimeSpan -Hours 4) -MultipleInstances IgnoreNew
+# KUINE KAIVITI EHITATAKSE XML-ist, mitte cmdlet'itest. Kaks teed on labi proovitud
+# ja molemad kukkusid:
+#   1. New-ScheduledTaskTrigger EI TUNNE kuist kaivitit (-Once/-Daily/-Weekly/
+#      -AtLogOn/-AtStartup on koik, mis tal on) - teostusplaani koodiloige oleks
+#      kukkunud parameetrivea peale;
+#   2. New-CimInstance MSFT_TaskMonthlyTrigger LOOB objekti, aga
+#      Register-ScheduledTask KEELDUB temast:
+#        "Cannot bind argument to parameter 'Trigger', because PSTypeNames of the
+#         argument do not match ... MSFT_TaskTrigger"
+#      Moodetud 21.09.2026 paris masinal: paevane ulesanne registreerus, kuine
+#      kukkus tapselt selle veaga. Kuupoorde saab PSTypeNames-i sissepistmisega
+#      ule kavaldada, aga see on dokumenteerimata trikk, mis voib iga Windowsi
+#      uuendusega katki minna.
+# Register-ScheduledTask -Xml on esimese klassi parameeter ja CalendarTrigger/
+# ScheduleByMonth on Task Scheduleri oma skeem - siin ei ole midagi kavaldada.
+$kuuArgument = 'agent\hanked-history.mjs --kuud=1'
+$kuuXml = @"
+<?xml version="1.0" encoding="UTF-16"?>
+<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <Description>eForms kuuvarskendus: lepinguteated 24 kuu aknasse.</Description>
+  </RegistrationInfo>
+  <Triggers>
+    <CalendarTrigger>
+      <StartBoundary>$([datetime]::Today.AddHours(5).ToString('yyyy-MM-ddTHH:mm:ss'))</StartBoundary>
+      <Enabled>true</Enabled>
+      <ScheduleByMonth>
+        <DaysOfMonth><Day>3</Day></DaysOfMonth>
+        <Months><January/><February/><March/><April/><May/><June/><July/><August/><September/><October/><November/><December/></Months>
+      </ScheduleByMonth>
+    </CalendarTrigger>
+  </Triggers>
+  <Principals>
+    <Principal id="Author">
+      <UserId>$env:USERNAME</UserId>
+      <LogonType>InteractiveToken</LogonType>
+      <RunLevel>LeastPrivilege</RunLevel>
+    </Principal>
+  </Principals>
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <WakeToRun>false</WakeToRun>
+    <Enabled>true</Enabled>
+    <!-- Ajaloo import kestab kumneid minuteid (eForms XML kuu kaupa), seega 4 tundi. -->
+    <ExecutionTimeLimit>PT4H</ExecutionTimeLimit>
+  </Settings>
+  <Actions Context="Author">
+    <Exec>
+      <Command>$node</Command>
+      <Arguments>$kuuArgument</Arguments>
+      <WorkingDirectory>$juur</WorkingDirectory>
+    </Exec>
+  </Actions>
+</Task>
+"@
 
 PaigaldaUlesanne -Nimi $nimed[1] -Skript 'agent\hanked-history.mjs' `
-  -Argument 'agent\hanked-history.mjs --kuud=1' -Kaiviti @($kuuTegevus, $kuuKaiviti) `
-  -Seaded $kuuSeaded -Peaosa $peaosa `
-  -Kirjeldus 'eForms kuuvarskendus: lepinguteated 24 kuu aknasse.' `
+  -Argument $kuuArgument -Xml $kuuXml `
   -Ajakava 'kuu 3. paeval 05:00' | Out-Null
 
 Write-Host ""

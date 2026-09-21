@@ -61,19 +61,41 @@ const AJALUGU_NIMI = 'Leisson CRM hanked ajalugu';
   assert.match(kood, /param\s*\([^)]*\[switch\]\s*\$Kuiv/s, '-Kuiv lipp peab olema param-plokis');
   assert.match(kood, /param\s*\([^)]*\[switch\]\s*\$Eemalda/s, '-Eemalda lipp peab olema param-plokis');
 
-  const reg = kood.match(/Register-ScheduledTask/g) || [];
-  assert.equal(reg.length, 1, 'Register-ScheduledTask tohib olla TAPSELT uhes kohas, leiti ' + reg.length);
-  const unreg = kood.match(/Unregister-ScheduledTask/g) || [];
-  assert.equal(unreg.length, 1, 'Unregister-ScheduledTask tohib olla TAPSELT uhes kohas, leiti ' + unreg.length);
+  // Registreerimisel on KAKS haru (-Xml kuisele, -Action/-Trigger paevasele), sest
+  // Register-ScheduledTask keeldub CIM-ist ehitatud kuisest kaivitist. Seega ei saa
+  // noudja "tapselt uks kutse" - noue on, et IGA kutse oleks $Kuiv-valve taga ja
+  // samas funktsioonis. Kaks valveta koopiat on tapselt see viis, kuidas kuivjooks
+  // vaikselt pooleks jaab.
+  const kohad = (m) => { const v = []; let i = kood.indexOf(m);
+    while (i !== -1) { v.push(i); i = kood.indexOf(m, i + 1); } return v; };
 
-  for (const kirjutus of ['Register-ScheduledTask', 'Unregister-ScheduledTask']) {
-    const i = kood.indexOf(kirjutus);
-    // Valve peab olema SAMAS funktsioonis ja kirjutuse EES.
-    const ees = kood.slice(Math.max(0, i - 700), i);
+  const regKohad = kohad('Register-ScheduledTask').filter((i) => kood[i - 2] !== 'n'); // mitte Unregister
+  assert.ok(regKohad.length >= 1, 'Register-ScheduledTask peab olema olemas');
+  assert.ok(regKohad.length <= 2,
+    'registreerimisharusid tohib olla kuni kaks (paevane + kuine XML), leiti ' + regKohad.length);
+  const unregKohad = kohad('Unregister-ScheduledTask');
+  assert.equal(unregKohad.length, 1,
+    'Unregister-ScheduledTask tohib olla TAPSELT uhes kohas, leiti ' + unregKohad.length);
+
+  for (const i of [...regKohad, ...unregKohad]) {
+    const kirjutus = kood.slice(i, i + 24);
+    const ees = kood.slice(Math.max(0, i - 900), i);
     assert.match(ees, /if\s*\(\s*\$Kuiv\s*\)/,
       kirjutus + ' peab olema $Kuiv-valve taga (valvet ei leitud kirjutuse eest)');
     assert.match(ees, /return/, kirjutus + ' kuivjooksu haru peab varakult valjuma');
   }
+
+  // Kuine ulesanne EI TOHI kaia CIM-i kaudu: Register-ScheduledTask keeldub temast
+  // veaga "PSTypeNames of the argument do not match ... MSFT_TaskTrigger".
+  // Moodetud 21.09.2026 paris masinal - paevane registreerus, kuine kukkus.
+  assert.ok(!/MSFT_TaskMonthlyTrigger/.test(kood),
+    'kuine kaiviti ei tohi tulla CIM-klassist - Register-ScheduledTask keeldub temast');
+  assert.match(kood, /Register-ScheduledTask -TaskName \$Nimi -Xml \$Xml/,
+    'kuine ulesanne peab registreeruma XML-ist');
+  assert.match(kood, /<ScheduleByMonth>/, 'XML peab kandma kuist ajakava');
+  assert.match(kood, /<DaysOfMonth><Day>3<\/Day><\/DaysOfMonth>/, 'kuu 3. paev peab XML-is olema');
+  assert.match(kood, /<ExecutionTimeLimit>PT4H<\/ExecutionTimeLimit>/,
+    'ajaloo import kestab kumneid minuteid - 4 tunni lagi peab alles jaama');
   console.log('PASS hanked task: -Kuiv valvab molemat kirjutust');
 }
 
@@ -164,15 +186,18 @@ const AJALUGU_NIMI = 'Leisson CRM hanked ajalugu';
   assert.match(kood, /07:40/, 'paevane jooks kell 07:40 (enne konduktori akent)');
   assert.ok(!/0[89]:[03]0|1[0-8]:[03]0/.test(kood.replace(/08:00-18:00/g, '')),
     'ajad :00 ja :30 vahemikus 08-18 on konduktori kaes');
-  // New-ScheduledTaskTrigger EI TUNNE -Monthly lippu (on ainult -Once/-Daily/
-  // -Weekly/-AtLogOn/-AtStartup) - plaani koodiloige oleks kukkunud parameetrivea
-  // peale. Kuine kaiviti tuleb CIM-klassist, nagu Microsoft ise dokumenteerib.
-  assert.match(kood, /MSFT_TaskMonthlyTrigger/, 'kuine kaiviti tuleb CIM-klassist');
+  // Kuine kaiviti: KAKS teed on labi proovitud ja molemad kukkusid.
+  //   1. New-ScheduledTaskTrigger EI TUNNE -Monthly lippu (ainult -Once/-Daily/
+  //      -Weekly/-AtLogOn/-AtStartup) - plaani koodiloige oleks kukkunud kohe;
+  //   2. New-CimInstance MSFT_TaskMonthlyTrigger LOOB objekti, aga
+  //      Register-ScheduledTask keeldub temast ("PSTypeNames of the argument do
+  //      not match ... MSFT_TaskTrigger"). Moodetud 21.09.2026 paris masinal:
+  //      paevane ulesanne registreerus, kuine kukkus tapselt selle veaga.
+  // Seega kuine ulesanne tuleb XML-ist, kus ScheduleByMonth on Task Scheduleri
+  // oma skeem ja midagi ei ole kavaldada.
   assert.ok(!/New-ScheduledTaskTrigger[^\n]*-Monthly/.test(kood),
     'New-ScheduledTaskTrigger -Monthly ei ole olemas');
-  assert.match(kood, /05:00/, 'kuujooks kell 05:00');
-  // DaysOfMonth on BITIMASK (bitt 0 = kuu 1. paev), seega 3. paev = 4.
-  assert.match(kood, /DaysOfMonth\s*=\s*\[uint32\]\s*4\b/, 'kuujooks kuu 3. paeval (bitimask 4)');
+  assert.match(kood, /05:00|AddHours\(5\)/, 'kuujooks kell 05:00');
   console.log('PASS hanked task: kellaajad ei porka olemasolevatega');
 }
 
