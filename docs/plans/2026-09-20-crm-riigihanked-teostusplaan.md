@@ -27,7 +27,16 @@
 
 # Etapp F1 — andmekiht (ülesanded 1–6)
 
+> **Plaan on ajalugu, kood on tõde.** Iga tehtud ülesande all on rida „TEOSTATUD", mis
+> nimetab commiti(d). Kui plaani näidiskood ja teostus lahknevad, siis KEHTIB TEOSTUS —
+> lahknevused on põhjendatud commiti sõnumis ja koodikommentaarides, mitte siin.
+
 ## Ülesanne 1: tabelid ja migratsioon
+
+> **TEOSTATUD** — `ae2d2aa`, parandused `31ead85`, `7b5707d`. Teostus erineb plaanist: `ref` on
+> `TEXT PRIMARY KEY NOT NULL`, seisul on `CHECK`, lepingute unikaalindeks on avaldisindeks
+> `COALESCE`-iga, ja lausete vahemälu on baasipõhine (`WeakMap` + `finalized`-korduskatse).
+
 
 **Failid:**
 - Loo: `crm/lib/hanked.mjs`
@@ -147,6 +156,11 @@ git commit -F commitmsg.txt   # "feat(hanked): tabelid ja upsert, mis ei kirjuta
 
 ## Ülesanne 2: seis ja märkus jäävad sünkides puutumata
 
+> **TEOSTATUD** — `c234464`. Kriitiline parandus plaani suhtes: `markExpired` võrdleb
+> `date()`-ga, mitte stringidena (`'13.10.2026'` aegus muidu kohe), ja `today` valideeritakse.
+> `setNote` kasutab sama normaliseerijat mis `upsertHange`.
+
+
 **Failid:**
 - Muuda: `crm/test/gate-hanked.mjs` (lisa plokk)
 - Muuda: `crm/lib/hanked.mjs` (lisa `setState`, `setNote`, `markExpired`)
@@ -215,6 +229,13 @@ export function markExpired(db, today = new Date().toISOString().slice(0, 10)) {
 ---
 
 ## Ülesanne 3: RSS-i lugeja ja nišifilter
+
+> **TEOSTATUD** — `eb8e0b1`, parandused `d482884`, `ddead1c`. Kolm viga, mida plaanis ei olnud:
+> FIT peab vaatama pealkirja JA kirjeldust (muidu 3 leidu 6 asemel); sama ref tuleb feedis
+> mitu korda ja vanem teade kirjutas uuema üle; puuduv/parseerimatu `pubDate` laskis vanemal
+> ikkagi võita. `segmentOf(title, kirjeldus)` peab jääma sünkroonis failiga
+> `riigihanked/rhr_tools/rhr_watch.py`.
+
 
 **Failid:**
 - Muuda: `crm/lib/hanked.mjs` (lisa `FIT`, `EXCL`, `SMALLWEB`, `segmentOf`, `parseRss`)
@@ -312,6 +333,13 @@ export function parseRss(xml) {
 ---
 
 ## Ülesanne 4: skoor ja põhjendus
+
+> **TEOSTATUD** — `3bff69d`. Teostus erineb plaani näidiskoodist seitsmes kohas, kõik
+> kommenteeritud koodis: +40 on tingimuslik (tundmatu segment annab nähtava nullrea);
+> vahemik 140 001 – 1 M € on teadlik auk; alltöövõtu põhjus nimetab mõlemad põhjused;
+> vigane tähtaeg annab nullrea ja vigane `today` viskab; vorming `57 000 €`; `est`
+> valideeritakse nagu `viide()`; punkte ei lõigata nulli.
+
 
 **Failid:**
 - Muuda: `crm/lib/hanked.mjs` (lisa `score`)
@@ -465,7 +493,7 @@ async function main() {
 if (import.meta.url === 'file://' + process.argv[1].replace(/\\/g, '/')) main();
 ```
 
-`package.json`: lisa `"hanked:sync": "node agent/hanked-sync.mjs"` ja `"hanked:gate": "node test/gate-hanked.mjs"`; lisa `&& node test/gate-hanked.mjs` ahela `test:offline` lõppu.
+`package.json`: lisa `"hanked:sync": "node agent/hanked-sync.mjs"`. ~~lisa `&& node test/gate-hanked.mjs` ahela `test:offline` lõppu~~ — **aegunud**: `test:offline` on alates `1a9b2f8`-st `node tools/varav.mjs`, mis avastab väravad ise.
 
 **Samm 4: jooksuta** — `node test/gate-hanked.mjs` PASS, seejärel üks päris jooks: `npm run hanked:sync` peab lõppema `{"done":true,...}` reaga.
 
