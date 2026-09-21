@@ -4,14 +4,28 @@ Kohalik müügitöölaud: Zone IMAP, inimese kinnitatud SMTP, SQLite ja ChatGPT 
 
 ## Käivitamine
 
-Node 24+; `npm ci`, olemasolev kohalik `.env`, `npm start`.
+Node 22.5+ (`engines`; CI käib Node 24-l); `npm ci`, olemasolev kohalik `.env`, `npm start`.
+`npm ci` tõmbab privaatse paketi `@leisson/shared` GitHubist (vaja on ligipääsu repole `LEISSON-DARKSSON/leisson-shared`).
+
+## Repo paigutus ja naaberrepod
+
+See repo on eraldi `leisson-crm` (varem monorepo kaust `crm/`). Naaberkaustad samas vanemkaustas:
+
+| Repo | Roll |
+| --- | --- |
+| `../leisson-shared` | `@leisson/shared`: teenusekataloog, Orbit tokenid, kontaktivormi leping. Siia on kinnitatud etiketiga (`package.json`: `#v1.0.0`). |
+| `../leisson-site` | avalik leisson.eu sait, tarbib sama paketti. |
+
+Shared'i ja CRM-i koos muutmiseks: `npm run dev:link` (lingib `../leisson-shared`), tagasi `npm install`.
+Failid paketist leitakse `lib/shared-path.mjs` kaudu: `sharedFile('orbit-tokens/dist/orbit.css')`.
+Arhitektuur: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Tehisintellekti agentide juhised: [CLAUDE.md](CLAUDE.md), [AGENTS.md](AGENTS.md).
 Ava http://127.0.0.1:4310. Andmed ja postkasti paroolid jäävad `data/` ja `.env` sisse.
 Algandmete import lisab ainult puuduvaid ettevõtteid; taaskäivitus ei kirjuta käsitsi parandusi üle.
 
 ## Müügi töövoog
 
 1. Vaata päringut ja viimast inimvastust. Keeldumine, loobumine, “mitte praegu” ja olemasolev arendaja peatavad uue müügijada.
-2. Kinnita vajadus ja sobiv töömaht; vali pakett ühisest `../packages/service-catalog/catalog.json` kataloogist.
+2. Kinnita vajadus ja sobiv töömaht; vali pakett ühisest kataloogist: `service-catalog/catalog.json` failist paketis `@leisson/shared` (`node_modules/@leisson/shared/service-catalog/catalog.json`).
 3. Koosta pakkumine või vastus. Kõigi müügikirjade saatja on **gert@leisson.eu**.
 4. Saatmisaken näitab saajat, teemat ja täielikku kirja. Iga saatmine vajab inimese täpset kinnitust. Teksti, saaja või allikkirja muutus tühistab kinnituse.
 5. Arve ja laekumine on eraldi. Märgi raha laekunuks ainult pangaväljavõtte alusel, koos kuupäeva ja kordumatu viitega.
@@ -141,10 +155,10 @@ nähtav — agent kirjutab otsekäivitusel ise rea `hanke_runs`-i. Täpsem taust
 [win/README.md](win/README.md).
 
 > **PAIGALDA PEAKOOPIAST, MITTE WORKTREE'ST.** Ülesanne salvestab töökataloogi absoluutse
-> teena. Kui paigaldad selle `_worktrees\<haru>\crm` alt, siis pärast haru merge'i ja
+> teena. Kui paigaldad selle `_worktrees\<haru>\leisson-crm` alt, siis pärast haru merge'i ja
 > worktree eemaldamist osutab ülesanne olematule kaustale ja **kukub iga kuu vaikselt**
 > Task Scheduleri ajaloos, kuhu keegi ei vaata. Jooksuta skript
-> `C:\...\Leisson Creative\crm` alt. Kui oled juba worktree'st paigaldanud: `-Eemalda`
+> `C:\...\LEISSON.CREATIVE\leisson-crm` alt (või anna `-Crm <tee>`). Kui oled juba worktree'st paigaldanud: `-Eemalda`
 > sealt ja paigalda uuesti peakoopiast.
 
 ### Kus andmed on
@@ -185,11 +199,11 @@ Get-ChildItem riigihanked -Recurse -Directory -Filter 'docs-vana-*' | Remove-Ite
   `ALLTÖÖVÕTT` tähendab „üksi ei kvalifitseeru", mitte „ära paku".
 
 Lahtised otsad ja nende hind on ühes kohas:
-[`docs/plans/2026-09-21-crm-riigihanked-avatud-otsad.md`](../docs/plans/2026-09-21-crm-riigihanked-avatud-otsad.md).
+[`docs/plans/2026-09-21-crm-riigihanked-avatud-otsad.md`](docs/plans/2026-09-21-crm-riigihanked-avatud-otsad.md).
 
 ## Kontrollid ja andmed
 
-`npm test` — kohalikud käitumiskontrollid. `npm run test:offline` — CI-s lubatud eraldatud katsed.
+`npm test` — `test/gate.mjs` (elav suitsutest, avab päris CRM-i andmebaasi) ja seejärel `npm run test:offline`. `npm run varav:range` — CI-s kasutatav eraldatud ahel (vahelejäetud värav on viga). `npm run varav:brauser` — brauseriväravad (playwright).
 `node agent/mail-inventory.mjs` — kogu olemasoleva Zone konto kaustade inventuur, Seen-lippe muutmata.
 `node agent/import-prouxaudit.mjs --help` — allika-ID järgi teostusabi impordi töövoog; vaikimisi eelvaade.
 `node agent/proof-prouxaudit.mjs --help` — kohalik tõendipakk ilma tasulise API-ta.
@@ -198,4 +212,4 @@ Privaatne kirjavahetuse analüüs: `data/mail-strategy-audit.md`; tegevused: `da
 Need ei kuulu Giti. Postkasti inventuuri täielikkus ei tähenda, et iga manust on loetud.
 PROUXAUDITi päring ja veebivormi metadata on kontrollimist vajav sisend, mitte saatmisluba või ostu tõend.
 
-Skillid asuvad `.agents/skills/`; ühised Leissoni ja PROUXAUDITi töövõtted repo `../.agents/skills/`.
+Skillid asuvad `.agents/skills/` (Codexi töötaja; valideerib `python tools/validate-skills.py`) ja `.claude/skills/` (Claude Code'i oma variandid).

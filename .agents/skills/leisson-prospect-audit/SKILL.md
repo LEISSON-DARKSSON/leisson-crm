@@ -12,7 +12,7 @@ For every finding record URL, UTC time, viewport, tool/version, actual measureme
 Review up to three findings relevant to the customer's need. Do not claim full accessibility compliance, guaranteed search ranking, lost sales or a paying customer without specific evidence.
 
 ## Service fit
-Read packages/service-catalog/catalog.json at the repository root. Choose only a package whose scope fits the existing environment, required input/access and realistic work budget. Keep payment terms, price and catalog version together. Prefer improvements in the customer's current platform when feasible. E-commerce, logins and complex booking need a separate scope.
+Read `service-catalog/catalog.json` in the `@leisson/shared` package (`node_modules/@leisson/shared/service-catalog/catalog.json`). Choose only a package whose scope fits the existing environment, required input/access and realistic work budget. Keep payment terms, price and catalog version together. Prefer improvements in the customer's current platform when feasible. E-commerce, logins and complex booking need a separate scope.
 Use prouxaudit-evidence-to-service for an evidence pack and before/after acceptance. Public report access does not grant access to protected data. Keep tokens out of sales documents.
 
 ## Output
