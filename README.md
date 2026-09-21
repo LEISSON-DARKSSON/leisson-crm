@@ -99,8 +99,28 @@ Kaks asja nuppude juures, mida tasub teada:
 - **„Lae ajalugu" nupp laeb terve 24 kuu akna** (kümneid minuteid, sadu megabaite). Üht kuud
   saab ainult käsurealt: `npm run hanked:ajalugu -- --kuud=1`.
 
-PDF-ide lugemine vajab masinas `pdftotext`-i (poppler). Kui teda ei ole, ei teeskle kood
-midagi: failid jäävad loendisse „ei saanud tekstiks" ja jooks ütleb seda hoiatusena.
+PDF-ide lugemine vajab masinas `pdftotext`-i (poppler või xpdf). Kui teda ei ole, ei teeskle
+kood midagi: failid jäävad loendisse „ei saanud tekstiks" ja jooks ütleb seda hoiatusena.
+
+Binaari **ei otsita ainult PATH-ist** ja see on mõõdetud vajadus: hankel 315437 (21.09.2026)
+oli `pdftotext` masinas olemas (`C:\Program Files\Git\mingw64\bin`), aga jooks sai `ENOENT`
+ja luges tekstiks 0 faili 9-st — tagajärg oli NULL `rollid`/`kaive_noue`/`quality_weight` ja
+vale verdikt `KAALU`. Nüüd proovib `leiaPdftotext()` järjekorras: `PDFTOTEXT`
+keskkonnamuutuja (täistee) → paljas `pdftotext` PATH-ist → teadaolevad kohad. Kui su masinas
+on ta mujal, pane `.env`-i `PDFTOTEXT=C:\...\pdftotext.exe`. Värav
+`test/gate-hanked-docs-tekst.mjs` nõuab, et binaar SELLES masinas leitaks.
+
+**Kumb binaar loeb, see muudab tulemust.** xpdf 4.00 `-layout` lõhub hindamiskriteeriumide
+mitmeveerulise tabeli (osakaal satub labelist eraldi reale) ja kvaliteedikaal jääb lugemata;
+poppleri sama käsk hoiab rea koos. Paneel näitab rea „tekstiks luges &lt;tee&gt;", et seda
+oleks tagantjärele näha. Kui kvaliteedikaal jääb korduvalt „ei tuvastatud", on esimene
+kahtlustatav see.
+
+**Isikupõhine blokeeriv nõue.** Alusdokumentidest loetakse ka nõue, mida ettevõtte suurus ei
+lahenda: doktorikraad, kutsetunnistus, atesteering, tegevusluba. Leid kirjutatakse veergu
+`blokeeriv_noue` ja annab score-is verdikti `ALLTÖÖVÕTT` — täpselt nagu kolm rolli või suur
+käibenõue. Hindamiskriteeriumi keel („kõrgemalt hinnatakse doktorikraadi") ja seadusetsitaat
+(„Viide seadusele: RHS § 101 ...") jäävad märkega `kontrolli` ja verdikti EI liiguta.
 
 ### Ajastatud ülesanded (Windows)
 
