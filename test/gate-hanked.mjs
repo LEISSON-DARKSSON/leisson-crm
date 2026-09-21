@@ -4,10 +4,14 @@ import assert from 'node:assert/strict';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtempSync, readFileSync } from 'node:fs';
+import { createServer } from 'node:http';
+import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import { migrateHanked, upsertHange, listHanked, setState, setNote, markExpired, HANKE_STATES,
   segmentOf, parseRss, FIT, score } from '../lib/hanked.mjs';
 import { leiaVaravad, VALJAJATED } from '../tools/varav.mjs';
+import { syncFromXml, logiSync } from '../agent/hanked-sync.mjs';
 
 function testDb() {
   const dir = mkdtempSync(join(tmpdir(), 'hanked-'));
@@ -1257,4 +1261,283 @@ ${kirjed.join('\n')}
   assert.ok(!/\bfetch\s*\(|db\.prepare|db\.exec/.test(keha),
     'score keha ei tohi puutuda baasi ega vorku');
   console.log('PASS hanked: score on puhas funktsioon');
+}
+
+// ---------------------------------------------------------------------------
+// ULESANNE 5: sunkimisskript (RSS -> baas).
+// ---------------------------------------------------------------------------
+
+// Y1 (plaani test): sunk on idempotentne. RSS_FIKSTUURis on 5 nissi hanget ja
+// 333333 tahtaeg (05.09) on 20.09 seisuga moodas.
+{
+  const db = testDb();
+  const r1 = syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });
+  assert.equal(r1.uus, 5, 'esimene jooks toob viis uut hanget');
+  assert.equal(r1.uuendatud, 0);
+  assert.equal(r1.kokku, 5, 'kokku = nissi jounud read, mitte feedi kirjete arv');
+  assert.equal(r1.aegunud, 1, 'moodunud tahtajaga 333333 aegub sama tehingu sees');
+
+  const r2 = syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });
+  assert.equal(r2.uus, 0, 'teine jooks ei tekita dublikaate');
+  assert.equal(r2.uuendatud, 5);
+  assert.equal(r2.aegunud, 0, 'juba aegunud rida ei aegu teist korda');
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM hanked').get().c, 5, 'viis rida, mitte kumme');
+
+  const h = listHanked(db, {}).find((x) => x.ref === '314159');
+  assert.ok(h.score > 0 && h.score_why.includes('+'), 'skoor ja pohjendus salvestatakse');
+
+  const log = db.prepare("SELECT * FROM hanke_sync WHERE key='rss'").get();
+  assert.equal(log.ok, 1, 'onnestunud jooks jatab ok = 1');
+  assert.equal(log.rows, 5);
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM hanke_sync').get().c, 1,
+    'hanke_sync.key on PRIMARY KEY - uks rida votme kohta, mitte ajalugu');
+  db.close();
+  console.log('PASS hanked: sünk on idempotentne');
+}
+
+// Y2 (otsus 3): score_why on JSON-massiiv, sest ulesande 13 hangeDetail teeb
+// JSON.parse(score_why). Vabatekst laguneks seal vaikselt.
+{
+  const db = testDb();
+  syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });
+  const rida = db.prepare('SELECT * FROM hanked WHERE ref = ?').get('314159');
+  const oodatud = score(rida, { today: '2026-09-20' });
+  assert.equal(rida.score, oodatud.points, 'baasi laheb sama arv, mille score annab');
+  const why = JSON.parse(rida.score_why);
+  assert.ok(Array.isArray(why) && why.every((x) => typeof x === 'string'),
+    'score_why peab JSON.parse-ist tulema stringimassiivina');
+  assert.deepEqual(why, oodatud.why, 'read salvestatakse muutmata kujul');
+  db.close();
+  console.log('PASS hanked: score_why on JSON-massiiv');
+}
+
+// Y3 (otsus 2): skoor arvutatakse BAASIREA pealt, mitte RSS-i kirje pealt. RSS ei
+// anna maksumust; kui keegi (ulesanne 6 eForms voi kasitsi import) on maksumuse
+// juba tainud, ei tohi jargmine RSS-jooks pohjendust vaesemaks teha.
+{
+  const db = testDb();
+  syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });
+  db.prepare('UPDATE hanked SET est = 45000 WHERE ref = ?').run('314159');
+  syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });
+  const r = db.prepare('SELECT * FROM hanked WHERE ref = ?').get('314159');
+  assert.equal(r.score, 55, '40 nissi + 15 maksumus');
+  assert.ok(JSON.parse(r.score_why).some((x) => /maksumus 45 000 €/.test(x)),
+    'pohjendus peab kasutama baasis olevat maksumust: ' + r.score_why);
+  db.close();
+  console.log('PASS hanked: skoor arvutatakse baasirea, mitte RSS-i kirje pealt');
+}
+
+// Y4: sunk ei kirjuta ule inimese valju ja markExpired tehingu sees ei puutu
+// inimese poolt liigutatud rida.
+{
+  const db = testDb();
+  syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });
+  setState(db, '314159', 'valmistun');
+  setNote(db, '314159', 'Helistasin hankijale');
+  setState(db, '333333', 'valmistun');  // oli aegunud, inimene votab tagasi
+
+  const r = syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });
+  assert.equal(r.aegunud, 0, 'inimese puutatud rida ei aegu uuesti');
+  const a = db.prepare('SELECT * FROM hanked WHERE ref = ?').get('314159');
+  assert.equal(a.state, 'valmistun', 'seis on inimese oma');
+  assert.equal(a.note, 'Helistasin hankijale', 'markus on inimese oma');
+  assert.equal(db.prepare('SELECT state FROM hanked WHERE ref = ?').get('333333').state, 'valmistun',
+    'markExpired tehingu sees puudutab ainult seisu uus');
+  db.close();
+  console.log('PASS hanked: sünk ei kirjuta üle inimese välju');
+}
+
+// Y5 (otsus 6): VIGANE JOOKS PEAB JATMA JALJE. Ilma selleta naeb vaates vana edukat
+// aega ja inimene arvab, et sunk tootab. Ja (otsus 4): ROLLBACK ei tohi algset viga
+// ara neelata.
+{
+  const db = testDb();
+  syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });
+  assert.equal(db.prepare("SELECT ok FROM hanke_sync WHERE key='rss'").get().ok, 1);
+
+  db.exec('DELETE FROM hanked');
+  db.exec("CREATE TRIGGER katki BEFORE INSERT ON hanked BEGIN SELECT RAISE(ABORT,'katkine baas'); END");
+  assert.throws(() => syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' }), /katkine baas/,
+    'algne viga peab ROLLBACK-i tagant labi tulema');
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM hanked').get().c, 0,
+    'ebaonnestunud jooks ei jata poolikut seisu');
+  const log = db.prepare("SELECT * FROM hanke_sync WHERE key='rss'").get();
+  assert.equal(log.ok, 0, 'ebaonnestunud jooks kirjutab ok = 0');
+  assert.ok(/katkine baas/.test(log.note || ''), 'note utleb, mis kukkus: ' + log.note);
+
+  db.exec('DROP TRIGGER katki');
+  syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });
+  assert.equal(db.prepare("SELECT ok FROM hanke_sync WHERE key='rss'").get().ok, 1,
+    'jargmine onnestunud jooks puhastab punase jalje');
+  db.close();
+  console.log('PASS hanked: vigane jooks jätab jälje (ok = 0)');
+}
+
+// Y6 (otsus 4): kui kutsujal on juba tehing lahti, kukub BEGIN IMMEDIATE - ja siis
+// EI TOHI catch-plokk kutsuja tehingut tagasi keerata ega sinna jalgi kirjutada.
+{
+  const db = testDb();
+  db.exec('BEGIN');
+  db.exec("INSERT INTO hanked (ref,title) VALUES ('kutsuja','Kutsuja enda rida')");
+  assert.throws(() => syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' }), /transaction/i,
+    'pesastatud tehing peab viskama');
+  assert.ok(db.prepare('SELECT ref FROM hanked WHERE ref = ?').get('kutsuja'),
+    'kutsuja tehingut ei tohi ara rollbackida');
+  db.exec('COMMIT');
+  assert.ok(db.prepare('SELECT ref FROM hanked WHERE ref = ?').get('kutsuja'),
+    'kutsuja rida jaab COMMIT-i jarel alles');
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM hanke_sync').get().c, 0,
+    'voorasse tehingusse ei kirjuta sunk ok = 0 rida');
+  db.close();
+  console.log('PASS hanked: võõrasse tehingusse sünk ei kirjuta');
+}
+
+// Y7 (otsus 7): MAHAKUKKUNUD KIRJED. parseRss viskab vaikselt ara kirjed ilma
+// viitenumbrita, valest liigist ja nissivalised. Need loetakse kokku ja lahevad
+// hanke_sync.note-sse, muidu naeb inimene ainult "5" ja ei tea, kas feed kahanes.
+{
+  const s = {};
+  const read = parseRss(RSS_FIKSTUUR, s);
+  assert.equal(s.kirjeid, s.nisis + s.dublikaate + s.valjaspool + s.loetamatuid,
+    'loendurid peavad kokku andma feedi kirjete arvu: ' + JSON.stringify(s));
+  assert.equal(s.nisis, read.length, 'nisis = tagastatud read');
+  assert.deepEqual(parseRss(RSS_FIKSTUUR), read, 'loendur ei tohi tagastust muuta');
+
+  const db = testDb();
+  syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });
+  assert.equal(db.prepare("SELECT note FROM hanke_sync WHERE key='rss'").get().note,
+    '9 kirjet feedis · 5 nišis · 0 dublikaati · 3 väljaspool nišši · 1 loetamatu');
+
+  // Ainsus/mitmus ja dublikaadi loendus paris muutmisteate peal.
+  const db2 = testDb();
+  const kaks = rssFeed(
+    rssKirje({ title: '311111 - Veebilehe arendus', pub: 'Mon, 01 Sep 2026 05:00:00 GMT',
+      desc: 'Teenused; Lihthange; Tähtaeg: 01.12.2026 10:00' }),
+    rssKirje({ title: '311111 - Veebilehe arendus (muudetud)', pub: 'Tue, 02 Sep 2026 05:00:00 GMT',
+      desc: 'Teenused; Lihthange; Tähtaeg: 02.12.2026 10:00' }),
+    rssKirje({ title: 'Teade ilma viitenumbrita', desc: 'Teenused; Lihthange' }),
+  );
+  const r = syncFromXml(db2, kaks, { today: '2026-09-20' });
+  assert.equal(r.kokku, 1, 'muutmisteade ei tee teist rida');
+  assert.equal(db2.prepare("SELECT note FROM hanke_sync WHERE key='rss'").get().note,
+    '3 kirjet feedis · 1 nišis · 1 dublikaat · 0 väljaspool nišši · 1 loetamatu');
+  assert.equal(db2.prepare('SELECT deadline FROM hanked WHERE ref = ?').get('311111').deadline,
+    '2026-12-02', 'uuem muutmisteade voidab');
+  db.close(); db2.close();
+  console.log('PASS hanked: mahakukkunud kirjed loetakse kokku');
+}
+
+// Y8 (otsus 9): loetamatu keha ei tohi vaikselt onnestuda. HTML-veateade ja tuhi
+// keha on VIGA; paris, aga tuhi feed on nahtav nullrida, mitte viga.
+{
+  const db = testDb();
+  for (const keha of ['', '   ', '<html><body><h1>502 Bad Gateway</h1></body></html>',
+    null, undefined, 42, '{"error":"nope"}', '<!DOCTYPE html><html lang="et"></html>']) {
+    assert.throws(() => syncFromXml(db, keha, { today: '2026-09-20' }), /RSS/,
+      'mitte-RSS keha peab viskama: ' + JSON.stringify(keha));
+  }
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM hanked').get().c, 0, 'poolikut seisu ei jaa');
+  assert.equal(db.prepare("SELECT ok FROM hanke_sync WHERE key='rss'").get().ok, 0,
+    'loetamatu vastus jatab samuti punase jalje');
+
+  const db2 = testDb();
+  const tyhiFeed = '<?xml version="1.0"?><rss version="2.0"><channel><title>RHR</title></channel></rss>';
+  const r = syncFromXml(db2, tyhiFeed, { today: '2026-09-20' });
+  assert.equal(r.kokku, 0);
+  const log = db2.prepare("SELECT * FROM hanke_sync WHERE key='rss'").get();
+  assert.equal(log.ok, 1, 'paris tuhi feed ei ole viga');
+  assert.equal(log.note, '0 kirjet feedis · 0 nišis · 0 dublikaati · 0 väljaspool nišši · 0 loetamatut',
+    'nullid on NAHTAVAD - siin paistab valja, kui RHR kujundust muudab');
+  db.close(); db2.close();
+  console.log('PASS hanked: loetamatu keha ei õnnestu vaikselt');
+}
+
+// Y9: vorguvea jalg (main() kasutab sama abifunktsiooni, mida siin otse katsetame).
+{
+  const db = testDb();
+  logiSync(db, { ok: 0, note: 'RSS-i ei saanud: TimeoutError: The operation was aborted' });
+  const log = db.prepare("SELECT * FROM hanke_sync WHERE key='rss'").get();
+  assert.equal(log.ok, 0);
+  assert.ok(/TimeoutError/.test(log.note));
+  assert.ok(log.ts, 'ka vigasel jooksul on aeg');
+  db.close();
+  console.log('PASS hanked: võrguvea jälg läheb hanke_sync-i');
+}
+
+// Y10 (otsus 8): otsekaivituse valve peab olema Windowsi-kindel. Kasitsi kokku
+// kleebitud 'file://' + process.argv[1] laguneb draivitahe, URL-kodeeringu ja
+// tuhikute peal - ja SEE tee sisaldab tuhikuid ("Leisson Creative").
+{
+  const src = readFileSync(new URL('../agent/hanked-sync.mjs', import.meta.url), 'utf8');
+  assert.ok(/pathToFileURL\(process\.argv\[1\]\)\.href/.test(src),
+    'otsekaivituse valve peab kasutama pathToFileURL(process.argv[1]).href');
+  // Kommentaarid maha - MEIE kood, mitte meie selgitus vana vea kohta.
+  const kood = src.split('\n').filter((r) => !/^\s*\/\//.test(r)).join('\n');
+  assert.ok(!/["']file:\/\/["']\s*\+/.test(kood),
+    'kasitsi kokku kleebitud file:// URL on Windowsis katki');
+  const keha = src.slice(src.indexOf('export function syncFromXml('), src.indexOf('async function main('));
+  assert.ok(keha.length > 100, 'syncFromXml peab olema enne main-i');
+  assert.ok(!/\bfetch\s*\(|AbortSignal/.test(keha), 'syncFromXml ei tohi vorku puutuda');
+  console.log('PASS hanked: otsekäivituse valve on Windowsi-kindel');
+}
+
+// Y11: main() otsast lopuni ILMA VALISE VORGUTA - kohalik server annab XML-i,
+// HTML-i ja uhel juhul ei vasta uldse. Laps kaivitatakse paris teelt (tuhikutega),
+// seega see katab ka otsekaivituse valve paris protsessina.
+{
+  const server = createServer((req, res) => {
+    if (req.url.startsWith('/rss')) {
+      res.writeHead(200, { 'content-type': 'application/rss+xml; charset=utf-8' });
+      res.end(RSS_FIKSTUUR);
+    } else {
+      res.writeHead(502, { 'content-type': 'text/html' });
+      res.end('<html><body><h1>502 Bad Gateway</h1></body></html>');
+    }
+  });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const port = server.address().port;
+  const skript = fileURLToPath(new URL('../agent/hanked-sync.mjs', import.meta.url));
+
+  // spawnSync EI KOLBA: ta blokeerib siinse sundmustsukli ja siis ei vasta kohalik
+  // server lapsele kunagi - laps kukuks 60 sekundi parast aegumisega ja test
+  // "toestaks" vale asja.
+  const jooks = (url) => new Promise((valmis) => {
+    const dbPath = join(mkdtempSync(join(tmpdir(), 'hanked-main-')), 'crm.sqlite');
+    const laps = spawn(process.execPath, [skript],
+      { env: { ...process.env, HANKED_RSS_URL: url, CRM_DB_PATH: dbPath } });
+    let valja = ''; let viga = '';
+    laps.stdout.on('data', (d) => { valja += d; });
+    laps.stderr.on('data', (d) => { viga += d; });
+    laps.on('close', (kood) => {
+      const db = new DatabaseSync(dbPath);
+      const log = db.prepare("SELECT * FROM hanke_sync WHERE key='rss'").get();
+      const hankeid = db.prepare('SELECT COUNT(*) AS c FROM hanked').get().c;
+      db.close();
+      valmis({ kood, log, hankeid, stderr: viga,
+        read: valja.trim().split('\n').filter(Boolean).map((x) => JSON.parse(x)) });
+    });
+  });
+
+  const a = await jooks(`http://127.0.0.1:${port}/rss`);
+  assert.equal(a.kood, 0, 'onnestunud jooks annab valjumiskoodi 0. stderr: ' + a.stderr);
+  assert.deepEqual(a.read.at(-1).done, true, 'viimane rida on {"done":true,...}: '
+    + JSON.stringify(a.read.at(-1)));
+  assert.equal(a.read.at(-1).rows, 5);
+  assert.equal(a.hankeid, 5, 'laps kirjutas baasi');
+  assert.equal(a.log.ok, 1);
+
+  const b = await jooks(`http://127.0.0.1:${port}/html`);
+  assert.equal(b.kood, 1, 'HTML-veateade XML-i asemel peab andma valjumiskoodi 1');
+  assert.ok(b.read.some((x) => x.error), 'viga tuleb stdout-i JSON-reana');
+  assert.equal(b.hankeid, 0, 'poolikut seisu ei jaa');
+  assert.equal(b.log.ok, 0, 'HTML-vastus jatab punase jalje');
+  assert.ok(/502/.test(b.log.note || ''), 'note utleb, mis tuli: ' + b.log.note);
+
+  const c = await jooks('http://127.0.0.1:1/rss');
+  assert.equal(c.kood, 1, 'vastamata jaanud server peab andma valjumiskoodi 1');
+  assert.equal(c.log.ok, 0, 'vorguviga jatab punase jalje');
+  assert.ok(/RSS-i ei saanud/.test(c.log.note || ''), 'note utleb pohjuse: ' + c.log.note);
+
+  server.close();
+  console.log('PASS hanked: main() kirjutab JSON-read ja käitub veaga õigesti');
 }
