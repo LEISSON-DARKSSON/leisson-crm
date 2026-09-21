@@ -192,3 +192,30 @@ const AJALUGU_NIMI = 'Leisson CRM hanked ajalugu';
   assert.ok(failid.includes('gate-hanked-task.mjs'), 'see varav peab olema avastatav');
   console.log('PASS hanked task: varav on offline-ahelas');
 }
+
+// -Crm ja worktree-tee keeld. Ajastatud ulesanne kannab CRM-i teed ENDA sees,
+// seega see tee peab ule elama checkout'i, kust skript jooksutati. Ilma selleta
+// vottis skript alati $PSScriptRoot vanema ja worktree'st jooksutades lains
+// ulesandesse ajutine tee - mis parast merge'i ja worktree kustutamist KAOB.
+// Ulesanne ei kukuks siis nahtavalt, vaid teataks iga paev "faili ei leitud"
+// Task Scheduleri ajaloos, kuhu keegi ei vaata. Tapselt see vaikne lopp, mida
+// see projekt korduvalt on maksnud.
+{
+  assert.match(ps, /param\(\[switch\]\$Eemalda,\s*\[switch\]\$Kuiv,\s*\[string\]\$Crm\)/,
+    '-Crm lipp peab olema olemas');
+  assert.match(ps, /\$juur = if \(\$Crm\)/, '-Crm peab $juure ule kirjutama');
+  assert.match(ps, /package\.json[^\n]*PathType Leaf/,
+    'CRM-i teed tuleb kontrollida (package.json), mitte uskuda');
+
+  // Keeld ise: PARIS valve, mitte kommentaar.
+  const valve = ps.match(/if \(-not \$Eemalda -and \$juur -match [^\n]*_worktrees[^\n]*\) \{/);
+  assert.ok(valve, 'worktree-tee keeld peab olema paris tingimus, mitte kommentaar');
+  const plokk = ps.slice(ps.indexOf(valve[0]), ps.indexOf(valve[0]) + 500);
+  assert.match(plokk, /throw \("Ajutine worktree-tee ei kolba/, 'keeld peab VISKAMA, mitte hoiatama');
+  assert.match(plokk, /-Crm/, 'veateade peab utlema, KUIDAS edasi minna');
+
+  // -Eemalda peab keelust labi paasema: vana, vale teega ulesande peab saama maha
+  // votta ka worktree'st, muidu jaab ta igaveseks kettale.
+  assert.match(valve[0], /-not \$Eemalda/, '-Eemalda peab worktree-keelust labi paasema');
+  console.log('PASS hanked task: -Crm lipp ja worktree-tee keeld');
+}
