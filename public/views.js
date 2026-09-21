@@ -778,7 +778,17 @@
       el('span', { class: 'v', text: dok.kaiveNoue == null ? 'ei tuvastatud' : eur(dok.kaiveNoue) }),
       el('span', { class: 'k', text: 'Kvaliteedi kaal' }),
       el('span', { class: 'v', text: dok.qualityWeight == null ? 'ei tuvastatud' : dok.qualityWeight + ' % hindest' }),
+      el('span', { class: 'k', text: 'Blokeeriv nõue' }),
+      el('span', { class: 'v', text: (dok.blokeerivad && dok.blokeerivad.length)
+        ? dok.blokeerivad.join(', ') + ' — üksi ei kvalifitseeru'
+        : 'ei tuvastatud' }),
     ]));
+    if (dok.blokeerivad && dok.blokeerivad.length) {
+      lapsed.push(el('p', { class: 'warn',
+        text: 'Isikupõhine kvalifikatsiooninõue (' + dok.blokeerivad.join(', ')
+          + '): ilma seda tõendava inimeseta lükatakse pakkumus tagasi ENNE sisulist hindamist. '
+          + 'Tõend on allpool leidude nimekirjas.' }));
+    }
     if (dok.pdftotext === false) {
       lapsed.push(el('p', { class: 'warn',
         text: 'Masinas ei ole pdftotext-i — ükski PDF ei jõudnud tekstini, seega nõuded on lugemata.' }));
@@ -807,7 +817,10 @@
     for (const x of dok.vahelejaetud) {
       lapsed.push(el('p', { class: 'warn', text: 'Vahele jäetud: ' + x.nimi + ' — ' + x.pohjus }));
     }
-    if (dok.ts) lapsed.push(el('p', { class: 'why', text: 'Laetud ' + dok.ts }));
+    if (dok.ts) {
+      lapsed.push(el('p', { class: 'why', text: 'Laetud ' + dok.ts
+        + (dok.pdftotextTee ? ' · tekstiks luges ' + dok.pdftotextTee : '') }));
+    }
     return el('section', { class: 'detail-plokk', id: 'hankedDokumendid' }, lapsed);
   }
 
@@ -816,6 +829,7 @@
     if (x.liik === 'rollide-arv') return 'Rollide arv: ' + x.arv;
     if (x.liik === 'käive') return 'Käive: ' + eur(x.summa);
     if (x.liik === 'kvaliteedikaal') return 'Kvaliteedi kaal: ' + x.kaal + ' %';
+    if (x.liik === 'blokeeriv') return 'Blokeeriv nõue: ' + x.noue;
     return String(x.liik || 'leid');
   }
 

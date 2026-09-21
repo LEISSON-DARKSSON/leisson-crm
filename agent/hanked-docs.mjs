@@ -220,11 +220,42 @@ export function lahtiPaki(zip, siht, { uuesti = false, vaba = vabaKetas } = {}) 
 
 // --- tekstiks --------------------------------------------------------------
 
+// MOODETUD 21.09.2026, hange 315437: masinas OLI pdftotext (xpdf 4.00,
+// C:\Program Files\Git\mingw64\bin all), aga `hanked:dokumendid --ref=315437` sai
+// spawnSync-ist ENOENT-i ja kirjutas kõik 9 faili `tekstita`-nimekirja. Tagajärg:
+// rollid / kaive_noue / quality_weight jäid NULL ja verdikt jäi KAALU, kuigi õige
+// vastus oli JÄTA. Põhjus ei olnud puuduv binaar vaid PATH selles protsessis,
+// kust CRM käivitati. Seepärast EI otsi me binaari ainult PATH-ist:
+//   1. PDFTOTEXT keskkonnamuutuja (täistee) — kui masinal on ta mujal;
+//   2. paljas 'pdftotext' PATH-ist;
+//   3. teadaolevad kohad Windowsis/Linuxis/macOS-is.
+// `pdftotext -v` lõpetab xpdf-is koodiga 99 — see EI OLE viga, vaid versioonitrükk.
+const PDFTOTEXT_KANDIDAADID = [
+  'C:\\Program Files\\Git\\mingw64\\bin\\pdftotext.exe',
+  'C:\\Program Files (x86)\\Git\\mingw64\\bin\\pdftotext.exe',
+  'C:\\Program Files\\poppler\\Library\\bin\\pdftotext.exe',
+  '/usr/bin/pdftotext',
+  '/usr/local/bin/pdftotext',
+  '/opt/homebrew/bin/pdftotext',
+];
+
+export function leiaPdftotext({ env = process.env } = {}) {
+  const kandidaadid = [];
+  if (env.PDFTOTEXT) kandidaadid.push(env.PDFTOTEXT);
+  kandidaadid.push('pdftotext', ...PDFTOTEXT_KANDIDAADID);
+  for (const tee of kandidaadid) {
+    // Paljast nime ei saa existsSync-iga kontrollida — teda otsib OS PATH-ist.
+    if (tee !== 'pdftotext' && !existsSync(tee)) continue;
+    try {
+      const r = spawnSync(tee, ['-v'], { timeout: 10000 });
+      if (!r.error && (r.status === 0 || r.status === 99)) return tee;
+    } catch { /* järgmine kandidaat */ }
+  }
+  return null;
+}
+
 export function onPdftotext() {
-  try {
-    const r = spawnSync('pdftotext', ['-v'], { timeout: 10000 });
-    return !r.error && (r.status === 0 || r.status === 99);
-  } catch { return false; }
+  return leiaPdftotext() !== null;
 }
 
 /**
@@ -235,10 +266,12 @@ export function onPdftotext() {
  */
 export function failiTekst(tee, { pdftotext = true } = {}) {
   const nimi = tee.toLowerCase();
+  // `pdftotext` on kas true (otsi ise), false (teadaolevalt puudub) või täistee.
+  const bin = pdftotext === true ? leiaPdftotext() : pdftotext;
   try {
     if (nimi.endsWith('.pdf')) {
-      if (!pdftotext) return { tekst: null, pohjus: 'pdftotext puudub masinas — PDF-i ei saanud tekstiks' };
-      const r = spawnSync('pdftotext', ['-layout', '-enc', 'UTF-8', tee, '-'],
+      if (!bin) return { tekst: null, pohjus: 'pdftotext puudub masinas — PDF-i ei saanud tekstiks' };
+      const r = spawnSync(bin, ['-layout', '-enc', 'UTF-8', tee, '-'],
         { timeout: PAKI_PIIRID.pdfAegumine, maxBuffer: PAKI_PIIRID.maxTekst, encoding: 'utf8' });
       if (r.error) return { tekst: null, pohjus: 'pdftotext kukkus: ' + lyhike(r.error) };
       if (r.status !== 0) return { tekst: null, pohjus: 'pdftotext lõpetas koodiga ' + r.status };
@@ -254,15 +287,19 @@ export function failiTekst(tee, { pdftotext = true } = {}) {
   }
 }
 
-export function failidTekstiks(failid, { pdftotext = onPdftotext() } = {}) {
+export function failidTekstiks(failid, { pdftotext = leiaPdftotext() } = {}) {
+  // Binaar otsitakse ÜKS kord terve paki kohta, mitte iga faili kohta uuesti.
+  const bin = pdftotext === true ? leiaPdftotext() : pdftotext;
   const tekstid = [];
   const tekstita = [];
   for (const f of failid) {
-    const r = failiTekst(f.tee, { pdftotext });
+    const r = failiTekst(f.tee, { pdftotext: bin || false });
     if (r.tekst && r.tekst.trim()) tekstid.push({ nimi: f.nimi, tekst: r.tekst });
     else tekstita.push({ nimi: f.nimi, pohjus: r.pohjus || 'tekst oli tühi' });
   }
-  return { tekstid, tekstita, pdftotext };
+  // `pdftotext` jääb TÕEVÄÄRTUSEKS: seda välja loeb nii baas (docs_leiud) kui ka
+  // vaade (`dok.pdftotext === false`). Täistee käib eraldi väljal.
+  return { tekstid, tekstita, pdftotext: Boolean(bin), pdftotextTee: bin || null };
 }
 
 // --- argumendid ------------------------------------------------------------
@@ -351,7 +388,11 @@ async function main() {
     if (r.vanaKaust) teata({ hoiatus: 'vana kaust tõsteti kõrvale: ' + r.vanaKaust });
 
     const t = failidTekstiks(r.failid);
-    if (!t.pdftotext) teata({ hoiatus: 'pdftotext puudub masinas — ükski PDF ei jõua tekstini' });
+    if (!t.pdftotext) {
+      teata({ hoiatus: 'pdftotext puudub masinas — ükski PDF ei jõua tekstini, seega '
+        + 'rollid/käibenõue/kvaliteedikaal jäävad NULL ja verdikt on lugemata. '
+        + 'Sea PDFTOTEXT=<täistee> või lisa binaar PATH-i (vt gate-hanked-docs-tekst.mjs).' });
+    }
     for (const x of t.tekstita) teata({ hoiatus: 'tekstiks ei saanud: ' + x.nimi + ' — ' + x.pohjus });
 
     const leiud = koguLeiud(t.tekstid);
@@ -361,13 +402,20 @@ async function main() {
       vahelejaetud: r.vahelejaetud,
       tekstita: t.tekstita,
       pdftotext: t.pdftotext,
+      // MILLINE BINAAR luges — see EI OLE kosmeetika. Mõõdetud 21.09.2026
+      // hankel 315437: xpdf 4.00 `-layout` lõhub hindamiskriteeriumide
+      // mitmeveerulise tabeli nii, et osakaal „60" satub labelist eraldi reale
+      // ja kvaliteedikaal jääb lugemata; poppleri sama käsk hoiab rea koos.
+      // Ilma selle väljata ei ole hiljem võimalik aru saada, KUMB masin luges.
+      pdftotextTee: t.pdftotextTee || null,
       ts: new Date().toISOString(),
     };
 
     db.prepare(`UPDATE hanked SET docs_dir = ?, docs_count = ?, rollid = ?, kaive_noue = ?,
-        quality_weight = ?, docs_leiud = ?, updated = datetime('now') WHERE ref = ?`)
+        quality_weight = ?, blokeeriv_noue = ?, docs_leiud = ?, updated = datetime('now')
+        WHERE ref = ?`)
       .run(kaust, r.failid.length, leiud.rollid, leiud.kaiveNoue, leiud.qualityWeight,
-        JSON.stringify(docs), args.ref);
+        (leiud.blokeerivad || []).join(',') || null, JSON.stringify(docs), args.ref);
 
     // SKOOR ARVUTATAKSE KOHE UMBER. Ilma selleta jouaks `rollid` kull baasi, aga
     // verdikt jaaks vanaks kuni jargmise sungini - ja ALLTOOVOTT, mille parast
@@ -383,6 +431,7 @@ async function main() {
     teata({ done: true, ref: args.ref, failid: r.failid.length,
       vahelejaetud: r.vahelejaetud.length, tekstiga: t.tekstid.length, tekstita: t.tekstita.length,
       rollid: leiud.rollid, kaiveNoue: leiud.kaiveNoue, qualityWeight: leiud.qualityWeight,
+      blokeerivad: leiud.blokeerivad || [],
       kontrolli: leiud.leiud.filter((x) => x.kindlus === 'kontrolli').length,
       verdict: s.verdict, score: s.points, kaust });
     lopetaOtseJooks(db, jooks.id, { ok: true, rows: r.failid.length, progress: VIIMANE, log: LOGI });
