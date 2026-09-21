@@ -606,6 +606,13 @@ export function parseAward(blk) {
 
 ## Ülesanne 7: käivitaja lukuga
 
+> **TEOSTATUD** — `4c3fc54`. 409-lukk ei ole kontroll-siis-INSERT, vaid osaline unikaalindeks
+> `(cmd) WHERE state='käib'` — kaks paralleelset päringut ei saa enam mõlemad läbi. Serveril on
+> `boot_id`, sest pid-id lähevad pärast taaskäivitust ringlusse: võõra instantsi jooks on alati orb
+> ja teda ei tapeta pid-i järgi. Logi puhverdatakse mälus: **2401 baasikirjutust → 4**. Plaani väide
+> „`exit` kaotab viimased read" ei reprodutseerunud — `close` valiti, sest ta ei ole kunagi halvem.
+
+
 **Failid:**
 - Loo: `crm/lib/hanked-runs.mjs`
 - Muuda: `crm/test/gate-hanked.mjs`
@@ -727,6 +734,12 @@ export function runsView(db, limit = 5) {
 
 ## Ülesanne 8: marsruudid
 
+> **TEOSTATUD** — `68a3aa9`. Plaani import oleks serveri käivitumast takistanud (`hangeDetail`
+> tuleb alles ülesandes 13, ESM viskab puuduva ekspordi peale) — tehtud minimaalne `hangeDetail`.
+> Toores `e.message` ei lähe enam kliendile: ainult numbrilise koodiga (400/404/409) erindid,
+> muu on 500 + serveri logi. Polliv vastus 20 KB → 6,3 KB (`logTail` 400 märki, mitte täislogi).
+
+
 **Failid:**
 - Muuda: `crm/lib/routes2.mjs` (kuus marsruuti `extraRoutes`-i sisse)
 - Muuda: `crm/server.mjs` (kutsu `cleanupOrphans` käivitumisel, `migrateHanked` `initSales` kõrval)
@@ -790,6 +803,13 @@ ja `extraRoutes`-i tagastatavasse objekti:
 ---
 
 ## Ülesanne 9: sakk ja tabel
+
+> **TEOSTATUD** — `f7ea83f`. Seisufilter ei ole kliendis käsitsi kirjutatud nimekiri, vaid tuletatud
+> `SEISU_LIIK`-ist (`töös`/`lõpp`). Tähtajaarvutus võrdleb kalendripäevi, mitte millisekundeid —
+> naiivne `Date.parse` andis Eesti ajavööndis ühe võrra vale vastuse. Seisumuutus ei joonista
+> tabelit uuesti. Testid on kahes failis: puhas loogika `gate-hanked-ui.mjs`, brauser
+> `gate-hanked-vaade.mjs` (vajab playwrighti, jookseb `npm run varav:brauser`).
+
 
 **Failid:**
 - Muuda: `crm/public/index.html:19-26` (sakk) ja lisa `<main class="wide" id="viewHanked" hidden><div class="sheet" id="hankedBody"></div></main>` teiste `main`-ide kõrvale
@@ -871,6 +891,18 @@ Ruuter: `const R = { stats: renderStats, services: renderServices, billing: rend
 ---
 
 ## Ülesanne 10: nupud, staatus ja detailpaneel
+
+> **TEOSTATUD** — `3551e9c`, `8cd4d0e`. Plaani `poll()` oli aegunud: ta kutsus `renderHanked()`,
+> mis teeb uue päringu — ülesanne 9 keelab selle mustri. Lisaks kaks kasutaja kinnitatud tööd:
+> **verdikt läheb baasi** (`verdict TEXT`; `ALLTÖÖVÕTT` ei ole punktidest tagasi arvutatav) ja
+> **märk uueneb `app.js` `load()`-is** (`kiireidLoend` = üks `SELECT COUNT(*)` `/api/state` vastuses;
+> värav võrdleb serveri SQL-i kliendi `onKiire`-ga 16 piirijuhtumi peal). `8cd4d0e` ühendas
+> `markExpired` ja `kiireidLoend` kuupäevavalved — aegumise oma oli lõdvem ja andis samale reale
+> teise vastuse.
+>
+> **NB:** `ALLTÖÖVÕTT` ei ole täna toodangus saavutatav — `score()` loeb `rollid` ja `kaiveNoue`,
+> mida `hanked`-tabelis ei ole. Need tulevad ülesandega 14.
+
 
 **Failid:** `crm/public/views.js`, `crm/public/crm2.css`, `crm/test/gate-hanked.mjs`
 
@@ -956,6 +988,23 @@ Detailpaneel (`detailPaneel(ref)`) kutsub `POST /api/hanked/detail` ja näitab: 
 > hanked:sync` käsurealt lakkaks töötamast.
 
 
+> **TEOSTATUD** — `d3530fb`. **Allolev näidiskood on katki, ära kopeeri seda:**
+> `New-ScheduledTaskTrigger` EI TOETA lippu `-Monthly` (ainult `-Once/-Daily/-Weekly/-AtLogOn/-AtStartup`)
+> — kuine käiviti tuleb CIM-klassist `MSFT_TaskMonthlyTrigger`, kus `DaysOfMonth` on bitimask
+> (3. päev = 4). Nimed on masina mustris `Leisson CRM hanked sync` / `… ajalugu`, ilma mõttekriipsuta
+> (U+2014 läheb konsooli vaikekodeeringus prügiks ja `-Eemalda` ei leiaks ülesannet enam üles).
+>
+> Kaks sisulist parandust: (a) **ajaloo-ülesanne jääb registreerimata**, kuni
+> `agent/hanked-history.mjs` on olemas — registreeritud ülesanne puuduva failiga kukuks iga kuu
+> vaikselt; (b) **`hanked-sync.mjs` kirjutab otsekäivitusel ise `hanke_runs` rea**
+> (`boot_id='otse:<uuid>'` → `oma=false`), sest Task Scheduler kutsub skripti serverist mööda ja
+> öine jooks ei oleks CRM-i vaates üldse näha. Elav lukk → vahelejätt väljumiskoodiga 0 ja
+> põhjusega, mitte ingliskeelne `UNIQUE constraint failed`.
+>
+> **Ülesandeid EI OLE registreeritud** — see on Gerti otsus. Käsk:
+> `powershell -NoProfile -ExecutionPolicy Bypass -File win\install-hanked-task.ps1`
+> (`-Kuiv` näitab, mida teeks; `-Eemalda` võtab maha).
+
 **Failid:**
 - Loo: `crm/win/install-hanked-task.ps1`
 - Muuda: `crm/test/gate-hanked.mjs`
@@ -1005,6 +1054,10 @@ Get-ScheduledTask -TaskName "LEISSON — hanked*" | Format-Table TaskName, State
 
 ## Ülesanne 12: kuine ajaloo import
 
+> **MEELDETULETUS (ülesandest 11):** kui `agent/hanked-history.mjs` on valmis, tuleb
+> `win\install-hanked-task.ps1` UUESTI jooksutada — kuine ülesanne jäeti teadlikult
+> registreerimata, sest skripti ei olnud. Ilma selleta ei uuene ajalugu kunagi ja keegi ei märka.
+>
 > **LÕKS (ülesandest 6):** `segmentOf(a.title)` ainult pealkirjaga kaotas ülesandes 3 päris
 > hanke (310983) — FIT peab vaatama pealkirja JA kirjeldust. Lepinguteatel ei ole RSS-i
 > kirjeldust; otsusta, kas anda teine argument `cbc:Description`-ist või teadvustada, et
