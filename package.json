@@ -63,7 +63,8 @@
     "registry:email:gate": "node test/gate-registry-email-fallback.mjs",
     "registry:gate": "node test/gate-registry.mjs",
     "registry:update": "npm run registry:sync && npm run registry:enrich && npm run registry:financials && npm run registry:backfill -- --kirjuta",
-    "registry:kandidaadid": "node agent/registry-candidates.mjs"
+    "registry:kandidaadid": "node agent/registry-candidates.mjs",
+    "varav:brauser": "node tools/varav.mjs --brauserid"
   },
   "dependencies": {
     "imapflow": "^1.0.171",

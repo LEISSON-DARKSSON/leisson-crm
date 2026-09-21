@@ -62,6 +62,20 @@ export function leiaVaravad(juur = JUUR) {
   };
 }
 
+/**
+ * Teadlikult valja jaetud varavad ehtses kujus {silt, argumendid}.
+ * Need on brauserivaravad: nad EI kuulu offline-ahelasse, aga nad peavad kuskil
+ * jooksma. Varem loetles CI neid kasitsi (.github/workflows/orbit-gates.yml,
+ * too site-gates) ja uus brauserivarav (gate-hanked-vaade.mjs) jai sinna lisamata:
+ * varav oli olemas, VALJAJATED lubas, et CI jooksutab teda, ja keegi ei jooksutanud.
+ * Tapselt see bugiklass, mille parast see jooksja uldse tehti - nuud on ka teine
+ * ots avastatud, mitte kasitsi hoitav.
+ */
+export function koostaBrauserijooksud(juur = JUUR) {
+  const { valjajaetud } = leiaVaravad(juur);
+  return valjajaetud.map((f) => ({ silt: 'test/' + f, argumendid: ['test/' + f] }));
+}
+
 /** Avastatud väravad + lisajooksud ühtses kujus {silt, argumendid}. */
 export function koostaJooksud(juur = JUUR) {
   const { varavad } = leiaVaravad(juur);
@@ -115,6 +129,10 @@ function main(argv) {
   const juur = juurLipp ? juurLipp.slice('--juur='.length) : JUUR;
   const muster = (lipud.find((a) => a.startsWith('--ainult=')) || '').slice('--ainult='.length);
   const range = lipud.includes('--range') || lipud.includes('--strict');
+  // --brauserid poorab valiku umber: jooksutab TAPSELT need varavad, mis
+  // offline-ahelast valja jaeti. CI too site-gates kutsub seda, nii et uus
+  // brauserivarav satub jooksu ilma, et keegi peaks YAML-i muutma.
+  const brauserid = lipud.includes('--brauserid');
 
   if (!existsSync(join(juur, 'test'))) {
     console.error(`Juurt ei ole: ${juur}`);
@@ -122,8 +140,13 @@ function main(argv) {
   }
 
   const { valjajaetud } = leiaVaravad(juur);
-  const koik = koostaJooksud(juur);
+  const koik = brauserid ? koostaBrauserijooksud(juur) : koostaJooksud(juur);
   const jooksud = koik.filter((j) => sobib(j.silt, muster));
+
+  if (brauserid && koik.length === 0) {
+    console.error('--brauserid: ühtegi välja jäetud väravat ei ole. Kas VALJAJATED tühjenes?');
+    return 1;
+  }
 
   if (muster && jooksud.length === 0) {
     console.error(`Muster "${muster}" ei anna ühtegi vastet — 0 väravat jooksis.`);
@@ -131,9 +154,11 @@ function main(argv) {
     return 1;
   }
 
-  console.log(`Väravajooksja — ${jooksud.length} jooksu${muster ? ` (muster "${muster}")` : ''}`
-    + `${valjajaetud.length ? `, ${valjajaetud.length} teadlikult väljas` : ''}`);
-  for (const f of valjajaetud) console.log(`  välja jäetud: test/${f} — ${VALJAJATED.get(f)}`);
+  console.log(brauserid
+    ? `Väravajooksja (brauserid) — ${jooksud.length} jooksu${muster ? ` (muster "${muster}")` : ''}`
+    : `Väravajooksja — ${jooksud.length} jooksu${muster ? ` (muster "${muster}")` : ''}`
+      + `${valjajaetud.length ? `, ${valjajaetud.length} teadlikult väljas` : ''}`);
+  if (!brauserid) for (const f of valjajaetud) console.log(`  välja jäetud: test/${f} — ${VALJAJATED.get(f)}`);
   console.log('');
 
   const okid = [], kukkusid = [], vahele = [];
@@ -156,6 +181,11 @@ function main(argv) {
   for (const v of vahele) console.log(`  VAHELE JÄETUD ${v.silt} — puudub npm-pakett "${v.pakett}"`);
 
   if (kukkusid.length) return 1;
+  if (vahele.length && brauserid) {
+    console.error('\n--brauserid: vahelejätt loeb veaks. Brauserivärav ilma playwrightita'
+      + ' ei kaitse midagi — paigalda sõltuvused või eemalda värav VALJAJATED-ist.');
+    return 1;
+  }
   if (vahele.length && range) {
     console.error('\n--range: vahelejätt loeb veaks. CI-s on kõik sõltuvused olemas,'
       + ' seega vahelejätt tähendaks seal vaikset katvuse kadu.');

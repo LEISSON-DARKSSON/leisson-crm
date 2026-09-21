@@ -9,12 +9,12 @@
 // Kõik alamprotsessid jooksevad os.tmpdir() võltsjuures. Võrku ei kasutata,
 // päris CRM-i SQLite-i ei avata.
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync as fsReadFileSync, existsSync as fsExistsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { leiaVaravad, koostaJooksud, klassifitseeri, VALJAJATED, LISAJOOKSUD } from '../tools/varav.mjs';
+import { leiaVaravad, koostaJooksud, koostaBrauserijooksud, klassifitseeri, VALJAJATED, LISAJOOKSUD } from '../tools/varav.mjs';
 
 const JUUR = join(dirname(fileURLToPath(import.meta.url)), '..');
 const VARAV = join(JUUR, 'tools', 'varav.mjs');
@@ -180,6 +180,42 @@ check('klassifitseeri eristab välise paketi kohalikust failist', () => {
   assert.equal(klassifitseeri(1, "Error [ERR_MODULE_NOT_FOUND]: Cannot find module 'C:\\\\x\\\\pole.mjs' imported from C:\\\\x\\\\y.mjs").seis, 'kukkus');
   assert.equal(klassifitseeri(1, 'AssertionError: midagi on valesti').seis, 'kukkus');
 });
+
+// --- 8. Valja jaetud varavad peavad ka kuskil jooksma. ---------------------
+// gate-hanked-vaade.mjs lisati VALJAJATED-isse lubadusega "jookseb CI toos
+// site-gates" ja CI-sse jai lisamata: varav oli olemas, keegi ei jooksutanud.
+// Sama bugiklass, mille parast see jooksja tehti - ainult teisest otsast.
+check('valja jaetud varavad joukavad brauserijooksu, mitte unustusse', () => {
+  const juur = voltsjuur();
+  mkdirSync(join(juur, 'test'), { recursive: true });
+  // Kaks tavalist + uks, mis on VALJAJATED-is.
+  for (const nimi of ['gate-a.mjs', 'gate-b.mjs', ...VALJAJATED.keys()]) {
+    writeFileSync(join(juur, 'test', nimi), "console.log('PASS');\n");
+  }
+  const ahel = koostaJooksud(juur).map((j) => j.silt);
+  const brauser = koostaBrauserijooksud(juur).map((j) => j.silt);
+  for (const f of VALJAJATED.keys()) {
+    assert.ok(!ahel.includes('test/' + f), `${f} ei tohi olla offline-ahelas`);
+    assert.ok(brauser.includes('test/' + f), `${f} PEAB olema brauserijooksus, muidu ta ei jookse kuskil`);
+  }
+  assert.equal(brauser.length, VALJAJATED.size, 'brauserijooks katab tapselt valjajaetud hulga');
+});
+
+check('CI kutsub brauserivaravaid jooksja kaudu, mitte nimekirja pidi', () => {
+  const { readFileSync, existsSync } = getFs();
+  const tee = join(JUUR, '..', '.github', 'workflows', 'orbit-gates.yml');
+  if (!existsSync(tee)) { console.log('   (orbit-gates.yml puudub - vahele)'); return; }
+  const yml = readFileSync(tee, 'utf8');
+  assert.match(yml, /varav:brauser/, 'CI peab kutsuma npm run varav:brauser');
+  for (const f of VALJAJATED.keys()) {
+    assert.ok(!yml.includes('crm/test/' + f),
+      `orbit-gates.yml loetleb ${f} kasitsi - just nii jai gate-hanked-vaade.mjs kunagi jooksmata`);
+  }
+});
+
+function getFs() {
+  return { readFileSync: fsReadFileSync, existsSync: fsExistsSync };
+}
 
 for (const juur of prugi) rmSync(juur, { recursive: true, force: true });
 console.log(`PASS varav: ${tehtud} kontrolli`);
