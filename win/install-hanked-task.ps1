@@ -5,6 +5,10 @@
 #   powershell -NoProfile -ExecutionPolicy Bypass -File win\install-hanked-task.ps1
 #   powershell -NoProfile -ExecutionPolicy Bypass -File win\install-hanked-task.ps1 -Eemalda
 #
+# Kui skript ei ole peakoopias (nt jooksutad teda worktree'st), anna PUSIV CRM-i
+# tee kaasa, muidu skript keeldub:
+#   ... -File win\install-hanked-task.ps1 -Crm "C:\...\Leisson Creative\crm"
+#
 # -Kuiv trukib tapselt selle, mida ta teeks, JA EI KIRJUTA MIDAGI. Iga muudatus
 # selles failis katsetatakse ainult kuivjooksuga; paris registreerimine on inimese
 # otsus, mitte skripti oma.
@@ -39,10 +43,28 @@
 # LogonType Interactive: vajab sisselogitud kasutajat, paroole ulesandesse ei
 # kirjutata - sama muster mis install-saatja.ps1-s.
 
-param([switch]$Eemalda, [switch]$Kuiv)
+# -Crm <tee>. Ajastatud ulesanne kannab CRM-i teed ENDA sees, seega see tee peab
+# ule elama selle checkout'i, kust skript jooksutati. Ilma selle liputa vottis
+# skript alati $PSScriptRoot vanema - ja kui teda jooksutati git worktree'st,
+# lains ulesandesse ajutine tee (_worktrees\...), mis parast haru merge'imist ja
+# worktree kustutamist KAOB. Ulesanne ei oleks siis veateatega kukkunud, vaid
+# lihtsalt teatanud iga paev "0x80070002 - faili ei leitud" Task Scheduleri
+# ajaloos, kuhu keegi ei vaata. Seega: worktree-tee on KEELATUD, kui sa ei utle
+# -Crm-iga selgelt, kuhu ulesanne peab osutama.
+param([switch]$Eemalda, [switch]$Kuiv, [string]$Crm)
 
 $ErrorActionPreference = 'Stop'
-$juur = Split-Path -Parent $PSScriptRoot
+$juur = if ($Crm) { (Resolve-Path -LiteralPath $Crm).Path } else { Split-Path -Parent $PSScriptRoot }
+
+if (-not (Test-Path -LiteralPath (Join-Path $juur 'package.json') -PathType Leaf)) {
+  throw ("CRM-i ei ole siin: " + $juur + " (package.json puudub). Anna oige tee -Crm lipuga.")
+}
+if (-not $Eemalda -and $juur -match '[\\/]_worktrees[\\/]') {
+  throw ("Ajutine worktree-tee ei kolba ajastatud ulesandesse: " + $juur + "`n" +
+    "  Ulesanne jaaks sellele teele osutama ka parast worktree kustutamist ja kukuks" +
+    " iga paev vaikselt.`n" +
+    "  Jooksuta skript peakoopiast, voi anna puusiv tee: -Crm 'C:\tee\crm'")
+}
 
 # TAPSELT need kaks nime. Metamarki ('Leisson CRM*') siin EI OLE: see tabaks ka
 # saatjat, loobumisi, jarelkirju ja konduktorit, ehk -Eemalda kustutaks ara asju,
@@ -94,7 +116,7 @@ function PaigaldaUlesanne {
   if ($Kuiv) {
     Write-Host ("KUIVJOOKS - registreeriks: " + $Nimi)
     Write-Host ("  kask     : " + $node + " " + $Argument)
-    Write-Host ("  kataloog : " + $juur)
+    Write-Host ("  kataloog : " + $juur + $(if ($Crm) { ' (-Crm)' } else { ' (skripti asukohast)' }))
     Write-Host ("  ajakava  : " + $Ajakava)
     Write-Host ("  kasutaja : " + $env:USERNAME + " (Interactive, LeastPrivilege)")
     Write-Host ("  olemas   : " + $(if (Get-ScheduledTask -TaskName $Nimi -ErrorAction SilentlyContinue) { 'jah, kirjutataks ule (-Force)' } else { 'ei, loodaks uus' }))
