@@ -1,4 +1,4 @@
-/* Leisson CRM — klient. Sõltuvusteta. Kuus vaadet; siin on müügitoru ja postkast. */
+/* Leisson CRM — klient. Sõltuvusteta. Seitse vaadet; siin on müügitoru ja postkast. */
 (() => {
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -39,7 +39,7 @@
   try { const m = localStorage.getItem(MODE_KEY); if (m) document.documentElement.dataset.mode = m; } catch {}
 
   /* ---------- vaated ---------- */
-  const VIEWS = ['pipeline', 'inbox', 'stats', 'services', 'billing', 'agents'];
+  const VIEWS = ['pipeline', 'inbox', 'stats', 'services', 'billing', 'agents', 'hanked'];
   const viewEl = (v) => $('#view' + v[0].toUpperCase() + v.slice(1));
   $$('.view-tab').forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
   function setView(v) {

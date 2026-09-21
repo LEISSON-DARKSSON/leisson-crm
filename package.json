@@ -31,6 +31,8 @@
     "aruanne:gate": "node test/gate-aruanne.mjs",
     "hanked:sync": "node agent/hanked-sync.mjs",
     "hanked:gate": "node test/gate-hanked.mjs",
+    "hanked:ui:gate": "node test/gate-hanked-ui.mjs",
+    "hanked:vaade:gate": "node test/gate-hanked-vaade.mjs",
     "pariteet:gate": "node test/gate-pariteet.mjs",
     "pariteet:uuenda": "node tools/pariteet-uuenda.mjs",
     "pariteet:python": "node tools/pariteet-python.mjs",

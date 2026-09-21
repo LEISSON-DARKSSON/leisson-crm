@@ -34,6 +34,8 @@ export const VALJAJATED = new Map([
     'Brauserivärav: nõuab playwrighti + Chromiumi, mida offline-ahelas ei ole. Jookseb CI töös site-gates (.github/workflows/orbit-gates.yml).'],
   ['gate-inquiry-ui.mjs',
     'Brauserivärav: nõuab playwrighti + Chromiumi, mida offline-ahelas ei ole. Jookseb CI töös site-gates (.github/workflows/orbit-gates.yml).'],
+  ['gate-hanked-vaade.mjs',
+    'Brauserivärav: nõuab playwrighti + Chromiumi, mida offline-ahelas ei ole. Puhas loogika on kaetud test/gate-hanked-ui.mjs-is, mis jookseb ahelas. Jookseb CI töös site-gates (.github/workflows/orbit-gates.yml).'],
 ]);
 
 // Jooksud, mis kuuluvad ahelasse, aga ei vasta mustrile gate-*.

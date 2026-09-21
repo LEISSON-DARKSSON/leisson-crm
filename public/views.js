@@ -1,4 +1,4 @@
-/* Leisson CRM — neli lisavaadet: statistika, teenused, arved, agendid.
+/* Leisson CRM — viis lisavaadet: statistika, teenused, arved, agendid, riigihanked.
    Kasutab app.js-i jagatud pinda window.CRM. Sõltuvusteta. */
 (() => {
   const { api, el, toast, eur, dt, usd } = window.CRM;
@@ -226,8 +226,260 @@
       ...(d.digest?[block('Viimane kokkuvõte · '+dt(d.digestTs),el('pre',{class:'mailbody',text:d.digest}),null,'laic')]:[])
     );
   }
+  /* ================= RIIGIHANKED (ülesanne 9) =================
+     Puhas loogika — tähtajani jäänud päevad, seisufilter, kiireloomuliste
+     loendur ja rea vormindus — elab public/hanked-loogika.js-is ja on
+     test/gate-hanked-ui.mjs-is päris väidetega kaetud. Siin on ainult DOM.
+
+     RHR on VÄLINE allikas: pealkiri, hankija nimi ja märkus tulevad sealt
+     toorelt. Kogu tekst läheb lehele el()-i kaudu, mis kirjutab textContent-i.
+     HTML-i otsekirjutamist selles projektis ei ole ja test/gate-hanked-ui.mjs
+     hoiab, et teda ei tekiks. */
+  const L = window.HankedLoogika;
+
+  // Ainult need kaks seisu vajavad eestikeelset silti; ülejäänud kuus on juba
+  // loetavad. Tundmatu seis näidatakse TOORELT, mitte ei kao ära — server võib
+  // seisu juurde lisada ja vaade ei tohi seda vaikselt maha vaikida.
+  const SEISU_SILT = { voidetud: 'võidetud', jatsin: 'jätsin' };
+  const silt = (s) => SEISU_SILT[s] || s;
+
+  const VEERUD = ['Tähtaeg', 'Viitenr', 'Hankija', 'Nimetus', 'Maksumus', 'Menetlus', 'Skoor', 'Seis', 'Dok'];
+
+  let hankedData = {
+    hanked: [], tasks: {}, runs: [], states: [], lopuseisud: [],
+    filter: { seis: 'aktiivsed' }, valitud: null,
+  };
+
+  // Päring ja joonistamine on LAHUS. Seisumuutus ja ülesande 10 pollimine
+  // joonistavad ilma uue täislaadimiseta; ainult sakk ja „Proovi uuesti"
+  // toovad andmed uuesti.
+  async function renderHanked() {
+    const host = $('#hankedBody');
+    if (!host) return;
+    if (!L) return host.replaceChildren(el('p', { class: 'warn', text: 'hanked-loogika.js ei ole laetud' }));
+    let d;
+    try { d = await api('/api/hanked'); } catch (e) { return host.replaceChildren(hankedViga(e)); }
+    hankedData = {
+      ...hankedData,
+      hanked: Array.isArray(d.hanked) ? d.hanked : [],
+      tasks: d.tasks || {},
+      runs: Array.isArray(d.runs) ? d.runs : [],
+      states: Array.isArray(d.states) ? d.states : [],
+      lopuseisud: Array.isArray(d.lopuseisud) ? d.lopuseisud : [],
+    };
+    joonistaHanked();
+  }
+
+  // Vigane vastus ei tohi jätta valget lehte. Võrgukatkestusel viskab fetch
+  // INGLISKEELSE TypeError-i ('Failed to fetch') — serveri enda vead on juba
+  // eestikeelsed (lib/routes2.mjs vastaVeaga). Nupp jätab vaate kasutatavaks.
+  function hankedViga(e) {
+    const sonum = e instanceof TypeError ? 'server ei vasta' : e.message;
+    return el('div', { class: 'head' }, [
+      el('h1', { text: 'Riigihanked' }),
+      el('p', { class: 'warn', text: 'Hangete nimekirja ei saanud: ' + sonum }),
+      el('p', { class: 'why', text: 'Ülejäänud CRM töötab edasi. Kui server on kinni, käivita ta uuesti.' }),
+      el('button', { class: 'btn ghost', type: 'button', text: 'Proovi uuesti', onclick: () => renderHanked() }),
+    ]);
+  }
+
+  function joonistaHanked() {
+    const host = $('#hankedBody');
+    if (!host) return;
+    const nyyd = new Date();
+    const kiired = L.kiireloomulised(hankedData.hanked, nyyd);
+    uuendaMark(kiired.length);
+    const read = L.filtreeri(hankedData.hanked, hankedData.filter, hankedData.lopuseisud);
+    host.replaceChildren(
+      el('div', { class: 'head' }, [
+        el('h1', { text: 'Riigihanked' }),
+        el('div', { class: 'head-meta' }, [
+          el('span', {
+            text: kiired.length
+              ? kiired.length + ' hanget tähtajaga kuni ' + L.KIIRE_PAEVI + ' päeva ootab otsust'
+              : 'Kiireloomulisi hankeid ei ole',
+          }),
+          el('span', { text: hankedData.hanked.length + ' hanget andmebaasis' }),
+        ]),
+      ]),
+      andmeRiba(),
+      block('Nimekiri', [filtriRiba(), tabel(read, nyyd)],
+        'Seis ja märkus on sinu omad — sünkimine ei kirjuta neid kunagi üle.', 'laic'),
+      el('div', { class: 'panel hanked-detail', id: 'hankedDetail', 'aria-live': 'polite' }),
+    );
+    joonistaDetail();
+  }
+
+  // ÜLESANNE 10 paneb #hankedRunbar sisse käivitusnupud (POST /api/hanked/run),
+  // progressi ja „Peata". Praegu on riba informatiivne: millal andmed viimati
+  // tulid ja kas sünkimist on üldse kordagi jooksutatud.
+  function andmeRiba() {
+    const kaib = hankedData.runs.find((r) => r.state === 'käib');
+    const viimane = hankedData.runs.find((r) => r.cmd === 'sync' && r.state !== 'käib');
+    const rida = kaib
+      ? (kaib.cmd + ' käib praegu' + (kaib.progress ? ' · ' + kaib.progress : ''))
+      : viimane
+        ? 'Viimane sünk ' + dt(viimane.finished) + ' · ' + (viimane.rows ?? 0) + ' rida · '
+          + (viimane.state === 'tehtud' ? 'korras' : (viimane.error || viimane.state))
+        // Kaks eri "jooksusid ei ole": tuhi baas tahendab, et sunkimist ei ole
+        // kordagi tehtud; hangetega baas ilma jooksudeta tahendab, et sunk kais
+        // KASUREALT (voi enne seda serverit) ja logis teda ei ole.
+        : hankedData.hanked.length
+          ? 'Selle serveri kaudu ei ole sünki jooksutatud — read on tulnud käsurealt või varasemast jooksust.'
+          : 'Sünkimist ei ole veel kordagi jooksutatud.';
+    return block('Andmed', el('div', { class: 'runbar', id: 'hankedRunbar' },
+      el('span', { class: 'run-row', text: rida })),
+    'Käsud jooksevad CRM-i serveri all. Käivitusnupud lisab järgmine samm.');
+  }
+
+  // Filtririba EI hoia oma seisunimekirja: „aktiivsed" tuleb serveri
+  // lopuseisud-väljast ja iga seisu kiip serveri states-väljast.
+  function filtriRiba() {
+    const loend = (seis) => L.filtreeri(hankedData.hanked, { seis }, hankedData.lopuseisud).length;
+    const kiip = (seis, tekst) => el('button', {
+      class: 'chip', type: 'button', 'data-seis': seis,
+      'aria-pressed': hankedData.filter.seis === seis ? 'true' : 'false',
+      onclick: () => { hankedData.filter.seis = seis; joonistaHanked(); },
+    }, [el('span', { text: tekst }), el('i', { text: String(loend(seis)) })]);
+    return el('div', { class: 'chips', role: 'group', 'aria-label': 'Seisufilter' }, [
+      kiip('aktiivsed', 'Aktiivsed'),
+      kiip('kõik', 'Kõik'),
+      ...hankedData.states.map((s) => kiip(s, silt(s))),
+    ]);
+  }
+
+  function tabel(read, nyyd) {
+    return el('table', { class: 'tbl hanked' }, [
+      el('thead', {}, el('tr', {}, VEERUD.map((text) => el('th', { scope: 'col', text })))),
+      el('tbody', { id: 'hankedRows' }, read.length ? read.map((h) => reaElement(h, nyyd)) : tyhiRida()),
+    ]);
+  }
+
+  // Tühi tabel ilma seletuseta on halb: kasutaja ei tea, kas hankeid ei ole või
+  // ei ole neid veel kordagi tõmmatud. Kaks eri põhjust, kaks eri lauset.
+  function tyhiRida() {
+    const pohjus = hankedData.hanked.length
+      ? 'Selle filtriga ei ole ühtegi hanget. Vali „Kõik" või mõni teine seis.'
+      : 'Ühtegi hanget ei ole andmebaasis — sünkimist ei ole veel jooksutatud.';
+    return el('tr', { class: 'tyhi' }, el('td', { colspan: String(VEERUD.length), class: 'why', text: pohjus }));
+  }
+
+  function reaElement(h, nyyd) {
+    const r = L.riviks(h, nyyd);
+    const tr = el('tr', { 'data-ref': r.ref, class: r.kiire ? 'kiire' : '' });
+    if (hankedData.valitud === r.ref) tr.setAttribute('aria-current', 'true');
+    tr.append(
+      el('td', { class: 'n taht ' + r.tahtaeg.klass }, [
+        el('b', { text: r.tahtaeg.text }), el('span', { class: 'kp', text: r.kuupaev }),
+      ]),
+      // Viitenumber on NUPP, mitte ainult klikitav rida: detail peab olema
+      // klaviatuuriga kättesaadav (Tab + Enter), mitte ainult hiirega.
+      el('td', {}, el('button', {
+        class: 'linkbtn', type: 'button', text: r.ref,
+        'aria-label': 'Ava hange ' + r.ref, onclick: () => valiHange(r.ref),
+      })),
+      el('td', { class: 'hankija', text: r.buyer }),
+      el('td', { class: 'nimetus', text: r.title }),
+      el('td', { class: 'n', text: r.est == null ? '—' : eur(r.est) }),
+      el('td', { text: r.menetlus }),
+      // Number, mitte otsusesõna: ALLTÖÖVÕTT-verdikti EI SAA punktidest tagasi
+      // arvutada (vt lib/hanked.mjs score) ja vale sõna oleks halvem kui arv.
+      el('td', { class: 'n skoor ' + r.skooriKlass, title: 'Lõpliku otsuse annab detailvaade', text: r.score == null ? '—' : String(r.score) }),
+      el('td', {}, seisuValik(h, r)),
+      el('td', { class: 'n', text: String(r.docs) }),
+    );
+    tr.addEventListener('click', (ev) => {
+      if (!(ev.target.closest && ev.target.closest('select,button,option'))) valiHange(r.ref);
+    });
+    return tr;
+  }
+
+  function seisuValik(h, r) {
+    const s = el('select', { class: 'input sm', 'aria-label': 'Seis — hange ' + r.ref });
+    for (const st of (hankedData.states.length ? hankedData.states : [h.state])) {
+      const o = el('option', { value: st, text: silt(st) });
+      if (st === h.state) o.selected = true;
+      s.append(o);
+    }
+    s.addEventListener('change', () => muudaSeis(h, s));
+    return s;
+  }
+
+  /* Seisumuutus puudutab ÜHTE rida. Täisjoonistus (renderHanked) laeks kogu
+     nimekirja uuesti ja kaotaks kerimiskoha, valiku ja fookuse — seda tehakse
+     siin kolmekümne rea kaupa järjest, seega on see päris kadu, mitte teooria.
+     Seega: paranda mudelit, siis seda rida. Kui rida enam filtrisse ei kuulu,
+     kaob AINULT tema; kui tabel jääb tühjaks, tuleb asemele seletav rida. */
+  async function muudaSeis(h, s) {
+    const vana = h.state;
+    const uus = s.value;
+    if (uus === vana) return;
+    s.disabled = true;
+    try {
+      await api('/api/hanked/state', { ref: h.ref, state: uus });
+    } catch (e) {
+      s.value = vana;
+      return toast('Seisu ei muudetud: ' + e.message, true);
+    } finally { s.disabled = false; }
+
+    h.state = uus;
+    toast(h.ref + ' → ' + silt(uus));
+    uuendaMark(L.kiireloomulised(hankedData.hanked, new Date()).length);
+    uuendaLoendurid();
+
+    const rows = $('#hankedRows');
+    const tr = rows && [...rows.children].find((x) => x.dataset && x.dataset.ref === h.ref);
+    if (!tr) return;
+    if (!L.filtreeri([h], hankedData.filter, hankedData.lopuseisud).length) {
+      tr.remove();
+      if (!rows.children.length) rows.append(tyhiRida());
+    } else {
+      tr.className = L.riviks(h, new Date()).kiire ? 'kiire' : '';
+    }
+  }
+
+  function uuendaLoendurid() {
+    for (const kiip of document.querySelectorAll('#viewHanked .chip[data-seis]')) {
+      const i = kiip.querySelector('i');
+      if (i) i.textContent = String(L.filtreeri(hankedData.hanked, { seis: kiip.dataset.seis }, hankedData.lopuseisud).length);
+    }
+  }
+
+  // Märk loeb ainult kiireloomulisi (seis 'uus', tähtajani 0…7 päeva) ja kaob
+  // täielikult, kui neid ei ole — null kastis oleks vale signaal.
+  function uuendaMark(n) {
+    const b = document.querySelector('#hankedBadge');
+    if (!b) return;
+    b.textContent = String(n);
+    b.hidden = n === 0;
+    b.setAttribute('aria-label', n + ' kiireloomulist hanget');
+  }
+
+  function valiHange(ref) {
+    hankedData.valitud = ref;
+    for (const tr of document.querySelectorAll('#hankedRows tr[data-ref]')) {
+      if (tr.dataset.ref === ref) tr.setAttribute('aria-current', 'true');
+      else tr.removeAttribute('aria-current');
+    }
+    joonistaDetail();
+  }
+
+  // ÜLESANNE 10 ehitab siia päris detailpaneeli (POST /api/hanked/detail:
+  // skoori põhjendusread, CPV, link RHR-i, märkuse väli, seisunupud, failid).
+  // Praegu näitab konteiner valitud viidet, et valik oleks nähtav ja
+  // klaviatuuriga kontrollitav — tühi konteiner peidetakse CSS-is.
+  function joonistaDetail() {
+    const host = $('#hankedDetail');
+    if (!host) return;
+    if (!hankedData.valitud) return host.replaceChildren();
+    host.replaceChildren(
+      el('h2', { text: 'Valitud hange' }),
+      el('p', { class: 'why', text: hankedData.valitud + ' — detailvaade tuleb järgmise sammuga.' }),
+    );
+  }
+
   /* ================= router ================= */
-  const R = { stats: renderStats, services: renderServices, billing: renderBilling, agents: renderAgents };
+  const R = { stats: renderStats, services: renderServices, billing: renderBilling, agents: renderAgents, hanked: renderHanked };
   window.CRMViews = {
     render(v) { if (R[v]) { try { R[v](); } catch (e) { toast('Vaade ' + v + ': ' + e.message, true); } } },
   };
