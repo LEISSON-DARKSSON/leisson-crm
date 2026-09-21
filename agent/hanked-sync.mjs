@@ -12,8 +12,13 @@
 // (serveri marsruut tuleb ulesandes 11). Kui see kunagi muutub, on muudatus uhes
 // kohas: server impordib syncFromXml-i ja main() jaab ainult JSON-ridu trukkima.
 import { pathToFileURL } from 'node:url';
+import { randomUUID } from 'node:crypto';
 import { open } from '../lib/db.mjs';
 import { migrateHanked, parseRss, upsertHange, markExpired, score } from '../lib/hanked.mjs';
+// Otsekaivitus kirjutab SAMASSE tabelisse, mida serveri kaivitaja kasutab (ulesanne 7).
+// finishRun ja LOG_MAX tulevad sealt, mitte teise koopiana - kaks eri lopetajat
+// tahendaks kaht eri 'tehtud'-definitsiooni.
+import { finishRun, LOG_MAX } from '../lib/hanked-runs.mjs';
 
 // URL on ulekirjutatav AINULT selleks, et varav saaks main()-i paris lapsprotsessina
 // kohaliku serveri vastu jooksutada - ilma selleta jaaks vorguveakasitlus katsetamata.
@@ -35,7 +40,22 @@ const margiAllikas = (tekst, allikas = ALLIKAS) => (allikas ? tekst + ' · allik
 const AEGUMINE = 60000;
 
 // Server (ulesanne 11) loeb neid ridu lapse stdout-ist. Uks rida = uks JSON.
-const teata = (o) => process.stdout.write(JSON.stringify(o) + '\n');
+//
+// OTSEKAIVITUSEL EI LOE NEID KEEGI. Task Scheduler viskab lapse stdout-i ara,
+// seega peab jalg jouma sinna, kust inimene teda nagunii vaatab: hanke_runs.log -
+// tapselt sama veerg, mida serveri kaivitaja taidab. Faili EI KIRJUTATA: ei
+// install-saatja.ps1 ega install-konduktor.ps1 suuna midagi logifaili, nende jalg
+// on baasis, ja teine logikoht tahendaks teist tode.
+let LOGI = '';
+let VIIMANE_PROGRESS = null;
+const teata = (o) => {
+  if (o && typeof o.progress === 'string') VIIMANE_PROGRESS = o.progress;
+  const rida = JSON.stringify(o);
+  // Sama lagi mis serveri poolel (lib/hanked-runs.mjs) ja sama saba-loige:
+  // pikk jooks ei tohi rida paisutada.
+  LOGI = (LOGI + rida + '\n').slice(-LOG_MAX);
+  process.stdout.write(rida + '\n');
+};
 
 // Veateade laheb baasi veergu ja sealt vaatesse: uks rida, piiratud pikkus.
 const lyhike = (e) => String((e && e.message) || e).replace(/\s+/g, ' ').trim().slice(0, 500);
@@ -127,6 +147,92 @@ export function logiSyncKindel(db, valikud = {}, { katseid = 3, paus = 300 } = {
   }
   teata({ error: valikud.note || lyhike(viimane), jalgeta: true, baas: baasiViga(viimane) });
   return false;
+}
+
+// --- OTSEKAIVITUSE JOOKSURIDA ---------------------------------------------
+//
+// PROBLEEM. Ulesanne 7 tegi hanke_runs SERVERI kaivitaja jaoks: nupp -> lapsprotsess
+// -> rida, mille kirjutab VANEM. Task Scheduler kutsub aga seda faili OTSE, ilma
+// vanemata - ja siis ei ole oisest jooksust CRM-i vaates MITTE UHTEGI jalge, ainult
+// hanke_sync rida. Plaan lubab ise: "Oine Task Scheduleri jooks kirjutab samasse
+// tabelisse." Seega kirjutab laps otsekaivitusel rea ISE.
+//
+// boot_id = 'otse:<uuid>'. See EI OLE ukski serveri BOOT_ID, seega runsView annab
+// oma = false ja vaade ei paku "Peata" nuppu - ta ei tohikski, sest see pid ei
+// kuulu serverile ja parast masina taaskaivitust voib ta kuuluda kellelegi teisele.
+export const OTSE_BOOT = 'otse:';
+const OTSE_CMD = 'sync';
+
+const nr = (v) => {
+  if (v === null || v === undefined || v === '') return null;
+  const n = Number(v);
+  return Number.isSafeInteger(n) ? n : null;
+};
+
+// EPERM tahendab "protsess on olemas, aga ei ole minu oma" - see on ELAV.
+const pidElab = (pid) => {
+  if (!pid) return false;
+  try { process.kill(pid, 0); return true; } catch (e) { return Boolean(e) && e.code === 'EPERM'; }
+};
+
+const ORVU_POHJUS = 'Eelmine ajastatud jooks katkes (masin kustus või protsess suri) — jäi pooleli';
+
+// Ulesande 7 OSALINE UNIKAALINDEKS idx_runs_kaib(cmd) WHERE state='käib' on
+// AATOMNE LUKK. Naiivne INSERT kukuks siin "UNIQUE constraint failed" veaga -
+// ingliskeelne SQLite-teade keset ood, mille peale Task Scheduler naitab punast ja
+// keegi ei saa aru, et CRM lihtsalt sunkis parasjagu ise.
+//
+// Kaks erinevat olukorda, kaks erinevat vastust:
+//   1. lukku hoiab ELAV jooks (serveri nupp voi teine ajastatud jooks) -> jaame
+//      VAHELE. See ei ole rike: sama too tehakse nagunii ara ja kaks paralleelset
+//      BEGIN IMMEDIATE-i ainult lukustaksid teineteist.
+//   2. lukku hoiab MEIE OMA surnud jooks -> koristame ta ise. Otsejooksu taga EI
+//      OLE serverit, kes cleanupOrphans-iga koristaks; ilma selleta jaaks uks
+//      kustunud masin sunkimise IGAVESEKS kinni, ilma uhegi punase reata.
+// VOORAST rida (serveri boot_id) me EI puutu kunagi - see on serveri too.
+export function alustaOtseJooks(db, { pid = process.pid, elab = pidElab, bootId = null } = {}) {
+  migrateHanked(db);
+  const boot = bootId || OTSE_BOOT + randomUUID();
+  const lisa = () => nr(db.prepare(`INSERT INTO hanke_runs (cmd, args, state, started, boot_id, pid)
+      VALUES (?, '{}', 'käib', datetime('now'), ?, ?)`).run(OTSE_CMD, boot, pid).lastInsertRowid);
+
+  // Kaks katset: esimene kukub luku peale, teine jookseb koristatud luku pealt.
+  for (let katse = 1; katse <= 2; katse++) {
+    try { return { id: lisa(), bootId: boot, pohjus: null, blokeerija: null }; } catch (e) {
+      if (!/UNIQUE constraint failed/i.test(String(e && e.message))) throw e;
+      const kaib = db.prepare("SELECT id, pid, boot_id FROM hanke_runs WHERE cmd = ? AND state = 'käib'")
+        .get(OTSE_CMD);
+      const meieOrb = Boolean(kaib) && String(kaib.boot_id || '').startsWith(OTSE_BOOT)
+        && !elab(nr(kaib.pid));
+      if (!meieOrb || katse === 2) {
+        return {
+          id: null,
+          bootId: boot,
+          blokeerija: kaib ? nr(kaib.id) : null,
+          pohjus: 'Sünkroon käib juba' + (kaib ? ' (jooks ' + kaib.id + ')' : '')
+            + ' — ajastatud jooks jäi vahele',
+        };
+      }
+      db.prepare(`UPDATE hanke_runs SET state = 'katkestatud', finished = datetime('now'),
+          error = COALESCE(error, ?) WHERE id = ? AND state = 'käib'`).run(ORVU_POHJUS, nr(kaib.id));
+    }
+  }
+  // Siia ei joua: tsukkel tagastab molemal katsel.
+  return { id: null, bootId: boot, pohjus: 'Sünkroon käib juba', blokeerija: null };
+}
+
+// Logi ja progress kirjutatakse UHE korraga lopus, mitte rea kaupa: vahepeal hoiab
+// syncFromXml kirjutuslukku (BEGIN IMMEDIATE) ja iga vahepealne UPDATE ootaks
+// busy_timeout-i. Logi kadu ei tohi jooksu LOPPTULEMUST varjata, seega eraldi try.
+export function lopetaOtseJooks(db, id, { ok = true, rows = null, error = null,
+  progress = null, log = null } = {}) {
+  const i = nr(id);
+  if (i === null) return false;
+  try {
+    db.prepare(`UPDATE hanke_runs SET log = COALESCE(?, log), progress = COALESCE(?, progress)
+        WHERE id = ?`).run(log, progress, i);
+  } catch { /* logi kadu ei tohi lopptulemust varjata */ }
+  try { return finishRun(db, i, { ok, rows, error }); } catch { return false; }
 }
 
 // Vastus peab olema RSS, mitte HTML-veateade ega tuhi keha. Ilma selle valveta
@@ -258,9 +364,21 @@ async function main() {
   // db on valjaspool try-plokki, et finally saaks ta sulgeda ka siis, kui AVAMINE ise
   // kukkus - ja et catch teaks vahet, kas kukkus avamine voi jooks.
   let db = null;
+  // Jooksurida on samuti valjaspool: catch peab teda punaseks margima.
+  let jooks = { id: null };
   try {
     db = avaBaas();
     migrateHanked(db);
+
+    jooks = alustaOtseJooks(db);
+    if (jooks.id === null) {
+      // VAHELEJATT EI OLE RIKE. Valjumiskood jaab 0-ks: kui inimene parasjagu
+      // vajutas CRM-is "Sünkroon", naitaks kood 1 Task Scheduleris punast riket,
+      // mida ei ole. Pohjus laheb stdout-i ja elav jooks on vaates nagunii nahtav.
+      teata({ vahelejaetud: true, pohjus: jooks.pohjus, jooks: jooks.blokeerija });
+      return;
+    }
+
     teata({ progress: margiAllikas('laen RSS-i') });
 
     let xml;
@@ -287,12 +405,21 @@ async function main() {
       rows: r.kokku });
     teata({ done: true, rows: r.kokku, uus: r.uus, uuendatud: r.uuendatud, aegunud: r.aegunud,
       tyhjenes: r.tyhjenes });
+    // Tuhjenenud feed on hanke_sync-is punane (ok = 0) - sama otsus peab kanduma
+    // jooksuritta, muidu naitaks vaade sama jooksu kohta kaht eri vastust.
+    lopetaOtseJooks(db, jooks.id, {
+      ok: !r.tyhjenes, rows: r.kokku, progress: VIIMANE_PROGRESS, log: LOGI,
+      error: r.tyhjenes ? 'Feed tühjenes — vaata hanke_sync rida' : null,
+    });
   } catch (e) {
     if (db === null) {
       teata({ error: 'Baasi ei saanud avada: ' + lyhike(e) });
     } else {
       if (!(e && e.jalg)) logiSyncKindel(db, { ok: 0, note: margiAllikas(lyhike(e)) });
       teata({ error: baasiViga(e) });
+      lopetaOtseJooks(db, jooks.id, {
+        ok: false, error: baasiViga(e), progress: VIIMANE_PROGRESS, log: LOGI,
+      });
     }
     process.exitCode = 1;
   } finally {

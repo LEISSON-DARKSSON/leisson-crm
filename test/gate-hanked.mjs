@@ -13,7 +13,9 @@ import { runInNewContext } from 'node:vm';
 import { migrateHanked, upsertHange, listHanked, setState, setNote, markExpired, HANKE_STATES,
   segmentOf, parseRss, FIT, score, hangeDetail, kiireidLoend, KIIRE_PAEVI } from '../lib/hanked.mjs';
 import { leiaVaravad, VALJAJATED } from '../tools/varav.mjs';
-import { syncFromXml, logiSync, avaBaas, logiSyncKindel, baasiViga } from '../agent/hanked-sync.mjs';
+import { syncFromXml, logiSync, avaBaas, logiSyncKindel, baasiViga,
+  alustaOtseJooks, lopetaOtseJooks, OTSE_BOOT } from '../agent/hanked-sync.mjs';
+import { runsView, finishRun } from '../lib/hanked-runs.mjs';
 
 function testDb() {
   const dir = mkdtempSync(join(tmpdir(), 'hanked-'));
@@ -2107,4 +2109,192 @@ function pyya(too) {
   }
   db.close();
   console.log('PASS hanked: aegumine ja kiireloomulisus kasutavad sama kuupaevavalvet');
+}
+
+// ---------------------------------------------------------------------------
+// ULESANNE 11: AJASTATUD JOOKS PEAB OLEMA CRM-i VAATES NAHTAV.
+//
+// Ulesanne 7 tegi hanke_runs SERVERI kaivitaja jaoks: nupp -> lapsprotsess ->
+// rida. Task Scheduler kutsub aga `node agent/hanked-sync.mjs` OTSE, ilma
+// serverita - ja siis ei ole CRM-i vaates oist jooksu MITTE KUSAGIL, ainult
+// hanke_sync rida. Plaani tekst lubab ise: "Oine Task Scheduleri jooks kirjutab
+// samasse tabelisse." Seega kirjutab laps otsekaivitusel ISE rea:
+//   cmd = 'sync', boot_id = 'otse:<uuid>' (ei ole ukski serveri BOOT_ID, seega
+//   runsView annab oma = false ja vaade ei paku "Peata" nuppu voorale pid-ile).
+//
+// Kitsaskoht on ulesande 7 OSALINE UNIKAALINDEKS idx_runs_kaib(cmd) WHERE
+// state='kaib': kui server just sungib, kukuks naiivne INSERT arusaamatu
+// "UNIQUE constraint failed" veaga keset ood. Allpool on kirjeldatud, mis TAPSELT
+// peab juhtuma - jooks jaab vahele, valjumiskood 0, pohjus nahtav.
+// ---------------------------------------------------------------------------
+
+const OTSE_SKRIPT = fileURLToPath(new URL('../agent/hanked-sync.mjs', import.meta.url));
+
+// Paris lapsprotsess paris kohaliku serveri vastu. Mock ei kolba: kogu kusimus on
+// selles, mida OTSEKAIVITATUD protsess baasi jatab.
+function otseJooks(dbPath, rssUrl) {
+  return new Promise((valmis) => {
+    const laps = spawn(process.execPath, [OTSE_SKRIPT],
+      { env: { ...process.env, HANKED_RSS_URL: rssUrl, CRM_DB_PATH: dbPath } });
+    let valja = ''; let viga = '';
+    laps.stdout.on('data', (d) => { valja += d; });
+    laps.stderr.on('data', (d) => { viga += d; });
+    laps.on('close', (kood) => valmis({
+      kood, stderr: viga,
+      read: valja.trim().split('\n').filter(Boolean).map((x) => { try { return JSON.parse(x); } catch { return { toores: x }; } }),
+    }));
+  });
+}
+
+function rssServer(keha) {
+  const server = createServer((req, res) => {
+    res.writeHead(200, { 'content-type': 'application/rss+xml; charset=utf-8' });
+    res.end(keha);
+  });
+  return new Promise((r) => server.listen(0, '127.0.0.1', () => r({ server, port: server.address().port })));
+}
+
+// T1: ONNESTUNUD OTSEJOOKS JATAB TAIELIKU REA.
+{
+  const { server, port } = await rssServer(RSS_FIKSTUUR);
+  const dbPath = join(mkdtempSync(join(tmpdir(), 'hanked-otse-')), 'crm.sqlite');
+  const r = await otseJooks(dbPath, `http://127.0.0.1:${port}/rss`);
+  server.close();
+  assert.equal(r.kood, 0, 'otsejooks peab onnestuma. stderr: ' + r.stderr);
+
+  const db = new DatabaseSync(dbPath);
+  const read = db.prepare('SELECT * FROM hanke_runs').all();
+  assert.equal(read.length, 1, 'otsekaivitus peab jatma TAPSELT uhe hanke_runs rea: '
+    + JSON.stringify(read));
+  const rida = read[0];
+  assert.equal(rida.cmd, 'sync', 'kask on sync (sama, mida nupp kasutab)');
+  assert.equal(rida.state, 'tehtud', 'lopetatud jooks on tehtud: ' + JSON.stringify(rida));
+  assert.equal(Number(rida.rows), 5, 'rows peab kandma sama arvu mis hanke_sync');
+  assert.ok(rida.finished, 'finished peab olema taidetud');
+  assert.ok(String(rida.boot_id || '').startsWith(OTSE_BOOT),
+    'boot_id peab eristama otsejooksu serveri jooksust: ' + rida.boot_id);
+  assert.ok((rida.log || '').includes('"done":true'),
+    'logi peab kandma lapse stdout-i ridu: ' + JSON.stringify(rida.log));
+  assert.ok(rida.progress, 'progress peab olema taidetud: ' + JSON.stringify(rida.progress));
+  assert.equal(rida.error, null, 'onnestunud jooksul ei ole viga');
+
+  // Vaade: "Peata" nuppu voorale jooksule ei pakuta.
+  const vaade = runsView(db, 5);
+  assert.equal(vaade[0].oma, false, 'ajastatud jooks EI OLE serveri oma - "Peata" jaab pakkumata');
+  db.close();
+  console.log('PASS hanked: ajastatud otsejooks jatab hanke_runs rea');
+}
+
+// T2: KUKKUNUD OTSEJOOKS JAAB PUNASENA NIMEKIRJA. Ilma selleta naitaks vaade
+// ainult viimast ONNESTUNUD jooksu ja oine rike oleks nahtamatu.
+{
+  const dbPath = join(mkdtempSync(join(tmpdir(), 'hanked-otse-viga-')), 'crm.sqlite');
+  const r = await otseJooks(dbPath, 'http://127.0.0.1:1/rss');
+  assert.equal(r.kood, 1, 'vorguviga annab valjumiskoodi 1');
+
+  const db = new DatabaseSync(dbPath);
+  const rida = db.prepare('SELECT * FROM hanke_runs').get();
+  assert.ok(rida, 'ka kukkunud jooks peab jatma rea');
+  assert.equal(rida.state, 'viga', 'kukkunud jooks on punane: ' + JSON.stringify(rida));
+  assert.match(String(rida.error || ''), /RSS-i ei saanud/, 'veateade on lapse oma: ' + rida.error);
+  assert.ok(rida.finished, 'finished peab olema taidetud ka veaga');
+  db.close();
+  console.log('PASS hanked: kukkunud otsejooks jaab punasena nimekirja');
+}
+
+// T3: SERVER SUNGIB JUBA -> OTSEJOOKS JAAB VAHELE, MITTE EI KUKU UNIQUE-VEAGA.
+// Ette valmistatud 'kaib' rida kannab ELAVAT pid-i (see varav ise) ja serverilikku
+// boot_id-d, seega teda ei tohi ei tappa ega katkestatuks margi.
+{
+  const dbPath = join(mkdtempSync(join(tmpdir(), 'hanked-otse-luk-')), 'crm.sqlite');
+  const ette = new DatabaseSync(dbPath);
+  migrateHanked(ette);
+  ette.prepare(`INSERT INTO hanke_runs (cmd, args, state, started, boot_id, pid)
+      VALUES ('sync', '{}', 'käib', datetime('now'), 'serveri-boot-id', ?)`).run(process.pid);
+  ette.close();
+
+  const { server, port } = await rssServer(RSS_FIKSTUUR);
+  const r = await otseJooks(dbPath, `http://127.0.0.1:${port}/rss`);
+  server.close();
+
+  assert.equal(r.kood, 0, 'vahelejaetud jooks EI OLE rike - valjumiskood 0 (muidu Task '
+    + 'Scheduler naitab punast iga kord, kui inimene parasjagu nuppu vajutas). stderr: ' + r.stderr);
+  const teade = r.read.find((x) => x && x.vahelejaetud);
+  assert.ok(teade, 'vahelejatt peab tulema stdout-i JSON-reana: ' + JSON.stringify(r.read));
+  assert.match(String(teade.pohjus || ''), /käib juba/i, 'pohjus eesti keeles: ' + JSON.stringify(teade));
+  assert.ok(!r.read.some((x) => /UNIQUE constraint/i.test(String((x && x.error) || ''))),
+    'UNIQUE constraint ei tohi kunagi inimeseni jouda: ' + JSON.stringify(r.read));
+
+  const db = new DatabaseSync(dbPath);
+  const read = db.prepare('SELECT * FROM hanke_runs').all();
+  assert.equal(read.length, 1, 'teist rida ei tohi tekkida: ' + JSON.stringify(read));
+  assert.equal(read[0].state, 'käib', 'voorast jooksu ei tohi katkestatuks margi');
+  assert.equal(read[0].boot_id, 'serveri-boot-id', 'vooras rida jaab puutumata');
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM hanked').get().c, 0,
+    'vahelejaetud jooks ei tohi baasi puutuda');
+  db.close();
+  console.log('PASS hanked: paralleelne sunk jatab ajastatud jooksu selgelt vahele');
+}
+
+// T4: SURNUD OTSEJOOKSU LUKK EI TOHI JAADA IGAVESEKS. Otsejooksu taga EI OLE
+// serverit, kes cleanupOrphans-iga koristaks: kui masin kukub keset ood, jaaks
+// 'kaib' rida igaveseks ette ja sunk oleks SURNUD - iga jargmine oo jaaks vahele
+// ilma uhegi punase reata. Seega koristab otsejooks OMA eelmise orvu ise.
+{
+  const dbPath = join(mkdtempSync(join(tmpdir(), 'hanked-otse-orb-')), 'crm.sqlite');
+  const ette = new DatabaseSync(dbPath);
+  migrateHanked(ette);
+  ette.prepare(`INSERT INTO hanke_runs (cmd, args, state, started, boot_id, pid)
+      VALUES ('sync', '{}', 'käib', datetime('now'), ?, NULL)`).run(OTSE_BOOT + 'surnud');
+  ette.close();
+
+  const { server, port } = await rssServer(RSS_FIKSTUUR);
+  const r = await otseJooks(dbPath, `http://127.0.0.1:${port}/rss`);
+  server.close();
+  assert.equal(r.kood, 0, 'orvu koristamise jarel peab jooks onnestuma. stderr: ' + r.stderr);
+
+  const db = new DatabaseSync(dbPath);
+  const read = db.prepare('SELECT * FROM hanke_runs ORDER BY id').all();
+  assert.equal(read.length, 2, 'orb + uus jooks: ' + JSON.stringify(read));
+  assert.equal(read[0].state, 'katkestatud', 'surnud otsejooks margitakse katkestatuks');
+  assert.match(String(read[0].error || ''), /pooleli|katkes/i, 'pohjus on nahtav: ' + read[0].error);
+  assert.equal(read[1].state, 'tehtud', 'uus jooks lopeb korralikult');
+  db.close();
+  console.log('PASS hanked: surnud otsejooksu lukk koristatakse ise');
+}
+
+// T5: SURNUD PID (mitte ainult NULL) - sama haru, aga elususe kontroll on
+// susteemikutse, mida paris lapsega ei saa usaldusvaarselt lavastada.
+{
+  const db = testDb();
+  db.prepare(`INSERT INTO hanke_runs (cmd, args, state, started, boot_id, pid)
+      VALUES ('sync', '{}', 'käib', datetime('now'), ?, 4242)`).run(OTSE_BOOT + 'surnud');
+  const j = alustaOtseJooks(db, { elab: () => false });
+  assert.ok(j.id, 'surnud pid-iga orb ei tohi uut jooksu blokeerida: ' + JSON.stringify(j));
+  assert.equal(db.prepare('SELECT state FROM hanke_runs WHERE id = 1').get().state, 'katkestatud');
+
+  // Ja vastupidi: ELAV pid blokeerib.
+  const db2 = testDb();
+  db2.prepare(`INSERT INTO hanke_runs (cmd, args, state, started, boot_id, pid)
+      VALUES ('sync', '{}', 'käib', datetime('now'), ?, 4242)`).run(OTSE_BOOT + 'elav');
+  const j2 = alustaOtseJooks(db2, { elab: () => true });
+  assert.equal(j2.id, null, 'elav otsejooks peab blokeerima: ' + JSON.stringify(j2));
+  assert.ok(j2.pohjus, 'pohjus peab olema olemas');
+
+  // lopetaOtseJooks id = null peale on ohutu no-op (vahelejaetud jooks).
+  assert.equal(lopetaOtseJooks(db2, null, { ok: true }), false);
+  db.close(); db2.close();
+  console.log('PASS hanked: otsejooksu lukk arvestab pid-i elusust');
+}
+
+// T6: LOGI LAHEB BAASI, MITTE FAILI. install-saatja.ps1 ei suuna kuhugi midagi -
+// jalg on baasis. Sama muster siin: hanke_runs.log kannab lapse stdout-i ja
+// jaab LOG_MAX piiresse, et pikk jooks ei paisutaks rida.
+{
+  const src = readFileSync(new URL('../agent/hanked-sync.mjs', import.meta.url), 'utf8');
+  const kood = src.split('\n').filter((r) => !/^\s*\/\//.test(r)).join('\n');
+  assert.match(kood, /LOG_MAX/, 'logi peab olema kaetud sama laega mis serveri kaivitaja');
+  assert.ok(!/createWriteStream|appendFileSync|writeFileSync/.test(kood),
+    'otsejooks ei tohi kirjutada omaenda logifaili - jalg on baasis');
+  console.log('PASS hanked: otsejooksu logi laheb baasi, mitte faili');
 }
