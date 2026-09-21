@@ -2321,3 +2321,41 @@ function rssServer(keha) {
     'otsejooks ei tohi kirjutada omaenda logifaili - jalg on baasis');
   console.log('PASS hanked: otsejooksu logi laheb baasi, mitte faili');
 }
+
+// X2 (ülesanne 14 järelkorjamine): DOKUMENDIST LOETUD KVALITEEDIKAAL PEAB SKOORI
+// LIIGUTAMA. Varem oli tingimus ainult `crit.includes('quality')` ja `crit` tuleb
+// RSS-ist, mis on päris ridadel TÜHI (mõõdetud: 314159, 315437, 312645). Seega
+// loeti TAI hankest ausalt „kvaliteet 70 %", number jõudis baasi ja paneelile —
+// ja ei liigutanud skoori mitte kunagi. Loetud ja eiratud number on halvem kui
+// lugemata number, sest ta näeb ekraanil välja nagu töötav asi.
+{
+  const alus = { title: 'Veebilehe arendus', segment: 'nišš', deadline: '2026-12-01' };
+  const ilma = score(alus, { today: '2026-10-01' });
+  const dokidest = score(alus, { today: '2026-10-01', docs: { qualityWeight: 70 } });
+  assert.equal(dokidest.points - ilma.points, 20,
+    'alusdokumendist loetud 70 % peab andma +20 ka siis, kui RSS-i crit on tühi');
+  assert.ok(dokidest.why.some((r) => /kvaliteedikriteerium.*70 %.*alusdokumendist/.test(r)),
+    'põhjendus peab ütlema, KUST kaal tuli: ' + JSON.stringify(dokidest.why));
+
+  // Alla 50 % annab +10, mitte +20.
+  const nork = score(alus, { today: '2026-10-01', docs: { qualityWeight: 15 } });
+  assert.equal(nork.points - ilma.points, 10, '15 % on nõrk kvaliteedikaal');
+
+  // RSS-i lipp ilma kaaluta töötab endiselt.
+  const rssist = score({ ...alus, crit: ['quality'] }, { today: '2026-10-01' });
+  assert.equal(rssist.points - ilma.points, 10, 'RSS-i crit ilma kaaluta annab +10');
+  assert.ok(rssist.why.some((r) => /kaal teadmata/.test(r)));
+
+  // Ja tegurit EI anta kaks korda, kui mõlemad allikad ütlevad sama.
+  const molemad = score({ ...alus, crit: ['quality'] },
+    { today: '2026-10-01', docs: { qualityWeight: 70 } });
+  assert.equal(molemad.points, dokidest.points, 'kaks allikat ei tohi tegurit kahekordistada');
+
+  // Rämps ei tohi tegurit tekitada.
+  for (const praht of [null, undefined, NaN, -5, 101, 'seitsekümmend', {}]) {
+    const r = score(alus, { today: '2026-10-01', docs: { qualityWeight: praht } });
+    assert.equal(r.points, ilma.points,
+      'vigane kaal ' + JSON.stringify(praht) + ' ei tohi anda punkte');
+  }
+  console.log('PASS hanked: dokumendist loetud kvaliteedikaal liigutab skoori');
+}
