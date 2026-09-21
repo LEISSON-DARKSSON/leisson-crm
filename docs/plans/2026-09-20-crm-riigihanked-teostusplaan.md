@@ -503,6 +503,16 @@ if (import.meta.url === 'file://' + process.argv[1].replace(/\\/g, '/')) main();
 
 ## Ülesanne 6: eForms-parser (ettevalmistus ajaloole)
 
+> **TEOSTATUD** — `8edc438`. Näidiskood oli mõõdetult vale: päris kuu (956 teadet) peal andis
+> ta **274 teatel (29 %) vale või väljamõeldud võitja**, `notice_id` oli 956/956 vale ja `date`
+> võttis 591 teatel lepingu sõlmimise kuupäeva teate kuupäeva asemel — see oleks ülesande 12
+> 24 kuu akna vaikselt nihutanud. Teostus võtab võitja ahelast
+> `LotResult → LotTender → TenderingParty → Tenderer → Organization` (nagu `rhr_parse.py`),
+> valib statistika liigi järgi ja märgib iga oletuse väljadega `winner_allikas`,
+> `tenders_allikas`, `amount_allikas`. Võrreldud `rhr_parse.py`-ga: 956/956 identne kõigil
+> võrreldavatel väljadel.
+
+
 **Failid:**
 - Loo: `crm/lib/eforms.mjs`
 - Muuda: `crm/test/gate-hanked.mjs`
@@ -976,6 +986,19 @@ Get-ScheduledTask -TaskName "LEISSON — hanked*" | Format-Table TaskName, State
 
 ## Ülesanne 12: kuine ajaloo import
 
+> **LÕKS (ülesandest 6):** `segmentOf(a.title)` ainult pealkirjaga kaotas ülesandes 3 päris
+> hanke (310983) — FIT peab vaatama pealkirja JA kirjeldust. Lepinguteatel ei ole RSS-i
+> kirjeldust; otsusta, kas anda teine argument `cbc:Description`-ist või teadvustada, et
+> ajaloo segment on kitsam kui elava hanke oma. Praegune rida on ainult kohahoidja.
+>
+> **OTSUS ENNE 24 KUU LAADIMIST:** 113 teatel on üle ühe võitja ja 17-l on osade tulemused
+> erinevad. `hanke_lepingud` hoiab praegu ÜHT rida teate kohta, seega `winner` ja `tenders`
+> kirjeldavad esimest osa. Rida OSA kohta on ainus kuju, mis annab õige konkurentide
+> pingerea. Vaata ka: eForms annab `nature`/`menetlus` ingliskeelsete koodidena
+> (`services`, `open`), RSS-i tee annab eestikeelsed sõnad (`Teenused`, `Avatud
+> hankemenetlus`) — üks sõnavara tuleb valida ja normaliseerida, lugeja ise ei tõlgi.
+
+
 **Failid:**
 - Loo: `crm/agent/hanked-history.mjs`
 - Muuda: `crm/test/gate-hanked.mjs`
@@ -1038,7 +1061,7 @@ export function importMonthXml(db, kuu, xml) {
       const a = parseAward(blk);
       if (a.nature !== 'services' || !a.winner) continue;          // ehitus ja asjad lendavad minema
       lisa.run(a.ref, a.date, a.buyer, a.title, a.cpv, a.winner, a.winner_reg, a.winner_size,
-               a.amount, a.tenders, a.menetlus, segmentOf(a.title));
+               a.amount, a.tenders, a.menetlus, segmentOf(a.title, a.title));
       rows++;
     }
     db.prepare(`INSERT INTO hanke_sync (key,ts,rows,ok) VALUES (?, datetime('now'), ?, 1)
