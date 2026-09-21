@@ -163,19 +163,33 @@
       tulemus: viga ? tekst(r.error, r.state) : 'korras',
     };
   }
-  function nupuSeis(cmd, t, runs) {
+  /* NELJAS ASI: KÄSK, MIS VAJAB VALITUD HANGET.
+   * agent/hanked-docs.mjs nõuab --ref=<viitenumber> ja ilma selleta väljub kohe
+   * veaga „Puudub --ref=<viitenumber>". Ilma selle valveta oli „Lae dokumendid"
+   * nupp TÖÖTAV, KLIKITAV JA ALATI KUKKUV: detailpaneel ütles „vajuta „Lae
+   * dokumendid"", nupp spawnis lapse, laps suri esimese reaga ja ribale ilmus
+   * ingliskeelse tunde jättev veaviide. Sama klass, mis valmis:false — nupp
+   * lubas midagi, mida ta teha ei saanud. Nüüd: hanget valimata on ta KEELATUD
+   * ja SELETATUD, valitud hankega annab views.js talle args.ref kaasa. */
+  const REF_NOUAB = { docs: true };
+  function nupuSeis(cmd, t, runs, valitud) {
     const label = tekst(t && t.label, cmd);
     const valmis = !(t && t.valmis === false);
     const read = Array.isArray(runs) ? runs : [];
     const kaib = read.find((r) => r && r.cmd === cmd && r.state === 'käib') || null;
     const viimane = read.find((r) => r && r.cmd === cmd && r.state !== 'käib') || null;
+    const ref = tekst(valitud, null);
+    const refPuudu = Boolean(REF_NOUAB[cmd]) && ref === null;
     return {
       cmd, label, valmis, kaib,
-      tekst: kaib ? label + ' …' : label,
-      keelatud: !valmis || Boolean(kaib),
+      ref: REF_NOUAB[cmd] ? ref : null,
+      tekst: kaib ? label + ' …' : (REF_NOUAB[cmd] && ref ? label + ' (' + ref + ')' : label),
+      keelatud: !valmis || Boolean(kaib) || refPuudu,
       pohjus: !valmis
         ? label + ' ei ole veel valmis: skript puudub (' + tekst(t && t.script, 'tundmatu fail') + ')'
-        : kaib ? label + ' käib juba' : null,
+        : kaib ? label + ' käib juba'
+          : refPuudu ? label + ' käib ühe hanke kohta — vali kõigepealt nimekirjast hange'
+            : null,
       seis: kaib ? jooksuSeis(kaib) : null,
       peata: Boolean(kaib && kaib.oma === true),
       lopp: viimane ? lopuRida(viimane) : null,

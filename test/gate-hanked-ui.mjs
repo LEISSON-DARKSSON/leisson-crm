@@ -367,7 +367,35 @@ const T = (iso) => new Date(iso);
   assert.equal(L.nupuSeis('gate', { label: 'Värav', valmis: true }, jooksud).kaib, null,
     'teise käsu jooks ei tohi seda nuppu kinni panna');
 
-  console.log('PASS hanked UI: nupu seis, keeld, "Peata" ainult oma jooksul ja progressita staatusrida');
+  // KASK, MIS VAJAB VALITUD HANGET. agent/hanked-docs.mjs kaib UHE hanke kohta
+  // (--ref=<viitenumber>) ja ilma selleta vaijub kohe veaga "Puudub --ref=...".
+  // Enne parandust saatis nupp ainult { cmd } ja oli seega TOOTAV, KLIKITAV JA
+  // ALATI KUKKUV - detailpaneel utles "vajuta Lae dokumendid" ja iga vajutus
+  // andis veateate. Sama klass mis valmis:false: nupp lubas seda, mida ei saa.
+  const dt = { script: 'agent/hanked-docs.mjs', label: 'Lae dokumendid', valmis: true };
+  const ilmaValikuta = L.nupuSeis('docs', dt, []);
+  assert.equal(ilmaValikuta.keelatud, true, 'hanget valimata peab "Lae dokumendid" olema keelatud');
+  assert.equal(ilmaValikuta.ref, null, 'valikuta ei ole refi, mida kaasa anda');
+  assert.ok(/vali kõigepealt/i.test(ilmaValikuta.pohjus),
+    'keeld peab ütlema, MIDA teha: ' + ilmaValikuta.pohjus);
+  const valikuga = L.nupuSeis('docs', dt, [], '314159');
+  assert.equal(valikuga.keelatud, false, 'valitud hankega on nupp vajutatav');
+  assert.equal(valikuga.ref, '314159', 'valitud viitenumber läheb käsule kaasa');
+  assert.ok(valikuga.tekst.includes('314159'), 'nupp ütleb, MILLISE hanke kohta ta käib: ' + valikuga.tekst);
+  assert.equal(L.nupuSeis('docs', dt, [], '   ').keelatud, true, 'tühikutest valik ei ole valik');
+  // Refi EI nouavad kasud ei tohi sellest valvest muutuda.
+  assert.equal(L.nupuSeis('sync', t, [], '314159').ref, null, 'sünk ei võta refi kaasa');
+  assert.equal(L.nupuSeis('sync', t, []).keelatud, false, 'valikuta sünk jääb vajutatavaks');
+
+  // ...ja views.js peab selle ka TEGELIKULT kaasa andma. Ilma selle vaiteta
+  // labiks nupuSeis roheliselt ja paring saadaks ikka paljast { cmd }.
+  assert.match(views, /api\('\/api\/hanked\/run',\s*ref\s*\?\s*\{\s*cmd,\s*args:\s*\{\s*ref\s*\}\s*\}/,
+    'kaivita peab refi nõudva käsu puhul saatma args.ref');
+  assert.match(views, /L\.nupuSeis\(cmd,\s*t,\s*hankedData\.runs,\s*hankedData\.valitud\)/,
+    'käsuriba peab teadma, milline hange on valitud');
+
+  console.log('PASS hanked UI: nupu seis, keeld, "Peata" ainult oma jooksul, progressita staatusrida'
+    + ' ja "Lae dokumendid" ainult valitud hankega');
 }
 
 /* ------------------------------------------- 12. pollimise leping ja 409 keha */
@@ -463,4 +491,28 @@ const T = (iso) => new Date(iso);
     'RHR-ist tulev tekst ei tohi minna lehele HTML-ina');
 
   console.log('PASS hanked UI: sarnaste lepingute plokk kannab alust, varuteed ja väljajäetut');
+}
+
+/* ------------------------- 15. alusdokumentide leiud jõuavad ka EKRAANILE */
+{
+  // Ehitaja oli olemas (dokumendiPlokk) ja server saatis `dokumendid` kaasa, aga
+  // valiHange EI PANNUD teda vahemallu - dokumendiPlokk sai igavesti `undefined`
+  // ja paneel vaitis ka parast kordalainud jooksu, et "dokumente ei ole veel
+  // kordagi kusitud". Kogu ulesande 14 toendiplokk (rollid, kaibenoue,
+  // kvaliteedikaal koos LAUSE ja FAILINIMEGA) oli ekraanil kattesaamatu. Kolm
+  // vaidet, sest uhe kadumine on tapselt see, mis juhtus:
+  assert.match(views, /dokumendiPlokk\(/, 'alusdokumentide plokil peab olema ehitaja');
+  assert.match(views, /dokumendid:\s*d\.dokumendid/,
+    'detaili vastuse `dokumendid` peab jõudma vahemällu, muidu plokk ei näe kunagi midagi');
+  assert.match(views, /dokumendiPlokk\(d\.dokumendid\)/,
+    'joonistus peab võtma dokumendid vahemälust');
+  // Toend ise: leid ilma lauseta ja failita on paljas arv, mida silmaga
+  // kontrollida ei saa - ja vale arv annab -25 punkti ning verdikti ALLTOOVOTT.
+  assert.match(views, /lause|tõend/i, 'iga leid peab kandma lauset, millest ta tuli');
+  assert.match(views, /fail/i, 'iga leid peab ütlema, MILLISEST failist lause tuli');
+  assert.match(views, /kontrolli/, 'ebakindel leid peab jääma NÄHTAVAKS, mitte kaduma');
+  assert.match(views, /tekstita|tekstiks ei saanud/,
+    'tekstiks mitte saadud fail peab olema loendatud, mitte vaikitud');
+
+  console.log('PASS hanked UI: alusdokumentide leiud jõuavad vahemällu ja kannavad tõendit');
 }

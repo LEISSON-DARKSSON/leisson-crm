@@ -367,7 +367,10 @@
   }
 
   function kasuPlokk(cmd, t) {
-    const n = L.nupuSeis(cmd, t, hankedData.runs);
+    // Valitud hange läheb kaasa: „Lae dokumendid" käib ÜHE hanke kohta
+    // (agent/hanked-docs.mjs --ref=...) ja ilma valikuta peab nupp olema
+    // keelatud, mitte klikitav ja alati kukkuv.
+    const n = L.nupuSeis(cmd, t, hankedData.runs, hankedData.valitud);
     const viga = hankedData.kasuViga[cmd];
     return el('div', { class: 'cmd' + (n.kaib ? ' busy' : ''), 'data-cmd': cmd }, [
       el('button', {
@@ -377,7 +380,7 @@
         disabled: n.keelatud ? 'disabled' : null,
         'aria-disabled': n.keelatud ? 'true' : null,
         title: n.pohjus,
-        onclick: () => kaivita(cmd),
+        onclick: () => kaivita(cmd, n.ref),
       }),
       // „Peata" AINULT oma jooksul: võõra serveri-instantsi pid võib vahepeal
       // ringlusse minna ja server keeldub teda tapmast (lib/hanked-runs.mjs).
@@ -397,11 +400,14 @@
     ].filter(Boolean));
   }
 
-  async function kaivita(cmd) {
+  async function kaivita(cmd, ref) {
     delete hankedData.kasuViga[cmd];
     let r;
     try {
-      r = await api('/api/hanked/run', { cmd });
+      // args läheb kaasa AINULT siis, kui käsk teda nõuab (nupuSeis annab
+      // n.ref ainult neile). Tühja objekti saatmine on kahjutu, aga nii on
+      // päringu keha täpselt see, mida käsk vajab.
+      r = await api('/api/hanked/run', ref ? { cmd, args: { ref } } : { cmd });
     } catch (e) {
       // 409 EI OLE anonüümne toast. Server ütleb { error, runId } — „käib juba"
       // kuulub selle käsu juurde ja runId ütleb, KUMB jooks käib. Sama jooksu
@@ -658,6 +664,10 @@
 
   async function valiHange(ref) {
     hankedData.valitud = ref;
+    // Käsuriba sõltub valikust („Lae dokumendid" käib ühe hanke kohta), seega
+    // ta tuleb valiku muutudes üle joonistada — muidu jääb nupp keelatuks ka
+    // siis, kui hange on juba valitud.
+    uuendaRiba();
     for (const tr of document.querySelectorAll('#hankedRows tr[data-ref]')) {
       if (tr.dataset.ref === ref) tr.setAttribute('aria-current', 'true');
       else tr.removeAttribute('aria-current');
@@ -682,6 +692,12 @@
       // tähendaks teist võrguringi iga valiku peale ja kaht eri hetke, mille
       // pealt mediaan ja skoori põhjendus on arvutatud.
       sarnased: d.sarnased || null,
+      // ÜLESANNE 14: alusdokumentide leiud tulevad SAMA vastusega. Ilma selle
+      // reata kadus `dokumendid` siin vaikselt ära ja dokumendiPlokk sai igavesti
+      // `undefined` — paneel väitis ka pärast kordaläinud jooksu, et „dokumente
+      // ei ole veel kordagi küsitud", ja kogu tõendiplokk (rollid, käibenõue,
+      // kvaliteedikaal koos lause ja failinimega) oli ekraanil KÄTTESAAMATU.
+      dokumendid: d.dokumendid || null,
       mustand: null,   // poolikult kirjutatud märkus, mida täisjoonistus ei tohi süüa
     };
     joonistaDetail();
