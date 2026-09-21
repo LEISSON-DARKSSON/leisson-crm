@@ -16,12 +16,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { spawn } from 'node:child_process';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { open } from '../lib/db.mjs';
 import { migrateHanked } from '../lib/hanked.mjs';
 import { CMD, BOOT_ID, LOG_MAX, RIDA_MAX, cmdView, startRun, finishRun, stopRun,
   cleanupOrphans, runsView } from '../lib/hanked-runs.mjs';
 
+const JUUR = dirname(dirname(fileURLToPath(import.meta.url)));
 const TMP = mkdtempSync(join(tmpdir(), 'hanked-runs-'));
 let jrk = 0;
 
@@ -85,6 +88,9 @@ function skript(nimi, kood) {
 const lapseks = (tee, env = {}) => () => spawn(process.execPath, [tee], { env: { ...process.env, ...env } });
 
 const viimaneRida = (log) => String(log || '').trim().split('\n').pop();
+// Absoluutne file:// URL agent/hanked-sync.mjs-ile - ajutises kaustas olev laps
+// ei leia teda suhtelise teega.
+const SYNC_TEE = pathToFileURL(join(JUUR, 'agent', 'hanked-sync.mjs')).href;
 
 // ---------------------------------------------------------------------------
 // A (plaan 1): uks jooks korraga kasu kohta.
@@ -202,6 +208,8 @@ const viimaneRida = (log) => String(log || '').trim().split('\n').pop();
 // kunagi halvem - Node lubab 'exit' ajal voo veel lahti olla.
 const MURA = skript('mura.mjs', `
 import { spawn } from 'node:child_process';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { dirname } from 'node:path';
 const n = Number(process.env.RIDU || 1200);
 for (let i = 1; i <= n; i++) process.stdout.write(JSON.stringify({ progress: 'rida ' + i, rows: i }) + '\\n');
 if (process.env.LAPSELAPS === '1') {
@@ -498,6 +506,66 @@ process.stdout.write('LOPPRIDA\\n');
   db.close();
   console.log('PASS runs: kaks kirjutajat ei anna SQLITE_BUSY-t ega kaota logi');
 }
+
+// ---------------------------------------------------------------------------
+// R (regressioon, leitud ulesandes 12): NUPUVAJUTUS EI TEINUD MITTE MIDAGI.
+//
+// Ulesanne 11 pani agendid otsekaivitusel ISE hanke_runs rida kirjutama, et
+// Task Scheduleri jooks jataks jalje. Aga nupust kaivitatuna on rida juba
+// startRun-i tehtud JA ta hoiab osalist unikaalindeksit idx_runs_kaib - lapse
+// oma INSERT kukkus tapselt sellesse lukku ja laps teatas "kaib juba - jai
+// vahele". Vaade naitas rohelist jooksu, mis ei teinud mitte midagi.
+//
+// Valve: startRun annab lapsele HANKED_RUN_ID ja laps ei tee siis oma rida.
+// Kaks vaidet: (1) muutuja LAHEB kaasa; (2) paris lapsprotsessiga jaab TAPSELT
+// uks rida ja laps EI raporteeri vahelejattu.
+// ---------------------------------------------------------------------------
+{
+  const db = testDb();
+  const f = valeSpawn();
+  const r = startRun(db, 'sync', {}, { spawnFn: f });
+  const [, , opts] = f.argv[0];
+  assert.ok(opts && opts.env, 'startRun peab lapsele keskkonna kaasa andma');
+  assert.equal(opts.env.HANKED_RUN_ID, String(r.id),
+    'HANKED_RUN_ID peab olema vanema jooksu id - ilma selleta kukub laps vanema luku peale '
+    + 'ja nupuvajutus ei tee mitte midagi');
+  db.close();
+  console.log('  ok startRun annab lapsele HANKED_RUN_ID');
+}
+
+{
+  // Paris laps, kes kaitub nagu agent: kutsub alustaOtseJooks-i ja lopetab.
+  const AGENT = skript('vale-agent.mjs', [
+    "import { DatabaseSync } from 'node:sqlite';",
+    "import { alustaOtseJooks, lopetaOtseJooks } from " + JSON.stringify(SYNC_TEE) + ";",
+    "const db = new DatabaseSync(process.env.BAAS);",
+    "const j = alustaOtseJooks(db);",
+    "if (j.pohjus) console.log(JSON.stringify({ vahele: true, pohjus: j.pohjus }));",
+    "else console.log(JSON.stringify({ progress: 'tootan', rows: 7 }));",
+    "lopetaOtseJooks(db, j.id, { ok: true, rows: 7 });",
+    "db.close();",
+  ].join('\n'));
+  const baas = join(TMP, 'regress.sqlite');
+  const db = new DatabaseSync(baas);
+  migrateHanked(db);
+  // Spawn, mis AUSTAB startRun-i antud keskkonda (lapseks() viskab selle ara).
+  const spawnAus = (exe, argv, opts) => spawn(exe, [AGENT],
+    { ...opts, env: { ...opts.env, BAAS: baas } });
+  const r = startRun(db, 'sync', {}, { spawnFn: spawnAus });
+
+  await new Promise((r2) => setTimeout(r2, 1500));
+  const read = db.prepare("SELECT * FROM hanke_runs WHERE cmd = 'sync'").all();
+  assert.equal(read.length, 1,
+    'nupust kaivitatud jooks peab jatma TAPSELT uhe rea, sai ' + read.length);
+  assert.equal(nrId(read[0].id), r.id, 'see rida peab olema vanema oma');
+  assert.ok(!/vahele/i.test(String(read[0].log || '')),
+    'laps EI TOHI raporteerida vahelejattu oma vanema luku parast: ' + read[0].log);
+  assert.ok(/tootan/.test(String(read[0].log || '')), 'lapse paris too peab logisse jouma');
+  db.close();
+  console.log('  ok nupust kaivitatud laps ei kuku vanema luku peale');
+}
+
+function nrId(v) { return typeof v === 'bigint' ? Number(v) : v; }
 
 console.log('');
 console.log('Värav gate-hanked-runs: kõik plokid rohelised.');
