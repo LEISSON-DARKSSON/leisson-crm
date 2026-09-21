@@ -1731,6 +1731,44 @@ function pyya(too) {
   console.log('PASS hanked: tyhjaks jaanud feed ei ole roheline jooks');
 }
 
+// Z5b: sama vaikne kadu TEIST teed. Feed on tais <item>-eid, aga RHR muudab pealkirja
+// kuju ("314159 - ..." eraldaja kaob) -> VIIDE_JA_PEALKIRI ei klapi -> parseRss annab
+// tyhja massiivi. Esimene valve vaatas ainult loend.kirjeid === 0 ja jattis selle
+// rohelseks: kirjeid = 700, nisis = 0, ok = 1. Valve peab kaima TULEMUSE peale.
+{
+  const kujuMuutus = rssFeed(
+    rssKirje({ title: 'Veebilehe arendus ilma viitenumbrita',
+      desc: 'Teenused; Lihthange; Muu; Tähtaeg: 01.12.2026 10:00' }),
+    rssKirje({ title: 'Kasutajaliidese uuendus ilma viitenumbrita',
+      desc: 'Teenused; Lihthange; Muu; Tähtaeg: 02.12.2026 10:00' }),
+  );
+  const db = testDb();
+  const r1 = syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });
+  assert.equal(r1.kokku, 5);
+
+  const r2 = syncFromXml(db, kujuMuutus, { today: '2026-09-20' });
+  assert.equal(r2.kokku, 0, 'kujumuutus annab null rida');
+  assert.equal(r2.tyhjenes, true, 'tais feed ilma yhegi tulemuseta EI OLE roheline jooks');
+
+  const log = db.prepare("SELECT * FROM hanke_sync WHERE key='rss'").get();
+  assert.equal(log.ok, 0, 'kirjeid on, tulemusi ei ole - see peab olema punane');
+  assert.ok(/filter ei tabanud/.test(log.note || ''),
+    'pohjus peab eristuma tyhjast feedist: ' + log.note);
+  assert.ok(!/feed tühjenes/.test(log.note || ''),
+    'tais feedi ei tohi nimetada tyhjenenuks: ' + log.note);
+  assert.ok(/2 kirjet feedis/.test(log.note || ''),
+    'note peab utlema, mitu kirjet feedis oli: ' + log.note);
+
+  // Ja vastupidi: esimene jooks, millel pole eelmist, ei ole viga.
+  const db2 = testDb();
+  const r3 = syncFromXml(db2, kujuMuutus, { today: '2026-09-20' });
+  assert.equal(r3.tyhjenes, false, 'ilma eelmise jooksuta ei saa jarelduda');
+  assert.equal(db2.prepare("SELECT ok FROM hanke_sync WHERE key='rss'").get().ok, 1,
+    'esimene jooks jaab roheliseks');
+  db.close(); db2.close();
+  console.log('PASS hanked: tais feed ilma tulemusteta on punane');
+}
+
 // Z6 (K5): `updated` peab tahendama "midagi muutus", mitte "sunk nagi teda viimati".
 // Iga 15 min jooks kirjutas varem updated-i igale reale ja vaates "muutus" kogu
 // nimekiri - paris muutus (nihkunud tahtaeg) upub sinna ara.

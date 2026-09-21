@@ -163,7 +163,17 @@ export function syncFromXml(db, xml, { today = new Date().toISOString().slice(0,
   // ok-lipuga. Eelmine rida on ainus, mis teab vahet "feed ongi tuhi" ja "feed
   // tuhjenes" vahel - seega loeme ta ENNE kirjutamist.
   const eelmine = db.prepare('SELECT rows, ok FROM hanke_sync WHERE key = ?').get(VOTI);
-  const tyhjenes = Boolean(loend.kirjeid === 0 && eelmine && eelmine.ok === 1 && eelmine.rows > 0);
+  const eelmineAndis = Boolean(eelmine && eelmine.ok === 1 && eelmine.rows > 0);
+
+  // Valve kaib TULEMUSE, mitte feedi kuju peale. Esimene versioon vaatas ainult
+  // loend.kirjeid === 0 ehk "feedis ei ole uhtegi <item>-it". Aga sama vaikne kadu
+  // tuleb ka teist teed: RHR jatab <item>-id alles ja muudab ainult PEALKIRJA KUJU
+  // ("314159 - ..." eraldaja kaob), mille peale VIIDE_JA_PEALKIRI ei klapi ja
+  // parseRss tagastab tuhja massiivi. Siis on kirjeid = 700, nisis = 0 ja jooks
+  // oleks ok = 1 - roheline jooks, null hanget, tapselt see, mida see valve pidi
+  // arastama. Seega: kui eelmine ONNESTUNUD jooks andis ridu ja see ei anna uhtegi,
+  // on see punane, olenemata sellest, KUS ahelas tulemus kaduma laks.
+  const tyhjenes = eelmineAndis && read.length === 0;
 
   // Kas MEIE alustasime tehingut. Kui BEGIN IMMEDIATE ise kukub (kutsujal on juba
   // tehing lahti), siis ei tohi catch-plokk teha ROLLBACK-i: see keeraks tagasi
@@ -211,8 +221,13 @@ export function syncFromXml(db, xml, { today = new Date().toISOString().slice(0,
     // kontrollitud lib/hanked.mjs-ist, mitte eeldatud.
     aegunud = markExpired(db, today);
     // Paris tuhi feed jaab roheliseks ainult siis, kui ka eelmine oli tuhi.
+    // Pohjus loeb: "feed on tuhi" ja "feed on tais, aga filter ei taba midagi" on
+    // kaks eri riket ja nouavad eri parandust.
+    const pohjus = loend.kirjeid === 0
+      ? 'feed tühjenes'
+      : 'filter ei tabanud ühtegi kirjet — kontrolli, kas RHR muutis kirje kuju';
     const note = tyhjenes
-      ? 'feed tühjenes: eelmine jooks andis ' + vorm(eelmine.rows, 'kirje', 'kirjet')
+      ? pohjus + ': eelmine jooks andis ' + vorm(eelmine.rows, 'kirje', 'kirjet')
         + ' · ' + loendiTekst(loend)
       : loendiTekst(loend);
     db.prepare(SYNC_SQL).run(VOTI, read.length, tyhjenes ? 0 : 1, margiAllikas(note, allikas));
