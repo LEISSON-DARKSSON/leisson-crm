@@ -20,11 +20,25 @@ import { migrateAgent } from './lib/agentdb.mjs';
 import * as mail from './lib/mail.mjs';
 import { LOOBUMISRIDA, lisaLoobumisrida } from './lib/sendgate.mjs';
 import { initSales, salesState, extraRoutes, docPage } from './lib/routes2.mjs';
+import { migrateHanked } from './lib/hanked.mjs';
+import { cleanupOrphans } from './lib/hanked-runs.mjs';
 
 const cfg = loadEnv();
 const db = open();
 migrateAgent(db);          // agent_jobs, agent_runs, drafts + messages klassifikatsiooniveerud
 initSales(db);             // offers, invoices, invoice_lines, counters, message_groups, suppressions, stages
+// ULESANNE 8: JARJEKORD ON ANSUS. migrateHanked loob hanke_runs-i (ja sinna boot_id
+// veeru ning osalise unikaalindeksi), cleanupOrphans lugeb sealt. Vastupidises
+// jarjekorras viskab cleanupOrphans "no such table: hanke_runs" - ja kuna see on
+// mooduli tasemel, EI KAIVITU server enam uldse.
+//
+// boot_id-d server.mjs ei tekita: ta sunnib lib/hanked-runs.mjs-i mooduli tasemel
+// (BOOT_ID = randomUUID() impordi hetkel), ehk uks protsess = uks vaartus. Just
+// TANU sellele margib jargmine kaivitus eelmise serveri pooleli jaanud jooksud
+// orbudeks ka siis, kui nende pid on vahepeal ringlusse laanud - ilma selleta
+// jaaks spinner igaveseks keerlema.
+migrateHanked(db);
+const orbud = cleanupOrphans(db);
 const seeded = process.env.CRM_NO_SEED === '1' ? {inserted:0} : seed(db);
 migrateOutbound(db);
 migrateCampaigns(db);
@@ -423,6 +437,7 @@ server.listen(cfg.port, '127.0.0.1', () => {
   console.log(`  kontod    ${cfg.accounts.map((a) => a.user).join(', ')}`);
   console.log(`  postkast  automaatne kontroll iga ${cfg.pollMinutes} min`);
   console.log(`  andmebaas data/crm.sqlite (${seeded.inserted} kirjet seemnest)`);
+  if (orbud) console.log(`  hanked    ${orbud} pooleli jäänud jooksu märgitud katkestatuks`);
   console.log(`  allkiri   http://127.0.0.1:${cfg.port}/signature`);
   console.log('');
 });
