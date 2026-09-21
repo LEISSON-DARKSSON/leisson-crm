@@ -10,6 +10,7 @@ import { open } from '../lib/db.mjs';
 import { migrateAgent } from '../lib/agentdb.mjs';
 import { existsSync, writeFileSync, unlinkSync, mkdtempSync, rmSync } from 'node:fs';
 import { ROOT } from '../lib/env.mjs';
+import { vabaPort } from './vaba-port.mjs';
 
 const require = createRequire(join(ROOT, '..', 'package.json'));
 let chromium;
@@ -20,7 +21,12 @@ try {
   process.exit(1);
 }
 
-const PORT = 4300 + Math.floor(Math.random() * 90);
+// PORTI EI LOOSITA. Varem oli siin `4300 + Math.random() * 90`, ehk vahemik
+// 4300-4389 - ja Gerti ELAV CRM kuulab pordil 4310. Iga `npm test` jooks oli
+// 1:90 toenaosusega vastuolus toodanguserveriga ja onnestumise korral oleks
+// see varav raakinud oma API-kontrollid PARIS CRM-iga. Nuud kusib port OS-ilt
+// ja seadistatud CRM_PORT on alati valistatud. Vt test/vaba-port.mjs.
+const PORT = await vabaPort();
 const fails = [];
 const ok = (s) => console.log('  OK    ' + s);
 const bad = (s) => { fails.push(s); console.log('  VIGA  ' + s); };
