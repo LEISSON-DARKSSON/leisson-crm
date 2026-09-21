@@ -759,7 +759,7 @@ git push origin origin/main:release/production
 
 ## Task 17 (O2): Wikidata kirje — 3 h
 
-LEISSON OÜ + Gert Leisson. **WD:N kriteerium 2 lubab kirje ilma tähelepanuväärsuseta.** Allikad: ariregister, leisson.eu, GitHub. **et.wikipedia artiklit EI tehta** — tähelepanuväärsus ei ole täidetud ja kustutamisarutelu jääb indeksisse.
+**OTSUSTATUD 21.09.2026: ainult LEISSON OÜ, isikukirjet EI tehta.** WD:N kriteerium 2 lubab ettevõtte kirje ilma tähelepanuväärsuseta; elava inimese kirje mikroettevõtte juhatuse liikmena ilma sõltumatu allikata on kustutamisarutelu kandidaat. Allikas: <https://ariregister.rik.ee/est/company/16952932> (21.09.2026) — kontrollitud kirje, millele Wikidata omadus P6518 otse osutab. **et.wikipedia artiklit EI tehta** — tähelepanuväärsus ei ole täidetud ja kustutamisarutelu jääb indeksisse. Valmis QuickStatements-plokk: `docs/plans/voor5-pakett-2026-09.md`.
 Lisa Wikidata URI `JsonLd` `sameAs` hulka (ariregister ja GitHub on juba seal) — see on ainus koodimuudatus selles vooros.
 
 ## Task 18 (O3): LinkedIn — 4 h

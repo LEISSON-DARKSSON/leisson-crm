@@ -120,7 +120,15 @@ lehelt ja uuenda `catalog.json` `seller`-plokki – mitte teksti.
 
 ---
 
-## 5. Sinu otsus: axondeck.com registrikaardil
+## 5. OTSUSTATUD 21.09.2026: axondeck.com läheb registrikaardilt maha
+
+Gert valis valiku A. Registrikaardile jääb ainult `leisson.eu`.
+Teostus: ettevõtjaportaali töölaud, digiallkiri, riigilõivuta (vt T1).
+Alles jääb ainult see, et keegi selle päriselt ära teeks.
+
+Allpool on valiku põhjendus alles, et hilisem lugeja teaks, MIKS.
+
+### Kaalutud valikud
 
 **Valik A – võta maha, jäta ainult leisson.eu.**
 Registrikaart ütleb ühe asja: LEISSON OÜ = leisson.eu. Iga automaatne kataloog,
