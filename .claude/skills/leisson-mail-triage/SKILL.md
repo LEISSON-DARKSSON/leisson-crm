@@ -64,7 +64,7 @@ Kiireloomulisus tuleb kirja **sisust**, mitte saatja tähtsusest. "Kiireloomulin
 
 ## Väljund
 
-Vastus on JSON, mis vastab `crm/agent/schemas/triage.json`-ile. Iga kirje:
+Vastus on JSON, mis vastab `agent/schemas/triage.json`-ile. Iga kirje:
 
 ```json
 {

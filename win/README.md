@@ -34,7 +34,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File win\install-hanked-task.ps1 
 
 `-StartWhenAvailable` teeb magamise ajal vahele jäänud jooksu järele. `-WakeToRun` on teadlikult **välja jäetud**: see on tööarvuti.
 
-`agent\hanked-history.mjs` valmib ülesandes 12. Kuni faili ei ole, jätab skript selle ülesande **registreerimata** ja ütleb, miks — registreeritud ülesanne puuduva failiga kukuks iga kuu vaikselt. Pärast ülesannet 12 jooksuta sama skript uuesti.
+`agent\hanked-history.mjs` on olemas: kuine ajaloo import (eForms `notice_award`, kuu kaupa XML -> `hanke_lepingud`; tehing käib kuu kaupa, seega katkenud jooks jätkab pooleli jäänud kuust). Käsitsi: `node agent\hanked-history.mjs [--kuud=N] [--alates=AAAA-KK] [--uuesti]` või `npm run hanked:ajalugu`. Paigaldaja registreerib ülesande ainult siis, kui fail on olemas; kui see kaoks, jätab skript ülesande **registreerimata** ja ütleb, miks — registreeritud ülesanne puuduva failiga kukuks iga kuu vaikselt.
 
 Öine jooks on CRM-i vaates nähtav: `agent/hanked-sync.mjs` kirjutab otsekäivitusel ise rea `hanke_runs`-i (`cmd = sync`, `boot_id = otse:…`, seega „Peata" nuppu talle ei pakuta) ja paneb oma stdout-i JSON-read selle rea `log`-veergu. Eraldi logifaili ei ole — nagu saatja puhul, on jälg andmebaasis.
 
