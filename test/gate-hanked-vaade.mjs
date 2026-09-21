@@ -416,8 +416,13 @@ try {
 
   /* ================= ÜLESANNE 10: detailpaneel ================= */
   await page.locator('.view-tab[data-view="stats"]').click();
+  // Vaate DOM jaab peidetuna alles: sakile naasmisel on eelmise joonistuse read
+  // KOHE olemas ja renderHanked asendab need alles /api/hanked vastuse peale.
+  // Ilma markerita voitis .first().waitFor() selle vana rea, fookuseeritud nupp
+  // eemaldati enne Enterit ja detail jai tuhjaks (CI-s, kus fetch on aeglasem).
+  await page.evaluate(() => document.querySelector('#hankedRows')?.setAttribute('data-vana', '1'));
   await page.locator('.view-tab[data-view="hanked"]').click();
-  await page.locator('#viewHanked table.tbl tbody tr').first().waitFor();
+  await page.locator('#hankedRows:not([data-vana]) tr[data-ref]').first().waitFor();
 
   /* --- valik klaviatuuriga: reaklikk ei ole ainus tee --- */
   await page.locator('tr[data-ref="R-KIIRE"] button.linkbtn').focus();
