@@ -5,12 +5,17 @@ import {loadEnv} from '../lib/env.mjs';
 import {migrateOutbound} from '../lib/outbound.mjs';
 import {migrateCampaigns,nextApprovedCampaign,runCampaignOnce,pruneAlreadySentItems} from '../lib/campaign.mjs';
 import {syncInbox,composeText,composeHtml,sendMail} from '../lib/mail.mjs';
+import {resolveEnv} from '../lib/sendgate.mjs';
 import {reconcileSalesReplies} from '../lib/sales-safety.mjs';
 
 const requested=process.argv[2];
 if(requested!=='--sweep' && !/^[0-9a-f-]{36}$/i.test(String(requested||'')))
   throw new Error('Kampaania ID või --sweep puudub');
-if(process.env.CRM_CAMPAIGN_SEND_ENABLED!=='1')throw new Error('Kampaania saatja on välja lülitatud');
+// Tapilukk. Protsessi env voidab, siis .env fail. .env-i lugemine on siin
+// TAHTLIK: Task Scheduleri ulesanne ei saa keskkonnamuutujat kaasa anda ilma
+// wrapper-skriptita, ja uks nahtav rida .env-is on auditeeritavam kui .cmd,
+// mille sisu keegi ei vaata. Valja lulitamiseks: CRM_CAMPAIGN_SEND_ENABLED=0.
+if(resolveEnv('CRM_CAMPAIGN_SEND_ENABLED','0')!=='1')throw new Error('Kampaania saatja on välja lülitatud');
 const cfg=loadEnv();
 if(!cfg.defaultAccount)throw new Error('Ainult gert@leisson.eu saatjakonto on lubatud');
 const db=open();
