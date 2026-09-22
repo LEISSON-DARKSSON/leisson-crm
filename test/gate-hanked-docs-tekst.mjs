@@ -13,9 +13,13 @@
 // jookseb, leiaks kood pdftotext-i üles. Kui ta ei leia, ei ole see „keskkonna
 // eripära“ vaid katkine radar.
 import { strict as assert } from 'node:assert';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 import { leiaPdftotext, onPdftotext, failiTekst, failidTekstiks } from '../agent/hanked-docs.mjs';
+import { lubatudEnv } from '../lib/hanked-runs.mjs';
 
 const FIKSTUUR = join(import.meta.dirname, 'fixtures', 'pdftotext-proov.pdf');
 
@@ -69,6 +73,47 @@ const FIKSTUUR = join(import.meta.dirname, 'fixtures', 'pdftotext-proov.pdf');
   assert.equal(typeof vastus.pdftotext, 'boolean', 'lipp ei tohi olla tee-string');
   assert.ok(vastus.pdftotextTee, 'täistee peab olema eraldi väljal pdftotextTee');
   assert.equal(vastus.tekstita.length, 0, 'ükski fail ei tohiks jääda tekstita: ' + JSON.stringify(vastus.tekstita));
+}
+
+// ---------------------------------------------------------------------------
+// 6. PDF-3 (audit PR2 järelparandus, 22.09.2026, järg PDF-1/PDF-2-le
+//    test/gate-hanked-docs.mjs-is): kontroll 3 ülal loeb fikstuuri TÄIE
+//    process.env-iga, SAMAS PROTSESSIS - see EI TÕESTA, et 'docs' käsu PÄRIS
+//    piiratud env-allowlist (lubatudEnv('docs')) on ISESEISVALT piisav
+//    pdftotext'i leidmiseks JA reaalse teksti saamiseks PÄRIS lapsprotsessis.
+//    PDF-1/PDF-2 test/gate-hanked-docs.mjs-is tõestavad ainult, KUMB BINAAR
+//    valitakse (kandidaatide iteratsioon) - kumbki ei loe päris fikstuuri
+//    tekstiks. See kontroll ühendab mõlemad: päris lubatudEnv('docs')
+//    väljund kui lapse TÄIELIK keskkond (mitte {...process.env, ...env} -
+//    vt test/gate-hanked-env.mjs ENV-INTEGRATSIOON kommentaari samast veast)
+//    + päris PDF-fikstuur + päris pdftotext-i väljakutse.
+// ---------------------------------------------------------------------------
+{
+  const dir = mkdtempSync(join(tmpdir(), 'pdf-allowlist-'));
+  const skriptifail = join(dir, 'loe.mjs');
+  writeFileSync(skriptifail, [
+    "import { leiaPdftotext, failiTekst } from " + JSON.stringify(pathToFileURL(join(import.meta.dirname, '..', 'agent', 'hanked-docs.mjs')).href) + ";",
+    "const tee = leiaPdftotext();",
+    "const r = failiTekst(" + JSON.stringify(FIKSTUUR) + ");",
+    "console.log(JSON.stringify({ tee, pohjus: r.pohjus, tekst: r.tekst }));",
+  ].join('\n'));
+
+  // Päris allowlist, päris lähteallikas (process.env) - täpselt see, mida
+  // startRun('docs') tegelikult kasutaks (vt lib/hanked-runs.mjs lubatudEnv).
+  // Kui PDFTOTEXT ei ole SELLES masinas process.env-is seatud, tugineb laps
+  // WIN_BASE PATH-ile ja PDFTOTEXT_KANDIDAADID varukohtadele - täpselt nagu
+  // päris 'npm run hanked:dokumendid' käivitus teeks.
+  const env = lubatudEnv('docs');
+  const r = spawnSync(process.execPath, [skriptifail], { env, encoding: 'utf8', windowsHide: true, timeout: 15000 });
+  assert.equal(r.status, 0,
+    'päris docs-allowlist env ei lasknud lapsel lõpetada (status=' + r.status + ', signal=' + r.signal
+    + '): ' + (r.stderr || ''));
+  const j = JSON.parse(r.stdout);
+  assert.ok(j.tee, 'lubatudEnv(docs) väljundiga laps ei leidnud pdftotext-i - WIN_BASE PATH/PDFTOTEXT_KANDIDAADID ei piisanud');
+  assert.equal(j.pohjus, null, 'lubatudEnv(docs) väljundiga laps ei jõudnud fikstuuri tekstini: ' + j.pohjus);
+  assert.ok(j.tekst && j.tekst.includes('MARKER-PDFTOTEXT-TOOTAB'),
+    'lubatudEnv(docs) väljundiga laps ei leidnud fikstuuri markerit - binaari valik üksi (PDF-1/PDF-2) ei tõesta teksti lugemist');
+  console.log('  ok päris docs-allowlist (lubatudEnv) piisab PÄRIS lapses PDF-i tekstiks lugemiseks (PDF-3)');
 }
 
 console.log('OK gate-hanked-docs-tekst: pdftotext leitud (' + leiaPdftotext() + '), fikstuur jõuab tekstini, puuduv binaar on nähtav');
