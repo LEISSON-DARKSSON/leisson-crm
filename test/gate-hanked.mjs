@@ -2667,7 +2667,11 @@ function rssServer(keha) {
   const teeA = join(dir, 'test.sqlite');
   const a = new DatabaseSync(teeA);
   a.exec('PRAGMA journal_mode = WAL');
-  a.exec(`CREATE TABLE hanke_sync (key TEXT PRIMARY KEY, ts TEXT, rows INTEGER, ok INTEGER, note TEXT)`);
+  // Skeem peab olema TÄIELIKULT valmis (kõik tabelid loodud) enne teist ühendust -
+  // muidu kukub migrateHanked hoopis oma CREATE TABLE-de peale (need vajavad ka
+  // kirjutuslukku), mitte backfill'i enda UPDATE-i peale, ja test tõestaks vale asja
+  // (vt code review, false-green).
+  migrateHanked(a);
   a.prepare(`INSERT INTO hanke_sync (key, ts, rows, ok, note) VALUES ('rss','2026-09-18 08:00:00',5,1,'legacy')`).run();
   a.close();
 
