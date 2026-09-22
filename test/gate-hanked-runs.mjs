@@ -22,7 +22,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { open } from '../lib/db.mjs';
 import { migrateHanked } from '../lib/hanked.mjs';
 import { CMD, BOOT_ID, LOG_MAX, RIDA_MAX, cmdView, startRun, finishRun, stopRun,
-  cleanupOrphans, runsView } from '../lib/hanked-runs.mjs';
+  cleanupOrphans, runsView, elab } from '../lib/hanked-runs.mjs';
 import { alustaOtseJooks } from '../agent/hanked-sync.mjs';
 
 const JUUR = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -425,6 +425,55 @@ process.stdout.write('LOPPRIDA\\n');
   );
   db.close();
   console.log('PASS runs: surnud otsejooks märgitakse katkestatuks');
+}
+
+// ---------------------------------------------------------------------------
+// Q (audit PR1b, F3, 22.09.2026): EPERM parast paris process.kill kutset peab
+// tahendama ELAV ("protsess on olemas, aga ei ole meie oma"), mitte surnud. Vana
+// `elab` puudis IGA erindi (sh EPERM) surmana - see voinuks vabastada otsejooksu
+// luku vale ajal (kui pid kuulub teisele kasutajale/protsessile). Sustime vea
+// OS-KUTSE PIIRIL (process.kill ise), mitte cleanupOrphans/alustaOtseJooks-i
+// "alive"/"elab" parameetri kaudu - nii testime paris veakasitlust, mitte ainult
+// harude valikut. Uhtegi paris signaali voorale protsessile EI saadeta -
+// process.kill on selle bloki jooksul terves ulatuses mockitud.
+// ---------------------------------------------------------------------------
+{
+  const algne = process.kill;
+  try {
+    process.kill = () => { const e = new Error('mock eperm'); e.code = 'EPERM'; throw e; };
+    assert.equal(elab(4242), true, 'EPERM ei tõenda surma - protsess on olemas, ei ole meie oma');
+
+    process.kill = () => { const e = new Error('mock esrch'); e.code = 'ESRCH'; throw e; };
+    assert.equal(elab(4242), false, 'ESRCH (protsessi pole) on ainus KINDEL surma tunnus');
+
+    process.kill = () => { throw new Error('tundmatu viga ilma koodita'); };
+    assert.equal(elab(4242), true, 'tundmatu kontrolliviga ei tohi vaikselt tähendada "surnud"');
+
+    process.kill = () => true; // päris "elab" juht - signaal 0 õnnestub
+    assert.equal(elab(4242), true);
+  } finally {
+    process.kill = algne;
+  }
+  assert.equal(elab(0), false, 'pid puudub - ei ole midagi kontrollida');
+  assert.equal(elab(null), false);
+
+  // A2 regressioonimaatriksi juhtum: alustaOtseJooks-i VAIKEPARAMEETER (pidElab,
+  // nüüd jagatud lib/hanked-runs.mjs `elab`-iga) peab käituma sama moodi PÄRIS
+  // EPERM-i korral, mitte ainult otse kutsutud elab() funktsiooniga.
+  const db2 = testDb();
+  const esimene = alustaOtseJooks(db2, { pid: 424242 }); // vaikimisi elab = pidElab
+  assert.equal(esimene.pohjus, null);
+  const algne2 = process.kill;
+  try {
+    process.kill = () => { const e = new Error('mock eperm'); e.code = 'EPERM'; throw e; };
+    const teine = alustaOtseJooks(db2, { pid: 424242 });
+    assert.equal(teine.id, null, 'A2: EPERM ei tohi vabastada lukku (pid tundub elus)');
+    assert.match(teine.pohjus, /käib juba/);
+  } finally {
+    process.kill = algne2;
+  }
+  db2.close();
+  console.log('PASS runs: elab() eristab ESRCH-i (surnud) EPERM-ist ja tundmatust veast (Q/F3)');
 }
 
 // ---------------------------------------------------------------------------

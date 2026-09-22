@@ -1834,6 +1834,223 @@ function pyya(too) {
   console.log('PASS hanked: kaks järjestikust tühja jooksu jäävad mõlemad punaseks');
 }
 
+// ---------------------------------------------------------------------------
+// F1 (PR1b audit, 22.09.2026): VANA hanke_sync rida (enne last_good_* veergude
+// olemasolu) ei tohi kaotada oma toendatud lahtejoont, kui migreeritakse uuele
+// skeemile. lisaVeerg lisab veerud NULL-ina - ilma backfillita naitas jargmine
+// tyhi jooks vale taastumist (ok=1), kuigi eelmine PARIS edukas jooks oli olemas.
+// ---------------------------------------------------------------------------
+{
+  const dir = mkdtempSync(join(tmpdir(), 'hanked-sync-vana-'));
+  const db = new DatabaseSync(join(dir, 'vana.sqlite'));
+  // Vana skeem ILMA last_good_* veergudeta (nii nagu baas enne seda parandust oli).
+  db.exec(`CREATE TABLE hanke_sync (
+      key TEXT PRIMARY KEY, ts TEXT NOT NULL, rows INTEGER, ok INTEGER NOT NULL DEFAULT 1, note TEXT
+    )`);
+  db.exec(`INSERT INTO hanke_sync (key, ts, rows, ok, note)
+      VALUES ('rss', '2026-09-21 10:00:00', 5, 1, 'vana edukas jooks')`);
+
+  migrateHanked(db);
+  migrateHanked(db); // korduskindel
+
+  const rida = db.prepare(
+    "SELECT ts, rows, ok, last_good_ts, last_good_rows FROM hanke_sync WHERE key='rss'",
+  ).get();
+  assert.equal(rida.last_good_rows, 5, 'M1: vana eduka rea reaarv peab migreeruma last_good_rows-i');
+  assert.equal(rida.last_good_ts, '2026-09-21 10:00:00',
+    'M1: backfill peab kasutama VANA ts-i, mitte migratsiooni praegust aega');
+  assert.equal(rida.rows, 5, 'algne rows ei tohi muutuda');
+  assert.equal(rida.ok, 1, 'algne ok ei tohi muutuda');
+  db.close();
+  console.log('PASS hanked: vana eduka hanke_sync rea lähtejoon migreerub (F1/M1)');
+}
+
+// F1/M2 (PR1b audit): vigane vana katse (ok=0) ei tohi tekitada olematut head
+// lähtejoont, isegi kui reaarv oli positiivne.
+{
+  const dir = mkdtempSync(join(tmpdir(), 'hanked-sync-vana-viga-'));
+  const db = new DatabaseSync(join(dir, 'vana.sqlite'));
+  db.exec(`CREATE TABLE hanke_sync (
+      key TEXT PRIMARY KEY, ts TEXT NOT NULL, rows INTEGER, ok INTEGER NOT NULL DEFAULT 1, note TEXT
+    )`);
+  db.exec(`INSERT INTO hanke_sync (key, ts, rows, ok, note)
+      VALUES ('rss', '2026-09-21 11:00:00', 9, 0, 'vana ebaõnnestunud katse')`);
+  migrateHanked(db);
+  const rida = db.prepare(
+    "SELECT last_good_ts, last_good_rows FROM hanke_sync WHERE key='rss'",
+  ).get();
+  assert.equal(rida.last_good_rows, null, 'M2: vigasest vanast katsest ei tohi lähtejoont fabritseerida');
+  assert.equal(rida.last_good_ts, null);
+  db.close();
+  console.log('PASS hanked: vigane vana katse ei fabritseeri lähtejoont (F1/M2)');
+}
+
+// F1/M3 (PR1b audit): PR #3-järgne baas, kus last_good_* veerud on JUBA olemas,
+// aga NULL - ainult "kui veerg lisati" harus tehtud backfill EI paranda seda;
+// see backfill peab töötama ka SIIN (veerg olemas, väärtus puudu).
+{
+  const dir = mkdtempSync(join(tmpdir(), 'hanked-sync-pr3-null-'));
+  const db = new DatabaseSync(join(dir, 'pr3.sqlite'));
+  db.exec(`CREATE TABLE hanke_sync (
+      key TEXT PRIMARY KEY, ts TEXT NOT NULL, rows INTEGER, ok INTEGER NOT NULL DEFAULT 1, note TEXT,
+      last_good_ts TEXT, last_good_rows INTEGER
+    )`);
+  db.exec(`INSERT INTO hanke_sync (key, ts, rows, ok, note, last_good_ts, last_good_rows)
+      VALUES ('rss', '2026-09-21 12:00:00', 5, 1, 'PR3-järgne, veerud olemas aga tühjad', NULL, NULL)`);
+  migrateHanked(db);
+  const rida = db.prepare(
+    "SELECT last_good_ts, last_good_rows FROM hanke_sync WHERE key='rss'",
+  ).get();
+  assert.equal(rida.last_good_rows, 5, 'M3: juba-olemasolevad NULL last_good_* veerud peavad taastuma');
+  assert.equal(rida.last_good_ts, '2026-09-21 12:00:00');
+  db.close();
+  console.log('PASS hanked: PR3-järgne NULL lähtejoon taastub (F1/M3)');
+}
+
+// F1/M4 (PR1b audit): olemasolev (juba täidetud) lähtejoon EI TOHI korduva
+// migratsiooni käigus muutuda.
+{
+  const db = testDb(); // juba migreeritud, uue skeemiga
+  db.prepare(`INSERT INTO hanke_sync (key, ts, rows, ok, note, last_good_ts, last_good_rows)
+      VALUES ('rss', '2026-09-19 09:00:00', 3, 1, 'olemasolev hea', '2026-09-19 09:00:00', 3)`).run();
+  migrateHanked(db);
+  migrateHanked(db);
+  const rida = db.prepare(
+    "SELECT last_good_ts, last_good_rows FROM hanke_sync WHERE key='rss'",
+  ).get();
+  assert.equal(rida.last_good_rows, 3, 'M4: olemasolev lähtejoon ei tohi korduva migratsiooniga muutuda');
+  assert.equal(rida.last_good_ts, '2026-09-19 09:00:00');
+  db.close();
+  console.log('PASS hanked: olemasolev lähtejoon püsib korduva migratsiooni all (F1/M4)');
+}
+
+// ---------------------------------------------------------------------------
+// F2 (PR1b audit, 22.09.2026): last_good_* tohib tekkida/uueneda AINULT edukal
+// (ok=1) POSITIIVSE reaarvuga katsel. SYNC_SQL kontrollis varem ainult rows>0,
+// mitte ok=1, seega ebaonnestunud katse (nt syncFromXml catch pärast rollback'i
+// kutsub logiSyncKindel({rows: read.length, ok:0})) kirjutas vale lähtejoone üle.
+// ---------------------------------------------------------------------------
+{
+  const db = testDb();
+  logiSync(db, { rows: 5, ok: 1, note: 'hea', key: 'rss' }); // hea lähtejoon = 5
+  let rida = db.prepare("SELECT * FROM hanke_sync WHERE key='rss'").get();
+  assert.equal(rida.last_good_rows, 5);
+
+  logiSync(db, { rows: 9, ok: 0, note: 'ebaõnnestunud katse 9 reaga', key: 'rss' });
+  rida = db.prepare("SELECT * FROM hanke_sync WHERE key='rss'").get();
+  assert.equal(rida.last_good_rows, 5,
+    'B3: ebaõnnestunud katse ei tohi muuta head lähtejoont, isegi rows>0 korral');
+  assert.equal(rida.rows, 9, 'ebaõnnestunud katse enda rows peab diagnostikaks säilima');
+  assert.equal(rida.ok, 0);
+  assert.equal(rida.note, 'ebaõnnestunud katse 9 reaga');
+  db.close();
+  console.log('PASS hanked: ebaõnnestunud positiivse reaarvuga katse ei riku lähtejoont (F2/B3)');
+}
+
+// F2/B3-ts (PR1b audit): eraldi, FIKSEERITUD varasema ajaga kontroll, et
+// last_good_ts TÄPSELT ei muutu (mitte ainult "sama väärtus juhuslikult").
+{
+  const db = testDb();
+  db.prepare(`INSERT INTO hanke_sync (key, ts, rows, ok, note, last_good_ts, last_good_rows)
+      VALUES ('rss', '2026-09-18 08:00:00', 5, 1, 'hea', '2026-09-18 08:00:00', 5)`).run();
+  logiSync(db, { rows: 9, ok: 0, note: 'ebaõnnestunud', key: 'rss' });
+  const rida = db.prepare("SELECT last_good_ts, last_good_rows FROM hanke_sync WHERE key='rss'").get();
+  assert.equal(rida.last_good_ts, '2026-09-18 08:00:00',
+    'B3: last_good_ts peab jääma vana FIKSEERITUD väärtuse juurde');
+  assert.equal(rida.last_good_rows, 5);
+  db.close();
+  console.log('PASS hanked: last_good_ts täpselt muutumatu ebaõnnestunud katse korral (F2/B3-ts)');
+}
+
+// F2/B4 (PR1b audit): esimene katse on POSITIIVNE, aga EBAÕNNESTUNUD - lähtejoont
+// ei tohi fabritseerida tühjast baasist.
+{
+  const db = testDb();
+  logiSync(db, { rows: 9, ok: 0, note: 'esimene katse, ebaõnnestus', key: 'rss' });
+  const rida = db.prepare("SELECT last_good_rows, last_good_ts FROM hanke_sync WHERE key='rss'").get();
+  assert.equal(rida.last_good_rows, null, 'B4: tühjalt baasilt ebaõnnestunud katse ei tohi luua lähtejoont');
+  assert.equal(rida.last_good_ts, null);
+  db.close();
+  console.log('PASS hanked: esimene positiivne, aga ebaõnnestunud katse ei loo lähtejoont (F2/B4)');
+}
+
+// F2/tyhi-baas (PR1b audit): tühi baas, ok=0 rows=9 - last_good_* jäävad NULL
+// (sama juht mis B4, aga otse logiSync kaudu ilma eelneva insertita).
+{
+  const db = testDb();
+  logiSync(db, { rows: 9, ok: 0, key: 'rss' });
+  const rida = db.prepare("SELECT last_good_rows, last_good_ts FROM hanke_sync WHERE key='rss'").get();
+  assert.equal(rida.last_good_rows, null);
+  assert.equal(rida.last_good_ts, null);
+  db.close();
+  console.log('PASS hanked: tühi baas + ebaõnnestunud positiivne katse jätab lähtejoone NULL-iks (F2)');
+}
+
+// F2/B6 (PR1b audit): hea -> tühi -> tühi -> UUS edukas ERINEVA reaarvuga - lähtejoon
+// peab uuenema õigesti uue reaarvuga (mitte jääma vana väärtuse juurde).
+{
+  const tyhi = '<?xml version="1.0"?><rss version="2.0"><channel><title>RHR</title></channel></rss>';
+  const db = testDb();
+  syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' }); // 5
+  syncFromXml(db, tyhi, { today: '2026-09-20' });
+  syncFromXml(db, tyhi, { today: '2026-09-20' });
+  assert.equal(
+    db.prepare("SELECT last_good_rows FROM hanke_sync WHERE key='rss'").get().last_good_rows,
+    5,
+  );
+  logiSync(db, { rows: 8, ok: 1, note: 'uus edukas, erinev reaarv', key: 'rss' });
+  const rida = db.prepare("SELECT last_good_rows FROM hanke_sync WHERE key='rss'").get();
+  assert.equal(rida.last_good_rows, 8, 'B6: uus edukas mittetühi tulemus peab lähtejoont UUENDAMA');
+  db.close();
+  console.log('PASS hanked: hea → tühi → tühi → uus edukas uuendab lähtejoont (F2/B6)');
+}
+
+// F2/B5 (PR1b audit): PÄRIS syncFromXml, mis EBAÕNNESTUB pärast andmete kirjutamise
+// algust (kontrollitud trigger). Rollback käib andmete peale, aga logiSyncKindel
+// jätab vealogi (ok=0) EDASI, VÄLJASPOOL tehingut - lähtejoon (5) ei tohi kaduda.
+{
+  const db = testDb();
+  syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' }); // hea lähtejoon = 5
+  assert.equal(
+    db.prepare("SELECT last_good_rows FROM hanke_sync WHERE key='rss'").get().last_good_rows,
+    5,
+  );
+
+  // Kontrollitud tõrge: trigger, mis viskab hanked.score UPDATE peale (syncFromXml
+  // enda skoori-kirjutus) - sunnib syncFromXml oma catch/ROLLBACK harusse PÄRAST
+  // seda, kui read.length (positiivne) on juba teada.
+  db.exec(`CREATE TRIGGER f2_katke BEFORE UPDATE OF score ON hanked BEGIN
+      SELECT RAISE(ABORT, 'F2 test: sunnitud katke');
+    END`);
+  assert.throws(() => syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' }), /sunnitud katke/);
+  db.exec('DROP TRIGGER f2_katke');
+
+  const rida = db.prepare("SELECT ok, rows, last_good_rows FROM hanke_sync WHERE key='rss'").get();
+  assert.equal(rida.ok, 0, 'katkenud katse peab jätma ok=0 jälje');
+  assert.equal(rida.rows, 5, 'katkenud katse enda rows (RSS-ist loetud) peab diagnostikaks säilima');
+  assert.equal(rida.last_good_rows, 5, 'B5: rollback ei tohi kaotada vana head lähtejoont');
+  db.close();
+  console.log('PASS hanked: katkenud tegelik sünk ei riku lähtejoont (F2/B5)');
+}
+
+// F2/vorguviga (PR1b audit): hea -> võrguviga (rows=NULL, ok=0) -> tühi -> endiselt
+// vigane, lähtejoon säilib.
+{
+  const tyhi = '<?xml version="1.0"?><rss version="2.0"><channel><title>RHR</title></channel></rss>';
+  const db = testDb();
+  syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' }); // 5
+  logiSync(db, { rows: null, ok: 0, note: 'võrguviga', key: 'rss' });
+  let rida = db.prepare("SELECT last_good_rows, ok FROM hanke_sync WHERE key='rss'").get();
+  assert.equal(rida.last_good_rows, 5, 'võrguviga (rows=NULL) ei tohi puutuda lähtejoont');
+  assert.equal(rida.ok, 0);
+  syncFromXml(db, tyhi, { today: '2026-09-20' });
+  rida = db.prepare("SELECT last_good_rows, ok FROM hanke_sync WHERE key='rss'").get();
+  assert.equal(rida.ok, 0, 'tühi feed pärast head lähtejoont peab jääma vigaseks');
+  assert.equal(rida.last_good_rows, 5);
+  db.close();
+  console.log('PASS hanked: hea → võrguviga → tühi jääb vigaseks, lähtejoon säilib (F2)');
+}
+
 // Z6 (K5): `updated` peab tahendama "midagi muutus", mitte "sunk nagi teda viimati".
 // Iga 15 min jooks kirjutas varem updated-i igale reale ja vaates "muutus" kogu
 // nimekiri - paris muutus (nihkunud tahtaeg) upub sinna ara.

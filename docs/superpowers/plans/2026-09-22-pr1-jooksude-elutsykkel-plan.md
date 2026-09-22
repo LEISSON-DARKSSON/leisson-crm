@@ -1000,3 +1000,13 @@ Expected: tühi (kõik ajutised sabotaaži-muudatused taastatud, kolm eelmist co
 - Olemasolev test Z5 kontrollib note-teksti täpset sõnastust regex-iga — Task 2 Step 5 sõnastusmuudatus nõuab Step 7 kontrolli/parandust selle regex-i peal.
 - `test/gate-hanked-runs.mjs` kasutab juba tähti A–M ja R — uued testid said tähed N, O, P, et mitte kollideeruda.
 - `test/gate-hanked-runs.mjs` olemasolev test H juba tõestab, et VÕÕRA-serveri (mitte-`otse:`) rea pid-i ei küsita — see jääb Task 1-ga muutumatuks ja on eraldi kontrollitud (Step 7).
+
+---
+
+## Järelparandus PR1b (22.09.2026)
+
+Kolm auditi leitud järelviga (F1 backfill, F2 ok-gate, F3 EPERM-i ühtlustamine)
+parandatud eraldi voorus, worktree `pr1b-jareltoimetus`. Vt spec-i lisatud
+jaotist "Järelparandus PR1b" täieliku kirjelduse jaoks. Selle plaani enda neli
+tasku (Task 1–4) jäävad muutumatuks — need kirjeldavad PR1 ise, mis on juba
+committitud/merge'itud (`72bad8c`).
