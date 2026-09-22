@@ -20,11 +20,16 @@ import { migrateHanked, parseRss, upsertHange, markExpired, score,
 // Otsekaivitus kirjutab SAMASSE tabelisse, mida serveri kaivitaja kasutab (ulesanne 7).
 // finishRun ja LOG_MAX tulevad sealt, mitte teise koopiana - kaks eri lopetajat
 // tahendaks kaht eri 'tehtud'-definitsiooni.
-import { finishRun, LOG_MAX, CMD, OTSE_BOOT } from '../lib/hanked-runs.mjs';
+import { finishRun, LOG_MAX, CMD, OTSE_BOOT, elab as pidElab } from '../lib/hanked-runs.mjs';
 // OTSE_BOOT elab nüüd lib/hanked-runs.mjs-is (cleanupOrphans vajab sama
 // prefiksit) - re-eksport, et olemasolevad importijad (test/gate-hanked.mjs)
 // ei katkeks.
 export { OTSE_BOOT };
+// AUDIT PR1b (F3, 22.09.2026): pidElab elas siin OMAETTE koopiana, mis kasitles
+// EPERM-i teisiti kui lib/hanked-runs.mjs oma `elab` - cleanupOrphans voinuks
+// EPERM-i peale otsejooksu surnuks kuulutada, kuigi see on tegelikult elus,
+// lihtsalt teise kasutaja/ohuraami all. Nuud on jargi UKS madalama taseme
+// kontroll (lib/hanked-runs.mjs elab), imporditud siia sama nime alt.
 import { laeTekst } from '../lib/hanked-net.mjs';
 
 // URL on ulekirjutatav AINULT selleks, et varav saaks main()-i paris lapsprotsessina
@@ -93,21 +98,28 @@ export function loendiTekst(loend) {
 // DO UPDATE SET sees viitab REA VANALE vaartusele, `excluded.veerg` uuele -
 // standardne SQLite upsert-semantika). Seega ei kao "viimane teadaolev hea"
 // jalg suvalise arvu jarjestikuste tuhjade jooksude all.
+// AUDIT PR1b (F2, 22.09.2026): CASE kontrollib nuud MOLEMAT (rows>0 JA ok=1) -
+// vana versioon kontrollis ainult rows>0, seega ebaonnestunud katse, mis JOUDIS
+// lugeda positiivse arvu ridu enne kukkumist (vt syncFromXml catch-i
+// logiSyncKindel({rows: read.length, ok: 0})), kirjutas VALE lähtejoone üle.
+// `excluded.ok` on ON CONFLICT harus juba olemas (ok on INSERT-i veerg) - uut
+// parameetrit vaja ainult VALUES-CASE jaoks, mis jookseb rea ESIMESEL loomisel.
 const SYNC_SQL = `INSERT INTO hanke_sync (key, ts, rows, ok, note, last_good_ts, last_good_rows)
     VALUES (?, datetime('now'), ?, ?, ?,
-      CASE WHEN ? > 0 THEN datetime('now') ELSE NULL END,
-      CASE WHEN ? > 0 THEN ? ELSE NULL END)
+      CASE WHEN ? > 0 AND ? = 1 THEN datetime('now') ELSE NULL END,
+      CASE WHEN ? > 0 AND ? = 1 THEN ? ELSE NULL END)
     ON CONFLICT(key) DO UPDATE SET
       ts = excluded.ts, rows = excluded.rows, ok = excluded.ok, note = excluded.note,
-      last_good_ts = CASE WHEN excluded.rows > 0 THEN excluded.ts ELSE hanke_sync.last_good_ts END,
-      last_good_rows = CASE WHEN excluded.rows > 0 THEN excluded.rows ELSE hanke_sync.last_good_rows END`;
+      last_good_ts = CASE WHEN excluded.rows > 0 AND excluded.ok = 1 THEN excluded.ts ELSE hanke_sync.last_good_ts END,
+      last_good_rows = CASE WHEN excluded.rows > 0 AND excluded.ok = 1 THEN excluded.rows ELSE hanke_sync.last_good_rows END`;
 
 // VIGANE JOOKS PEAB JATMA JALJE. Kui ebaonnestumine ei kirjuta midagi, naitab vaade
 // eelmist edukat aega ja inimene arvab, et sunk tootab - vaikne rike on siin hullem
 // kui punane rida. Seda kutsub ka main() vorguvea peal, kus syncFromXml-ini ei joutud.
 export function logiSync(db, { rows = null, ok = 1, note = null, key = VOTI } = {}) {
   migrateHanked(db);
-  db.prepare(SYNC_SQL).run(key, rows, ok ? 1 : 0, note, rows, rows, rows);
+  const okBit = ok ? 1 : 0;
+  db.prepare(SYNC_SQL).run(key, rows, okBit, note, rows, okBit, rows, okBit, rows);
 }
 
 // Sunkroonne paus. setTimeout ei kolba: korduskatse peab juhtuma ENNE, kui
@@ -188,11 +200,8 @@ const nr = (v) => {
   return Number.isSafeInteger(n) ? n : null;
 };
 
-// EPERM tahendab "protsess on olemas, aga ei ole minu oma" - see on ELAV.
-const pidElab = (pid) => {
-  if (!pid) return false;
-  try { process.kill(pid, 0); return true; } catch (e) { return Boolean(e) && e.code === 'EPERM'; }
-};
+// pidElab (jagatud madalama taseme kontroll) tuleb nuud lib/hanked-runs.mjs
+// `elab`-ist, imporditud ulal aliasega - vt AUDIT PR1b (F3) kommentaari.
 
 const ORVU_POHJUS = 'Eelmine ajastatud jooks katkes (masin kustus või protsess suri) — jäi pooleli';
 
@@ -395,7 +404,9 @@ export function syncFromXml(db, xml, { today = new Date().toISOString().slice(0,
       tyhjenes ? 0 : 1,
       margiAllikas(note, allikas),
       read.length,
+      tyhjenes ? 0 : 1,
       read.length,
+      tyhjenes ? 0 : 1,
       read.length,
     );
     db.exec('COMMIT');

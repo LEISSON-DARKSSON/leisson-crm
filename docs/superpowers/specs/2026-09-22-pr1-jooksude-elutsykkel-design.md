@@ -182,3 +182,44 @@ test/gate-hanked-sync-tyhjenemine.mjs  -- uus, katab B
 ```
 
 Rakenduskoodi selles spec-is ei ole — see kirjutatakse `writing-plans` etapis.
+
+---
+
+## Järelparandus PR1b (22.09.2026, väline audit PR #3 peale)
+
+PR #3 (`72bad8c`) merge järel leidis sõltumatu audit kolm kitsast järelviga sama
+alamsüsteemi sees. Kõik kolm on parandatud samas voorus, kood ja testid
+uuendatud, **commit/push tegemata** — muudatused ootavad omaniku ülevaatust.
+
+- **F1 (P1):** `lisaVeerg` lisas `last_good_ts`/`last_good_rows` NULL-ina — vana
+  (enne PR1) või PR3-järgne (veerud olemas, aga NULL) edukas rida kaotas oma
+  tõendatud lähtejoone. Parandus: `migrateHanked` lisab idempotentse backfilli
+  (`WHERE last_good_rows IS NULL AND ok = 1 AND rows > 0`), mis kannab rea ENDA
+  vana `ts`-i üle, mitte migratsiooni praegust aega, ja ei fabritseeri
+  lähtejoont vigasest/tundmatust katsest.
+- **F2 (P1):** `SYNC_SQL` kontrollis last_good_* uuendamisel ainult `rows > 0`,
+  mitte ka `ok = 1` — ebaõnnestunud, aga positiivse reaarvuga katse (nt
+  `syncFromXml` catch pärast `ROLLBACK`, mis kutsub `logiSyncKindel({rows:
+  read.length, ok: 0})`) kirjutas vale lähtejoone üle. Parandus: CASE
+  kontrollib nüüd mõlemat tingimust (`rows > 0 AND ok = 1`, vastavalt
+  `excluded.ok = 1` ON CONFLICT harus).
+- **F3 (P2):** `lib/hanked-runs.mjs` `elab()` ja `agent/hanked-sync.mjs`
+  `pidElab()` käsitlesid EPERM-i erinevalt — `elab()` puudis IGA erindi
+  surmana, `pidElab()` ainult ESRCH-i. Parandus: üks madalama taseme kontroll
+  (`lib/hanked-runs.mjs` eksporditud `elab`), mis annab ELUS igal juhul peale
+  ESRCH-i (sh EPERM JA tundmatu viga) — `agent/hanked-sync.mjs` impordib sama
+  funktsiooni aliasega `pidElab`.
+
+**Testid:** `test/gate-hanked.mjs` (F1: M1–M4; F2: B3, B3-ts, B4, B5, B6,
+tühi-baas, võrguviga-juht), `test/gate-hanked-runs.mjs` (F3: blokk Q, sh A2
+regressioonijuht `alustaOtseJooks` vaikeparameetriga). Kõik kolm parandust
+sabotaaži-kontrollitud (murdmine → punane täpsel kaitstaval väitel → taastamine
+→ roheline). `node tools/varav.mjs --ainult=hanked`: 12 OK · 0 kukkus.
+`npm run varav:range`: 43 OK · 0 kukkus (sama baastulemus mis enne PR1b-d).
+
+**Jääkriskid:** olemasolev, PR1b poolt puutumata rikutud lähtejoon (nt
+tootmisandmestikus juba ok=1 rida, mille last_good_* on vale muu tundmatu
+põhjuse tõttu) ei taastu — backfill usaldab ainult `ok=1 AND rows>0`
+tingimust, mitte tabeli praegust `COUNT(*)`-i ega oletatavat `ts`-i. `hanke_sync`
+`eelmine` SELECT-i tarbetu `rows`/`ok` valik (viidatud PR1 enda code review'is)
+jääb endiselt puudutamata — kosmeetiline, mõjuta käitumist.
