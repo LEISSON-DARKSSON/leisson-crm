@@ -1727,7 +1727,7 @@ function pyya(too) {
   assert.equal(r2.kokku, 0, 'tyhi feed annab null rida');
   const log = db.prepare("SELECT * FROM hanke_sync WHERE key='rss'").get();
   assert.equal(log.ok, 0, 'eelmine jooks andis kirjeid, nuud null - see EI OLE roheline jooks');
-  assert.ok(/^feed tühjenes: eelmine jooks andis 5 kirjet/.test(log.note || ''),
+  assert.ok(/^feed tühjenes: viimane teadaolev hea jooks andis 5 kirjet/.test(log.note || ''),
     'note utleb, mitu kirjet eelmine jooks andis: ' + log.note);
   // Paris tyhi feed jaab roheliseks, kui ka eelmine oli tyhi.
   const db2 = testDb();
@@ -1782,6 +1782,56 @@ function pyya(too) {
     'esimene jooks jaab roheliseks');
   db.close(); db2.close();
   console.log('PASS hanked: tais feed ilma tulemusteta on punane');
+}
+
+// Z5c (audit P1, 22.09.2026): KAKS jarjestikust tyhja jooksu parast paris andmeid
+// peavad MOLEMAD jaama punaseks. Vana kood luges eelmineAndis otse
+// hanke_sync.rows/ok pealt, mille see JOOKS ISE kohe ule kirjutab - teine tyhi
+// katse luges juba nullitud eelmist rida (ok=0) ja EELMINEANDIS lakkas olemast
+// tosi, kuigi paris viimane HEA tulemus oli 5 rida. Tulemus: teine tyhi jooks
+// naitas vale taastumist (ok=1) ilma uheainsa uue hanketa.
+{
+  const tyhi = '<?xml version="1.0"?><rss version="2.0"><channel><title>RHR</title></channel></rss>';
+  const db = testDb();
+  const r1 = syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });
+  assert.equal(r1.kokku, 5);
+  assert.equal(db.prepare("SELECT ok FROM hanke_sync WHERE key='rss'").get().ok, 1);
+
+  const r2 = syncFromXml(db, tyhi, { today: '2026-09-20' });
+  assert.equal(r2.tyhjenes, true, 'esimene tyhi parast paris andmeid on punane');
+  assert.equal(db.prepare("SELECT ok FROM hanke_sync WHERE key='rss'").get().ok, 0);
+  assert.equal(
+    db.prepare("SELECT last_good_rows FROM hanke_sync WHERE key='rss'").get().last_good_rows,
+    5,
+    'viimane teadaolev hea baseline peab jääma 5-ks',
+  );
+
+  const r3 = syncFromXml(db, tyhi, { today: '2026-09-20' });
+  assert.equal(
+    r3.tyhjenes,
+    true,
+    'TEINE järjestikune tühi jooks peab OLEMA endiselt punane, mitte näitama vale taastumist',
+  );
+  assert.equal(
+    db.prepare("SELECT ok FROM hanke_sync WHERE key='rss'").get().ok,
+    0,
+    'teine tühi ei tohi kirjutada ok=1',
+  );
+  assert.equal(
+    db.prepare("SELECT last_good_rows FROM hanke_sync WHERE key='rss'").get().last_good_rows,
+    5,
+    'baseline ei tohi tühja jooksu pealt muutuda',
+  );
+
+  const r4 = syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' });
+  assert.equal(r4.tyhjenes, false);
+  assert.equal(db.prepare("SELECT ok, last_good_rows FROM hanke_sync WHERE key='rss'").get().ok, 1);
+  assert.equal(
+    db.prepare("SELECT last_good_rows FROM hanke_sync WHERE key='rss'").get().last_good_rows,
+    5,
+  );
+  db.close();
+  console.log('PASS hanked: kaks järjestikust tühja jooksu jäävad mõlemad punaseks');
 }
 
 // Z6 (K5): `updated` peab tahendama "midagi muutus", mitte "sunk nagi teda viimati".

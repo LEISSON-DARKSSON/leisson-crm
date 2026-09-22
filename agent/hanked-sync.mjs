@@ -20,7 +20,11 @@ import { migrateHanked, parseRss, upsertHange, markExpired, score,
 // Otsekaivitus kirjutab SAMASSE tabelisse, mida serveri kaivitaja kasutab (ulesanne 7).
 // finishRun ja LOG_MAX tulevad sealt, mitte teise koopiana - kaks eri lopetajat
 // tahendaks kaht eri 'tehtud'-definitsiooni.
-import { finishRun, LOG_MAX, CMD } from '../lib/hanked-runs.mjs';
+import { finishRun, LOG_MAX, CMD, OTSE_BOOT } from '../lib/hanked-runs.mjs';
+// OTSE_BOOT elab nüüd lib/hanked-runs.mjs-is (cleanupOrphans vajab sama
+// prefiksit) - re-eksport, et olemasolevad importijad (test/gate-hanked.mjs)
+// ei katkeks.
+export { OTSE_BOOT };
 import { laeTekst } from '../lib/hanked-net.mjs';
 
 // URL on ulekirjutatav AINULT selleks, et varav saaks main()-i paris lapsprotsessina
@@ -82,17 +86,28 @@ export function loendiTekst(loend) {
 
 // hanke_sync.key on PRIMARY KEY (vt migrateHanked), seega ON CONFLICT(key) on
 // olemas - kontrollitud migratsioonist, mitte eeldatud.
-const SYNC_SQL = `INSERT INTO hanke_sync (key, ts, rows, ok, note)
-    VALUES (?, datetime('now'), ?, ?, ?)
-    ON CONFLICT(key) DO UPDATE SET ts = excluded.ts, rows = excluded.rows,
-      ok = excluded.ok, note = excluded.note`;
+//
+// last_good_ts/last_good_rows (audit P1, 22.09.2026) UUENEVAD AINULT rows > 0
+// korral - CASE avaldis sees. Kui rows on 0 voi NULL, kannab UPDATE vana
+// hanke_sync.last_good_* vaartuse edasi MUUTUMATUNA (bare `hanke_sync.veerg`
+// DO UPDATE SET sees viitab REA VANALE vaartusele, `excluded.veerg` uuele -
+// standardne SQLite upsert-semantika). Seega ei kao "viimane teadaolev hea"
+// jalg suvalise arvu jarjestikuste tuhjade jooksude all.
+const SYNC_SQL = `INSERT INTO hanke_sync (key, ts, rows, ok, note, last_good_ts, last_good_rows)
+    VALUES (?, datetime('now'), ?, ?, ?,
+      CASE WHEN ? > 0 THEN datetime('now') ELSE NULL END,
+      CASE WHEN ? > 0 THEN ? ELSE NULL END)
+    ON CONFLICT(key) DO UPDATE SET
+      ts = excluded.ts, rows = excluded.rows, ok = excluded.ok, note = excluded.note,
+      last_good_ts = CASE WHEN excluded.rows > 0 THEN excluded.ts ELSE hanke_sync.last_good_ts END,
+      last_good_rows = CASE WHEN excluded.rows > 0 THEN excluded.rows ELSE hanke_sync.last_good_rows END`;
 
 // VIGANE JOOKS PEAB JATMA JALJE. Kui ebaonnestumine ei kirjuta midagi, naitab vaade
 // eelmist edukat aega ja inimene arvab, et sunk tootab - vaikne rike on siin hullem
 // kui punane rida. Seda kutsub ka main() vorguvea peal, kus syncFromXml-ini ei joutud.
 export function logiSync(db, { rows = null, ok = 1, note = null, key = VOTI } = {}) {
   migrateHanked(db);
-  db.prepare(SYNC_SQL).run(key, rows, ok ? 1 : 0, note);
+  db.prepare(SYNC_SQL).run(key, rows, ok ? 1 : 0, note, rows, rows, rows);
 }
 
 // Sunkroonne paus. setTimeout ei kolba: korduskatse peab juhtuma ENNE, kui
@@ -163,7 +178,8 @@ export function logiSyncKindel(db, valikud = {}, { katseid = 3, paus = 300 } = {
 // boot_id = 'otse:<uuid>'. See EI OLE ukski serveri BOOT_ID, seega runsView annab
 // oma = false ja vaade ei paku "Peata" nuppu - ta ei tohikski, sest see pid ei
 // kuulu serverile ja parast masina taaskaivitust voib ta kuuluda kellelegi teisele.
-export const OTSE_BOOT = 'otse:';
+// (OTSE_BOOT konstant ise elab lib/hanked-runs.mjs-is, imporditud ja
+// re-eksporditud ülalt.)
 const OTSE_CMD = 'sync';
 
 const nr = (v) => {
@@ -285,8 +301,11 @@ export function syncFromXml(db, xml, { today = new Date().toISOString().slice(0,
   // roheline jooks, null hanget. Loendurid olid olemas, aga miski ei sidunud neid
   // ok-lipuga. Eelmine rida on ainus, mis teab vahet "feed ongi tuhi" ja "feed
   // tuhjenes" vahel - seega loeme ta ENNE kirjutamist.
-  const eelmine = db.prepare('SELECT rows, ok FROM hanke_sync WHERE key = ?').get(VOTI);
-  const eelmineAndis = Boolean(eelmine && eelmine.ok === 1 && eelmine.rows > 0);
+  const eelmine = db.prepare('SELECT rows, ok, last_good_rows FROM hanke_sync WHERE key = ?').get(VOTI);
+  // AUDIT P1: eelmineAndis loeb last_good_rows-t, MITTE rows/ok-d - viimased
+  // kaks kannavad ainult VIIMASE KATSE tulemust, mille see jooks kohe ule
+  // kirjutab. last_good_rows uueneb ainult paris andmete peal (vt SYNC_SQL).
+  const eelmineAndis = Boolean(eelmine && eelmine.last_good_rows > 0);
 
   // Valve kaib TULEMUSE, mitte feedi kuju peale. Esimene versioon vaatas ainult
   // loend.kirjeid === 0 ehk "feedis ei ole uhtegi <item>-it". Aga sama vaikne kadu
@@ -367,10 +386,18 @@ export function syncFromXml(db, xml, { today = new Date().toISOString().slice(0,
       ? 'feed tühjenes'
       : 'filter ei tabanud ühtegi kirjet — kontrolli, kas RHR muutis kirje kuju';
     const note = tyhjenes
-      ? pohjus + ': eelmine jooks andis ' + vorm(eelmine.rows, 'kirje', 'kirjet')
+      ? pohjus + ': viimane teadaolev hea jooks andis ' + vorm(eelmine.last_good_rows, 'kirje', 'kirjet')
         + ' · ' + loendiTekst(loend)
       : loendiTekst(loend);
-    db.prepare(SYNC_SQL).run(VOTI, read.length, tyhjenes ? 0 : 1, margiAllikas(note, allikas));
+    db.prepare(SYNC_SQL).run(
+      VOTI,
+      read.length,
+      tyhjenes ? 0 : 1,
+      margiAllikas(note, allikas),
+      read.length,
+      read.length,
+      read.length,
+    );
     db.exec('COMMIT');
   } catch (e) {
     if (meieTehing) {

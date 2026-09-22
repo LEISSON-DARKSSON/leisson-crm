@@ -23,6 +23,7 @@ import { open } from '../lib/db.mjs';
 import { migrateHanked } from '../lib/hanked.mjs';
 import { CMD, BOOT_ID, LOG_MAX, RIDA_MAX, cmdView, startRun, finishRun, stopRun,
   cleanupOrphans, runsView } from '../lib/hanked-runs.mjs';
+import { alustaOtseJooks } from '../agent/hanked-sync.mjs';
 
 const JUUR = dirname(dirname(fileURLToPath(import.meta.url)));
 const TMP = mkdtempSync(join(tmpdir(), 'hanked-runs-'));
@@ -353,6 +354,80 @@ process.stdout.write('LOPPRIDA\\n');
 }
 
 // ---------------------------------------------------------------------------
+// N (audit P1, 22.09.2026): OTSE_BOOT-prefiksiga rida on SÕLTUMATU jooks (Task
+// Scheduler / käsurida), mitte serveri laps. cleanupOrphans margib täna IGA
+// boot_id !== bootId rea orbuks pid-i kusimata (vt blokk H) - aga otsejooksu
+// boot_id ei saagi KUNAGI serveri BOOT_ID-ga klappida, seega tabas see reegel
+// elavaid otsejookse ALATI. alustaOtseJooks (agent/hanked-sync.mjs) juba
+// eristab OTSE_BOOT-prefiksit ja kontrollib pid-i - cleanupOrphans peab tegema
+// sama.
+// ---------------------------------------------------------------------------
+{
+  const db = testDb();
+  const jooks = alustaOtseJooks(db, { pid: process.pid, elab: () => true });
+  assert.equal(
+    jooks.pohjus,
+    null,
+    'esimene otsejooks peab algama takistuseta: ' + jooks.pohjus,
+  );
+
+  // Serveri taaskaivitus UUE boot_id-ga ei tohi elavat otsejooksu puutuda.
+  const n = cleanupOrphans(db, {
+    bootId: 'server-uus-boot-id',
+    alive: () => true,
+  });
+  assert.equal(n, 0, 'elav otsejooks ei ole orb');
+  assert.equal(
+    db.prepare('SELECT state FROM hanke_runs WHERE id = ?').get(jooks.id).state,
+    'käib',
+    'elav otsejooks peab jääma käib-olekusse üle serveri taaskäivituse',
+  );
+
+  // Kaitse ei tohi olla kadunud: teine sama käsu katse peab endiselt lukku austama.
+  const teine = alustaOtseJooks(db, { pid: process.pid, elab: () => true });
+  assert.equal(
+    teine.id,
+    null,
+    'teine otsejooks sama käsu peale ei tohi alata, kui esimene on elus',
+  );
+  assert.match(
+    teine.pohjus,
+    /käib juba/,
+    'lukk peab olema nähtav: ' + teine.pohjus,
+  );
+  db.close();
+  console.log(
+    'PASS runs: elav otsejooks ei kaota kaitset serveri taaskäivitusel',
+  );
+}
+
+// ---------------------------------------------------------------------------
+// O (audit P1, 22.09.2026): surnud otsejooks EI TOHI jääda igaveseks 'käib'-
+// olekusse kinni - ilma serverita ei koristaks teda kunagi keegi teine.
+// ---------------------------------------------------------------------------
+{
+  const db = testDb();
+  const jooks = alustaOtseJooks(db, { pid: 999999, elab: () => true });
+  assert.equal(jooks.pohjus, null);
+  const n = cleanupOrphans(db, {
+    bootId: 'server-uus-boot-id',
+    alive: () => false,
+  });
+  assert.equal(n, 1, 'surnud otsejooks peab minema orbuks');
+  const rida = db
+    .prepare('SELECT state, error FROM hanke_runs WHERE id = ?')
+    .get(jooks.id);
+  assert.equal(rida.state, 'katkestatud');
+  assert.match(
+    rida.error,
+    /suri|ei ela/i,
+    'põhjus peab olema nähtav: ' + rida.error,
+  );
+  db.close();
+  console.log('PASS runs: surnud otsejooks märgitakse katkestatuks');
+}
+
+// ---------------------------------------------------------------------------
 // I (p6): lapse enda veateade voidab uldise "Protsess loppes koodiga 1" ule.
 // ---------------------------------------------------------------------------
 {
@@ -378,6 +453,39 @@ process.exitCode = 1;
   assert.match(lopp2.error, /koodiga 3/, 'vaikiv laps saab uldise teate: ' + lopp2.error);
   db2.close();
   console.log('PASS runs: lapse enda veateade jääb alles');
+}
+
+// ---------------------------------------------------------------------------
+// P (audit P1, 22.09.2026): server-käivitatud jooks peab lugema lapse
+// tyhjenes-teadet, mitte ainult väljumiskoodi. agent/hanked-sync.mjs main() EI
+// SEA process.exitCode-i tühja-feedi harul (ainult catch-plokk seab 1), seega
+// laps lõpeb koodiga 0 ka siis, kui hanke_sync.ok=0 samal sündmusel. Enne seda
+// parandust näitas nupu kaudu käivitatud sünk 'tehtud', kui otsejooks samal
+// sündmusel oleks andnud 'viga' (vt agent/hanked-sync.mjs lopetaOtseJooks).
+// ---------------------------------------------------------------------------
+{
+  const TYHJENEB = skript('tyhjeneb.mjs', `
+process.stdout.write(JSON.stringify({ progress: 'laen RSS-i' }) + '\\n');
+process.stdout.write(JSON.stringify({ done: true, rows: 0, tyhjenes: true }) + '\\n');
+`);
+  const db = testDb();
+  const r = startRun(db, 'sync', {}, { spawnFn: lapseks(TYHJENEB) });
+  const lopp = await ootaLopp(db, r.id);
+  assert.equal(lopp.state, 'viga', 'tühjenenud feed ei tohi näidata tehtud, kuigi laps lõpeb koodiga 0');
+  assert.match(lopp.error, /tühjenes/i, 'põhjus peab ütlema, et feed tühjenes: ' + lopp.error);
+  db.close();
+
+  // Kontrolljuht: sama kuju, aga tyhjenes:false - PEAB jääma tehtud (mitte-regressioon).
+  const EI_TYHJENE = skript('ei-tyhjene.mjs', `
+process.stdout.write(JSON.stringify({ done: true, rows: 7, tyhjenes: false }) + '\\n');
+`);
+  const db2 = testDb();
+  const r2 = startRun(db2, 'sync', {}, { spawnFn: lapseks(EI_TYHJENE) });
+  const lopp2 = await ootaLopp(db2, r2.id);
+  assert.equal(lopp2.state, 'tehtud', 'tavaline edukas jooks ei tohi minna vigaseks');
+  assert.equal(lopp2.rows, 7);
+  db2.close();
+  console.log('PASS runs: server-käivitatud jooks loeb tühjenes-e, mitte ainult väljumiskoodi');
 }
 
 // ---------------------------------------------------------------------------
