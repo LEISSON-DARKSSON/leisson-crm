@@ -456,6 +456,39 @@ process.exitCode = 1;
 }
 
 // ---------------------------------------------------------------------------
+// P (audit P1, 22.09.2026): server-käivitatud jooks peab lugema lapse
+// tyhjenes-teadet, mitte ainult väljumiskoodi. agent/hanked-sync.mjs main() EI
+// SEA process.exitCode-i tühja-feedi harul (ainult catch-plokk seab 1), seega
+// laps lõpeb koodiga 0 ka siis, kui hanke_sync.ok=0 samal sündmusel. Enne seda
+// parandust näitas nupu kaudu käivitatud sünk 'tehtud', kui otsejooks samal
+// sündmusel oleks andnud 'viga' (vt agent/hanked-sync.mjs lopetaOtseJooks).
+// ---------------------------------------------------------------------------
+{
+  const TYHJENEB = skript('tyhjeneb.mjs', `
+process.stdout.write(JSON.stringify({ progress: 'laen RSS-i' }) + '\\n');
+process.stdout.write(JSON.stringify({ done: true, rows: 0, tyhjenes: true }) + '\\n');
+`);
+  const db = testDb();
+  const r = startRun(db, 'sync', {}, { spawnFn: lapseks(TYHJENEB) });
+  const lopp = await ootaLopp(db, r.id);
+  assert.equal(lopp.state, 'viga', 'tühjenenud feed ei tohi näidata tehtud, kuigi laps lõpeb koodiga 0');
+  assert.match(lopp.error, /tühjenes/i, 'põhjus peab ütlema, et feed tühjenes: ' + lopp.error);
+  db.close();
+
+  // Kontrolljuht: sama kuju, aga tyhjenes:false - PEAB jääma tehtud (mitte-regressioon).
+  const EI_TYHJENE = skript('ei-tyhjene.mjs', `
+process.stdout.write(JSON.stringify({ done: true, rows: 7, tyhjenes: false }) + '\\n');
+`);
+  const db2 = testDb();
+  const r2 = startRun(db2, 'sync', {}, { spawnFn: lapseks(EI_TYHJENE) });
+  const lopp2 = await ootaLopp(db2, r2.id);
+  assert.equal(lopp2.state, 'tehtud', 'tavaline edukas jooks ei tohi minna vigaseks');
+  assert.equal(lopp2.rows, 7);
+  db2.close();
+  console.log('PASS runs: server-käivitatud jooks loeb tühjenes-e, mitte ainult väljumiskoodi');
+}
+
+// ---------------------------------------------------------------------------
 // J (p7): kask on valge nimekirja taga ja argumendid valideeritakse.
 // Shelli ei ole (spawn ilma shell:true), seega see ei ole shell-injection, vaid
 // argv-hugiene: reavahetus voi '=' teeks --k=v kuju mitmemotteliseks ja objekt
