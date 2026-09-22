@@ -14,16 +14,55 @@
 import assert from 'node:assert/strict';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync } from 'node:fs';
 import { spawn } from 'node:child_process';
+import { createServer } from 'node:http';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { open } from '../lib/db.mjs';
-import { migrateHanked } from '../lib/hanked.mjs';
+import { migrateHanked, upsertHange } from '../lib/hanked.mjs';
+import { crc32 } from '../lib/zip.mjs';
 import { CMD, BOOT_ID, LOG_MAX, RIDA_MAX, cmdView, startRun, finishRun, stopRun,
   cleanupOrphans, runsView, elab, OTSE_BOOT } from '../lib/hanked-runs.mjs';
 import { alustaOtseJooks } from '../agent/hanked-sync.mjs';
+
+// Minimaalne ZIP-looja (stored/meetod 0, ilma deflate'ita) - PÄRIS docs-lapse
+// jaoks, kes loeb seda lib/zip.mjs loeKeskkataloog()/paki() kaudu (vt allpool
+// ENV-3/ENV-4 päris lapsprotsessi plokke). Sama kuju mis test/gate-hanked-docs.mjs
+// teeZip(), aga ainult stored-meetodiga - deflate ei ole siin testi mõte.
+function teeZipLihtne(kirjed) {
+  const lokaalsed = [];
+  const kesk = [];
+  let offset = 0;
+  for (const k of kirjed) {
+    const nimi = Buffer.from(k.nimi, 'utf8');
+    const andmed = Buffer.from(k.sisu);
+    const crc = crc32(andmed);
+    const lh = Buffer.alloc(30);
+    lh.writeUInt32LE(0x04034b50, 0); lh.writeUInt16LE(20, 4); lh.writeUInt16LE(0, 6);
+    lh.writeUInt16LE(0, 8); lh.writeUInt32LE(crc, 14);
+    lh.writeUInt32LE(andmed.length, 18); lh.writeUInt32LE(andmed.length, 22);
+    lh.writeUInt16LE(nimi.length, 26); lh.writeUInt16LE(0, 28);
+    lokaalsed.push(lh, nimi, andmed);
+
+    const ce = Buffer.alloc(46);
+    ce.writeUInt32LE(0x02014b50, 0); ce.writeUInt16LE(0x031e, 4); ce.writeUInt16LE(20, 6);
+    ce.writeUInt16LE(0, 10); ce.writeUInt32LE(crc, 16);
+    ce.writeUInt32LE(andmed.length, 20); ce.writeUInt32LE(andmed.length, 24);
+    ce.writeUInt16LE(nimi.length, 28);
+    ce.writeUInt32LE((0o100644 << 16) >>> 0, 38);
+    ce.writeUInt32LE(offset, 42);
+    kesk.push(ce, nimi);
+    offset += 30 + nimi.length + andmed.length;
+  }
+  const keskBuf = Buffer.concat(kesk);
+  const eocd = Buffer.alloc(22);
+  eocd.writeUInt32LE(0x06054b50, 0);
+  eocd.writeUInt16LE(kirjed.length, 8); eocd.writeUInt16LE(kirjed.length, 10);
+  eocd.writeUInt32LE(keskBuf.length, 12); eocd.writeUInt32LE(offset, 16);
+  return Buffer.concat([...lokaalsed, keskBuf, eocd]);
+}
 
 const JUUR = dirname(dirname(fileURLToPath(import.meta.url)));
 const TMP = mkdtempSync(join(tmpdir(), 'hanked-runs-'));
@@ -813,6 +852,136 @@ process.stdout.write('LOPPRIDA\\n');
   db.close();
   console.log('PASS runs: startRun süstib HANKED_RUN_ID õigesti history/docs käsule (ENV-3/ENV-4)');
 }
+
+// ---------------------------------------------------------------------------
+// PÄRIS LAPS (audit PR2 järelparandus, 22.09.2026): ENV-3/ENV-4 plokk ülal
+// tõestab ainult, et startRun ANNAB HANKED_RUN_ID argumendi valeSpawn-ile -
+// see EI TÕESTA, et päris agent/hanked-history.mjs / agent/hanked-docs.mjs
+// main() seda muutujat ka LOEB ja ei kuku vanema juba hoitava luku
+// (idx_runs_kaib) peale. Sama risk, mis plokis R 'sync' jaoks juba kinni
+// keerati (vt seal 'vale-agent.mjs' kommentaari) - siin PÄRIS skriptidega,
+// sest need on nüüd (ülesanne 12/14) olemas. CRM_DB_PATH osutab SAMALE
+// failile, mida vanema `db` käepide hoiab (mitte eraldi värskele tmp-baasile) -
+// muidu näeks laps tühja baasi, teeks OMA rea ja test ei tõestaks midagi
+// (vt advisor'i märkust: fikstuurbaas peab olema SAMA fail, mis kannab
+// vanema 'käib' rida).
+// ---------------------------------------------------------------------------
+{
+  const XML = readFileSync(join(JUUR, 'test/fixtures/eforms-2026-08-naidis.xml'), 'utf8');
+  const server = createServer((req, res) => {
+    res.writeHead(200, { 'content-type': 'application/xml' });
+    res.end(XML);
+  });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const port = server.address().port;
+
+  const dbTee = join(TMP, 'history-paris-laps.sqlite');
+  const db = new DatabaseSync(dbTee);
+  migrateHanked(db);
+
+  const VANA_CRM_DB_PATH = process.env.CRM_DB_PATH;
+  const VANA_AWARD_BASE = process.env.HANKED_AWARD_BASE;
+  process.env.CRM_DB_PATH = dbTee;
+  process.env.HANKED_AWARD_BASE = 'http://127.0.0.1:' + port;
+  try {
+    // spawnFn EI OLE antud - startRun kasutab OMA vaikimisi 'spawn'-i (node:child_process),
+    // seega see on TÕESTI agent/hanked-history.mjs, käivitatud lubatudEnv('history')
+    // päris väljundiga, mitte mock ega simuleeritud agent.
+    const r = startRun(db, 'history', { kuud: 1, tana: '2026-09-21' });
+    const lopp = await ootaLopp(db, r.id, 20000);
+    assert.equal(lopp.state, 'tehtud', 'päris history-laps peab lõppema: ' + lopp.error);
+    const read = db.prepare("SELECT * FROM hanke_runs WHERE cmd = 'history'").all();
+    assert.equal(read.length, 1,
+      'nupust käivitatud history-jooks peab jätma TÄPSELT ühe rea, sai ' + read.length);
+    assert.equal(nrId(read[0].id), r.id, 'see rida peab olema vanema oma');
+    // "vahele" üksi on liiga lai muster: kuu importija enda progressiväli
+    // (nt {"vahele":0,...} = 0 juba-laetud kuud vahele jäetud) kannab sama
+    // sõna omal, healoomulisel põhjusel. Lukukonflikti signaal on TÄPSELT
+    // JSON-väli 'vahelejaetud":true' (vt agent/hanked-history.mjs teata() ja
+    // alustaOtseJooks pohjus-tekst).
+    assert.ok(!/"vahelejaetud"\s*:\s*true/.test(String(read[0].log || '')),
+      'laps EI TOHI raporteerida vahelejättu oma vanema luku pärast (ENV-3 regressioon): ' + read[0].log);
+    const lepinguid = db.prepare('SELECT COUNT(*) AS c FROM hanke_lepingud').get().c;
+    assert.ok(lepinguid > 0,
+      'laps pidi kirjutama hanke_lepingud SAMASSE faili, mida CRM_DB_PATH osutas (õige baas), sai '
+      + lepinguid + ' rida');
+    db.close();
+    console.log('  ok päris history-laps (startRun kaudu) ei kuku vanema luku peale ja kirjutab õigesse baasi (ENV-3 päris laps)');
+  } finally {
+    server.close();
+    if (VANA_CRM_DB_PATH === undefined) delete process.env.CRM_DB_PATH;
+    else process.env.CRM_DB_PATH = VANA_CRM_DB_PATH;
+    if (VANA_AWARD_BASE === undefined) delete process.env.HANKED_AWARD_BASE;
+    else process.env.HANKED_AWARD_BASE = VANA_AWARD_BASE;
+  }
+}
+
+{
+  const REF = 'ENV4-REAL-CHILD';
+  const RHR_ID = '424242';
+  const zip = teeZipLihtne([{ nimi: 'markus.txt', sisu: 'lihtne testfail, pdftotext siia ei puutu' }]);
+
+  const server = createServer((req, res) => {
+    if (req.url === '/rhr/api/public/v1/procurement/' + RHR_ID + '/documents-temp-url') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ value: '/docs.zip' }));
+      return;
+    }
+    if (req.url === '/docs.zip') {
+      res.writeHead(200, { 'content-type': 'application/zip' });
+      res.end(zip);
+      return;
+    }
+    res.writeHead(404); res.end();
+  });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const port = server.address().port;
+
+  const dbTee = join(TMP, 'docs-paris-laps.sqlite');
+  const db = new DatabaseSync(dbTee);
+  migrateHanked(db);
+  upsertHange(db, { ref: REF, rhr_id: RHR_ID, buyer: 'Testostja', buyer_reg: '10000000',
+    title: 'ENV-4 päris lapse testhange', menetlus: 'Avatud hankemenetlus', est: 50000,
+    cpv: '72230000', deadline: '2026-12-01', published: '2026-09-01', segment: 'nišš' });
+  const docsDir = mkdtempSync(join(tmpdir(), 'hanked-docs-real-'));
+
+  const VANA_CRM_DB_PATH = process.env.CRM_DB_PATH;
+  const VANA_RHR_BASE = process.env.HANKED_RHR_BASE;
+  const VANA_DOCS_DIR = process.env.HANKED_DOCS_DIR;
+  process.env.CRM_DB_PATH = dbTee;
+  process.env.HANKED_RHR_BASE = 'http://127.0.0.1:' + port;
+  process.env.HANKED_DOCS_DIR = docsDir;
+  try {
+    // Sama loogika mis eelmises plokis: PÄRIS agent/hanked-docs.mjs, päris
+    // lubatudEnv('docs') väljund, startRun'i vaikimisi 'spawn'.
+    const r = startRun(db, 'docs', { ref: REF });
+    const lopp = await ootaLopp(db, r.id, 20000);
+    assert.equal(lopp.state, 'tehtud', 'päris docs-laps peab lõppema: ' + lopp.error);
+    const read = db.prepare("SELECT * FROM hanke_runs WHERE cmd = 'docs'").all();
+    assert.equal(read.length, 1,
+      'nupust käivitatud docs-jooks peab jätma TÄPSELT ühe rea, sai ' + read.length);
+    assert.equal(nrId(read[0].id), r.id, 'see rida peab olema vanema oma');
+    assert.ok(!/"vahelejaetud"\s*:\s*true/.test(String(read[0].log || '')),
+      'laps EI TOHI raporteerida vahelejättu oma vanema luku pärast (ENV-4 regressioon): ' + read[0].log);
+    const rida = db.prepare('SELECT * FROM hanked WHERE ref = ?').get(REF);
+    assert.equal(rida.docs_count, 1,
+      'laps pidi kirjutama docs_count SAMASSE faili, mida CRM_DB_PATH osutas (õige baas), sai '
+      + JSON.stringify(rida.docs_count));
+    assert.ok(rida.docs_dir && rida.docs_dir.startsWith(docsDir),
+      'dokumendid pidid laskuma HANKED_DOCS_DIR alla, mille lubatudEnv(docs) edastas: ' + rida.docs_dir);
+    db.close();
+    console.log('  ok päris docs-laps (startRun kaudu) ei kuku vanema luku peale ja kirjutab õigesse baasi (ENV-4 päris laps)');
+  } finally {
+    server.close();
+    if (VANA_CRM_DB_PATH === undefined) delete process.env.CRM_DB_PATH;
+    else process.env.CRM_DB_PATH = VANA_CRM_DB_PATH;
+    if (VANA_RHR_BASE === undefined) delete process.env.HANKED_RHR_BASE;
+    else process.env.HANKED_RHR_BASE = VANA_RHR_BASE;
+    if (VANA_DOCS_DIR === undefined) delete process.env.HANKED_DOCS_DIR;
+    else process.env.HANKED_DOCS_DIR = VANA_DOCS_DIR;
+  }
+}
+console.log('PASS runs: päris history/docs lapsed (startRun kaudu) ei kuku vanema luku peale ja kirjutavad õigesse baasi (ENV-3/ENV-4 päris laps)');
 
 function nrId(v) { return typeof v === 'bigint' ? Number(v) : v; }
 
