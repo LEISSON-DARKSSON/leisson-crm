@@ -22,7 +22,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { open } from '../lib/db.mjs';
 import { migrateHanked } from '../lib/hanked.mjs';
 import { CMD, BOOT_ID, LOG_MAX, RIDA_MAX, cmdView, startRun, finishRun, stopRun,
-  cleanupOrphans, runsView, elab } from '../lib/hanked-runs.mjs';
+  cleanupOrphans, runsView, elab, OTSE_BOOT } from '../lib/hanked-runs.mjs';
 import { alustaOtseJooks } from '../agent/hanked-sync.mjs';
 
 const JUUR = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -477,6 +477,43 @@ process.stdout.write('LOPPRIDA\\n');
 }
 
 // ---------------------------------------------------------------------------
+// PID-1 (audit PR2, 22.09.2026): cleanupOrphans ILMA süstitud `alive`-argumendita
+// (vaikimisi `elab`) peab käituma õigesti EPERM/tundmatu vea/ESRCH korral, kui
+// process.kill on OS-KUTSE PIIRIL mockitud - mitte ainult siis, kui test ise
+// annab valmis `alive`-vastuse (nagu kõik muud cleanupOrphans testid failis).
+{
+  const stsenaariumid = [
+    { kood: 'EPERM', ootus: 'käib' },
+    { kood: 'UNKNOWN', ootus: 'käib' },
+    { kood: 'ESRCH', ootus: 'katkestatud' },
+  ];
+  for (const { kood, ootus } of stsenaariumid) {
+    const db = testDb();
+    db.prepare(`INSERT INTO hanke_runs (cmd, args, state, started, boot_id, pid)
+        VALUES ('history', '{}', 'käib', datetime('now'), ?, 4242)`).run(OTSE_BOOT + 'fixture');
+    const algne = process.kill;
+    try {
+      process.kill = () => {
+        if (kood === 'UNKNOWN') throw new Error('tundmatu viga ilma koodita');
+        const e = new Error('mock ' + kood); e.code = kood; throw e;
+      };
+      cleanupOrphans(db); // VAIKIMISI alive = elab, EI anta üle
+    } finally {
+      process.kill = algne;
+    }
+    const rida = db.prepare("SELECT state FROM hanke_runs WHERE cmd='history'").get();
+    assert.equal(rida.state, ootus, kood + ': rida peaks jääma ' + ootus);
+    if (ootus === 'käib') {
+      assert.throws(() => startRun(db, 'history', {}, {
+        spawnFn: () => { throw new Error('ei tohiks siia jõuda'); },
+      }), /käib juba/);
+    }
+    db.close();
+  }
+  console.log('PASS runs: cleanupOrphans vaikeabifunktsioon EPERM/tundmatu/ESRCH OS-kutse piiril (PID-1)');
+}
+
+// ---------------------------------------------------------------------------
 // I (p6): lapse enda veateade voidab uldise "Protsess loppes koodiga 1" ule.
 // ---------------------------------------------------------------------------
 {
@@ -723,6 +760,58 @@ process.stdout.write('LOPPRIDA\\n');
   assert.ok(/tootan/.test(String(read[0].log || '')), 'lapse paris too peab logisse jouma');
   db.close();
   console.log('  ok nupust kaivitatud laps ei kuku vanema luku peale');
+}
+
+// ---------------------------------------------------------------------------
+// ENV-3/ENV-4 (audit PR2, 22.09.2026): startRun peab andma HANKED_RUN_ID õigesti
+// ka 'history' ja 'docs' käsule, mitte ainult 'sync'-ile (vt plokk R ülalpool).
+//
+// RISK, MIS SEE PLOKK LUKUSTAB: agent/hanked-history.mjs main() ja
+// agent/hanked-docs.mjs main() kutsuvad mõlemad alustaOtseJooks(db, { cmd: CMD_NIMI }),
+// mille vaikeparameeter loeb vanemaJooks = process.env.HANKED_RUN_ID. Kui see
+// muutuja on nupust käivitatud lapsele PUUDU (vale KASU_ENV konfiguratsioon vms),
+// üritab alustaOtseJooks kirjutada OMA hanke_runs rea, põrkab startRun-i juba
+// tehtud rea peale kehtivale osalisele unikaalindeksile (idx_runs_kaib) ja
+// tagastab { id: null, vanem: null, pohjus: '... käib juba' } - MÕLEMAD main()
+// funktsioonid loevad seda vahelejätuna ja lõpevad VAIKSELT koodiga 0 (nupp näeb
+// rohelisena välja, aga ei tee mitte midagi - täpselt sama klass viga, mis plokis
+// R juba ühe korra tabati sync-i puhul). Task 1 fikseeris süstimise üldiselt
+// (KASU_ENV per-cmd), see plokk lukustab TÄPSELT history/docs juhtumi, et
+// regressioon ei jääks vaikseks.
+//
+// SABOTAAŽIKONTROLL (CLAUDE.md "iga värav peab sabotaaži all punaseks minema"):
+// KASU_ENV.history.runId ja KASU_ENV.docs.runId lib/hanked-runs.mjs-is käsitsi
+// false peale keeratuna läks see plokk PUNASEKS (HANKED_RUN_ID oli undefined),
+// tagasi true-le taastatuna roheliseks - kinnitatud käsitsi enne commiti.
+{
+  const db = testDb();
+  const f = valeSpawn();
+
+  const history = startRun(db, 'history', {}, { spawnFn: f });
+  const [, , historyOpts] = f.argv[f.argv.length - 1];
+  assert.ok(historyOpts && historyOpts.env, 'startRun (history) peab lapsele keskkonna kaasa andma');
+  assert.equal(historyOpts.env.HANKED_RUN_ID, String(history.id),
+    'history peab saama HANKED_RUN_ID - muidu kukub alustaOtseJooks() vanema luku peale ja '
+    + 'main() lõpeb vaikselt vahelejätuna (koodiga 0, ENV-3)');
+
+  const docs = startRun(db, 'docs', {}, { spawnFn: f });
+  const [, , docsOpts] = f.argv[f.argv.length - 1];
+  assert.ok(docsOpts && docsOpts.env, 'startRun (docs) peab lapsele keskkonna kaasa andma');
+  assert.equal(docsOpts.env.HANKED_RUN_ID, String(docs.id),
+    'docs peab saama HANKED_RUN_ID - sama vahelejätu-risk mis history puhul (ENV-4)');
+
+  // Sümmeetriline kinnitus (odav lisakontroll - Task 1 testid katavad seda juba
+  // test/gate-hanked-env.mjs ENV-5-s ja plokk A/K katab siin 'gate' jooksu):
+  // 'gate' EI TOHI kunagi HANKED_RUN_ID-d saada, sest test/gate-hanked.mjs kutsub
+  // alustaOtseJooks-i ISE oma fikstuuribaaside peal - pärandatud run-id ajaks selle
+  // segi.
+  const gate = startRun(db, 'gate', {}, { spawnFn: f });
+  const [, , gateOpts] = f.argv[f.argv.length - 1];
+  assert.equal(gateOpts.env.HANKED_RUN_ID, undefined,
+    'gate ei tohi kunagi saada HANKED_RUN_ID-d (runId: false)');
+
+  db.close();
+  console.log('PASS runs: startRun süstib HANKED_RUN_ID õigesti history/docs käsule (ENV-3/ENV-4)');
 }
 
 function nrId(v) { return typeof v === 'bigint' ? Number(v) : v; }

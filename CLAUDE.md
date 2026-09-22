@@ -12,20 +12,20 @@ Local CRM for LEISSON CREATIVE: mail (IMAP/SMTP), sales pipeline, Codex-driven a
 
 ## Commands
 
-| Need                                                               | Command                                                                                               |
-| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| Install (needs GitHub access to leisson-shared)                    | `npm ci`                                                                                              |
-| First-run setup / start / health                                   | `npm run setup` / `npm start` / `npm run doctor`                                                      |
-| All offline gates (CI equivalent, a skipped gate = failure)        | `npm run varav:range`                                                                                 |
-| One gate group / one gate                                          | `node tools/varav.mjs --ainult=hanked` / `node test/gate-hanked.mjs`                                  |
-| Browser gates (playwright + chromium)                              | `npm run varav:brauser`                                                                               |
-| `npm test` = `test/gate.mjs` (touches the LIVE db) + offline chain | avoid unless the owner asks                                                                           |
-| Skills validation                                                  | `python tools/validate-skills.py`                                                                     |
-| Hanked                                                             | `npm run hanked:sync` / `hanked:ajalugu [-- --kuud=1]` / `hanked:dokumendid -- --ref=<nr> [--uuesti]` |
-| Registry                                                           | `npm run registry:sync` / `:enrich` / `:financials` / `:backfill` / `:update` / `:kandidaadid`        |
-| Agent status, dry plan                                             | `npm run agent:status`; `node agent/conductor.mjs --dry --why`                                        |
-| Link sibling shared / undo                                         | `npm run dev:link` / `npm install`                                                                    |
-| Parity oracles                                                     | `npm run pariteet:gate`, `pariteet:uuenda`, `pariteet:python`                                         |
+| Need                                                                      | Command                                                                                               |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Install (needs GitHub access to leisson-shared)                           | `npm ci`                                                                                              |
+| First-run setup / start / health                                          | `npm run setup` / `npm start` / `npm run doctor`                                                      |
+| All offline gates (CI equivalent, a skipped gate = failure)               | `npm run varav:range`                                                                                 |
+| One gate group / one gate                                                 | `node tools/varav.mjs --ainult=hanked` / `node test/gate-hanked.mjs`                                  |
+| Browser gates (playwright + chromium)                                     | `npm run varav:brauser`                                                                               |
+| `npm test` = `test/gate.mjs` (fixture db, fictitious env) + offline chain | runs in CI `browser` job; local `npm test` is fine, just slower than one gate                         |
+| Skills validation                                                         | `python tools/validate-skills.py`                                                                     |
+| Hanked                                                                    | `npm run hanked:sync` / `hanked:ajalugu [-- --kuud=1]` / `hanked:dokumendid -- --ref=<nr> [--uuesti]` |
+| Registry                                                                  | `npm run registry:sync` / `:enrich` / `:financials` / `:backfill` / `:update` / `:kandidaadid`        |
+| Agent status, dry plan                                                    | `npm run agent:status`; `node agent/conductor.mjs --dry --why`                                        |
+| Link sibling shared / undo                                                | `npm run dev:link` / `npm install`                                                                    |
+| Parity oracles                                                            | `npm run pariteet:gate`, `pariteet:uuenda`, `pariteet:python`                                         |
 
 ## Live data: read carefully
 
@@ -49,7 +49,7 @@ The service catalog lives in the pinned package: `node_modules/@leisson/shared/s
 ## CI (`.github/workflows/ci.yml`, PR + push to main)
 
 - `offline`: checkout, Node 24, `npm ci`, apt `poppler-utils` (pdftotext is required by the document-reader gate), `npm run varav:range`, `python3 tools/validate-skills.py`.
-- `browser`: `npm ci`, `npx playwright install --with-deps chromium`, `npm run varav:brauser`.
+- `browser`: `npm ci`, `npx playwright install --with-deps chromium`, `npm run varav:brauser`, `node test/gate.mjs`.
 - Private dependency recipe (both jobs; copy it into any new job): `actions/checkout@v4` with `persist-credentials: false`; `GIT_AUTH=https://x-access-token:${{ secrets.SHARED_READ_TOKEN }}@github.com/`; `git config --global url."$GIT_AUTH".insteadOf "https://github.com/"` and `git config --global --add url."$GIT_AUTH".insteadOf "ssh://git@github.com/"` (the lockfile may resolve to ssh); then `npm ci`.
 - `shared-drift.yml` (weekly Mon 06:00 + manual) runs `tools/check-pin.mjs`: fails if the pinned `@leisson/shared` tag (`package.json`, `#vX.Y.Z`) is more than a minor behind. Bump tag and lockfile together.
 - Changes go through a PR; squash-merge only when `offline` and `browser` are green.

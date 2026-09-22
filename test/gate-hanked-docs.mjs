@@ -16,16 +16,19 @@
 // PARIS TAI hanke 314159 alusdokumentidest (riigihanked/TAI_314159/alusdokumendid/).
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
+import { spawnSync } from 'node:child_process';
 import { deflateRawSync } from 'node:zlib';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { crc32, loeKeskkataloog, paki, docxTekst, ZIP_PIIRID } from '../lib/zip.mjs';
-import { turvalineSihtkoht, lahtiPaki, PAKI_PIIRID } from '../agent/hanked-docs.mjs';
+import { turvalineSihtkoht, lahtiPaki, PAKI_PIIRID, PDFTOTEXT_KANDIDAADID } from '../agent/hanked-docs.mjs';
 import { leiaRollid, leiaKaive, leiaKvaliteet, koguLeiud, laused } from '../lib/hanked-leiud.mjs';
 import { laeBaidid, VorguViga } from '../lib/hanked-net.mjs';
 import { score } from '../lib/hanked.mjs';
+import { ROOT } from '../lib/env.mjs';
 
 let ok = 0;
 const check = (nimi, f) => { f(); ok++; console.log('  ok ' + nimi); };
@@ -551,5 +554,136 @@ check('piirid on eksporditud ja mõistlikud', () => {
   assert.ok(ZIP_PIIRID.maxKokku >= 64 * 1024 * 1024);
   assert.ok(PAKI_PIIRID.vajaBaite > 0);
 });
+
+// ---------------------------------------------------------------------------
+// 13. PDF-1 (audit PR2, 22.09.2026): leiaPdftotext({env}) parameeter ei jõua
+// spawnSync-ile (see kutsub leiaPdftotext-i sees kasutatavat process.env-i
+// otse, mitte parameetrit) - seega OS-tasandi PATH-otsingu tõestamiseks peab
+// test käivitama PÄRIS lapse KONTROLLITUD env-iga ja kutsuma leiaPdftotext()
+// SISEMISELT, mitte andma sellele fiktiivset env-parameetrit väljastpoolt.
+//
+// AVASTUS SELLE VÄRAVA KIRJUTAMISEL: Windowsil ei kustuta `spawnSync`
+// `env`-valik käivitatava faili PATH-otsingut - laps saab paljast käsku
+// (`pdftotext`) lahendades ikkagi TÄIELIKU päris PATH-i, olenemata sellest,
+// mis `env`-objektis on (kontrollitud käesoleva testi kirjutamisel:
+// `process.env` dump lapse sees näitas täit reaalset PATH-i, kuigi `env`-is
+// oli ainult neli muutujat). Seega ei saa "minimaalne env ilma PATH-ita"
+// tõestada, et PDFTOTEXT ülekirjutus VÕITIS - paljas nimi leiaks õige
+// binaari niikuinii PATH-i kaudu. Ja kuna `PDFTOTEXT_KANDIDAADID` sisaldab
+// täpselt neid teid, kust pdftotext tavaliselt leitakse (mingw64, poppler,
+// /usr/bin, /usr/local/bin, /opt/homebrew/bin - k.a. täpselt see koht, kuhu
+// CI apt poppler-utils paigaldab), leiaks ka kõvakodeeritud varukohtade
+// nimekiri sama tee ülekirjutusest sõltumata. Seepärast EI SAA katsehobuseks
+// võtta päris pdftotext'i teed - iga selline väärtus on saavutatav KOLME
+// sõltumatu tee kaudu (PDFTOTEXT, paljas PATH, kõvakodeeritud nimekiri) ja
+// assert.equal(tee, tee) ei tõesta MIDAGI ülekirjutuse enda kohta.
+//
+// LAHENDUS: ülekirjutuse sihtmärgiks on `process.execPath` (node.exe enda
+// täistee). See vastab kõikidele leiaPdftotext-i nõuetele (fail on olemas,
+// `node -v` väljub koodiga 0), AGA teda EI SAA leida paljast 'pdftotext'
+// käsku otsides ega `PDFTOTEXT_KANDIDAADID` nimekirjast - ainuke tee, kuidas
+// laps saab selle tagasi anda, on PDFTOTEXT env-muutuja lugemine. Seega on
+// see katse päriselt sabotaaži suhtes tundlik (kontrollitud käsitsi: kui
+// `env.PDFTOTEXT` lugemine leiaPdftotext-is katki teha, läheb see test
+// PUNASEKS, sest laps leiab siis paljast PATH-i kaudu tavalise pdftotext'i,
+// mitte node.exe teed).
+// ---------------------------------------------------------------------------
+{
+  const skript = `
+    import { leiaPdftotext } from ${JSON.stringify(pathToFileURL(join(ROOT, 'agent/hanked-docs.mjs')).href)};
+    const tee = leiaPdftotext();
+    console.log(JSON.stringify({ tee }));
+  `;
+  const dir = mkdtempSync(join(tmpdir(), 'pdf-env-'));
+  const skriptifail = join(dir, 'test.mjs');
+  writeFileSync(skriptifail, skript);
+
+  // Minimaalne, KONTROLLITUD env + PDFTOTEXT osutab node.exe enda teele.
+  // Kuna node.exe teed ei saa leida ei paljast 'pdftotext' PATH-ist ega
+  // kõvakodeeritud varukohtade nimekirjast, tõestab võrdsus tõesti, et
+  // env.PDFTOTEXT jõudis SISEMISELT käivitunud spawnSync'ini.
+  const ulekirjutusega = spawnSync(process.execPath, [skriptifail], {
+    env: { SystemRoot: process.env.SystemRoot, WINDIR: process.env.WINDIR,
+      TEMP: process.env.TEMP, TMP: process.env.TMP, PDFTOTEXT: process.execPath },
+    encoding: 'utf8', windowsHide: true, timeout: 10000,
+  });
+  assert.equal(ulekirjutusega.status, 0,
+    'laps ei lõpetanud korralikult (status=' + ulekirjutusega.status + ', signal=' + ulekirjutusega.signal
+    + '): ' + (ulekirjutusega.stderr || ''));
+  const j = JSON.parse(ulekirjutusega.stdout);
+  assert.equal(j.tee, process.execPath,
+    'PDFTOTEXT ülekirjutus (node.exe tee) peab jõudma leiaPdftotext-i tagastuseni, '
+    + 'mitte kaduma bare PATH-otsingu või kõvakodeeritud varukohtade taha');
+  console.log('PASS hanked-docs: PDFTOTEXT env-ülekirjutus jõuab sisemiselt spawnSync-ini (PDF-1)');
+}
+
+// ---------------------------------------------------------------------------
+// 14. PDF-2 (audit PR2, 22.09.2026, järg PDF-1-le): PDF-1 tõestab ainult, et
+// PDFTOTEXT keskkonnamuutuja jõuab leiaPdftotext()-i sisemiselt spawnSync-ini.
+// See EI TÕESTA MIDAGI PDFTOTEXT_KANDIDAADID kõvakodeeritud varukohtade
+// nimekirja ITERATSIOONI kohta — täpselt selle koodi, mis lisati hange
+// 315437 vea parandamiseks (vt kommentaari eespool). Ilma selle testita võib
+// kandidaatide nimekirja läbimine olla katki (vale järjekord, katkine
+// tsükkel, vale existsSync-kontroll) ilma, et ükski värav seda märkaks —
+// täpselt see regressioonilõhe, mille koodikvaliteedi ülevaade leidis.
+//
+// EMPIIRILINE LEID (kontrollitud käesoleva paranduse käigus, laiendab PDF-1
+// avastust): kui `env`-objektis PATH VÕTI PUUDUB TÄIESTI, ehitab Windows/Node
+// lapse jaoks ikkagi kokku TÄIELIKU päris süsteemi PATH-i (nähtud dumpides
+// process.env last lapse sees — see näitas päris PATH-i, kuigi env-objektis
+// oli ainult 4 muutujat, nagu PDF-1-gi puhul). Kui PATH oli env-objektis
+// EKSPLITSIITSELT TÜHI STRING (''), oli laps Windowsil päriselt PATH-ita
+// (process.env.PATH == '') ja isegi paljaste käskude (`pdftotext`,
+// `where.exe`, `cmd.exe`) spawnSync andis ENOENT.
+//
+// SEE TEST EI KASUTA SIISKI PATH: '' — POSIX-i `execvp` (Linuxi CI kasutab
+// seda) võib tühja PATH-i korral rakendada vaikimisi otsinguteed (nt
+// `/bin:/usr/bin`, kuhu apt paigaldab poppler-utils'i pdftotext'i), mis
+// teeks katse Linuxil vaikselt mõttetuks samal põhjusel, miks PDF-1 päris
+// pdftotext'i teed katsehobuseks ei võtnud. Selle asemel antakse PATH-iks
+// PÄRISOLEV, aga TÜHI kataloog (dir2, kuhu on kirjutatud ainult see testi
+// enda skript, mitte ükski käivitatav fail) — see blokeerib bare-nime
+// otsingu usaldusväärselt nii Windowsil (kontrollitud käsitsi) kui ka
+// POSIX-il, ilma platvormipõhise vaikeotsingutee riskita.
+//
+// SEEGA: laps saab tühja kataloogi PATH-iks (paljas otsing blokeeritud) ega
+// saa PDFTOTEXT-i (ülekirjutus välja lülitatud) — ainuke viis, kuidas
+// leiaPdftotext() saab binaari leida, on PDFTOTEXT_KANDIDAADID nimekirja
+// läbimine. Vastus PEAB olema üks nimekirja kirjetest. (Sabotaaž
+// kontrollitud käsitsi: kandidaatide nimekirja väljajätmine `leiaPdftotext`-
+// ist läheb selle testiga punaseks — vt ka commit-sõnumit.)
+// ---------------------------------------------------------------------------
+{
+  const skript2 = `
+    import { leiaPdftotext } from ${JSON.stringify(pathToFileURL(join(ROOT, 'agent/hanked-docs.mjs')).href)};
+    const tee = leiaPdftotext();
+    console.log(JSON.stringify({ tee }));
+  `;
+  const dir2 = mkdtempSync(join(tmpdir(), 'pdf-kandidaat-'));
+  const skriptifail2 = join(dir2, 'test.mjs');
+  writeFileSync(skriptifail2, skript2);
+
+  // Puudub PDFTOTEXT ülekirjutus JA PATH osutab olemasolevale, aga tühjale
+  // kataloogile (dir2 sisaldab ainult test.mjs, mitte ühtegi käivitatavat
+  // faili) — ainuke järelejäänud tee binaarini on kõvakodeeritud
+  // varukohtade nimekiri.
+  const ilmaPathita = spawnSync(process.execPath, [skriptifail2], {
+    env: { SystemRoot: process.env.SystemRoot, WINDIR: process.env.WINDIR,
+      TEMP: process.env.TEMP, TMP: process.env.TMP, PATH: dir2 },
+    encoding: 'utf8', windowsHide: true, timeout: 10000,
+  });
+  assert.equal(ilmaPathita.status, 0,
+    'laps ei lõpetanud korralikult (status=' + ilmaPathita.status + ', signal=' + ilmaPathita.signal
+    + '): ' + (ilmaPathita.stderr || ''));
+  const j2 = JSON.parse(ilmaPathita.stdout);
+  assert.ok(j2.tee, 'leiaPdftotext() ei leidnud MITTE ÜHTEGI binaari, kui bare PATH-otsing oli '
+    + 'blokeeritud ja PDFTOTEXT polnud seatud — kõvakodeeritud varukohtade nimekiri ei andnud '
+    + 'sellel masinal ühtegi töötavat kandidaati');
+  assert.ok(PDFTOTEXT_KANDIDAADID.includes(j2.tee),
+    'leiaPdftotext() leidis binaari (' + j2.tee + '), mis EI OLE PDFTOTEXT_KANDIDAADID nimekirjas — '
+    + 'see ei saa juhtuda, kui bare PATH-otsing on tõesti blokeeritud, seega on midagi katki '
+    + 'kandidaatide-iteratsiooni ja PATH-blokeeringu vahel');
+  console.log('PASS hanked-docs: PDFTOTEXT_KANDIDAADID varukohtade iteratsioon leiab töötava binaari ilma PATH-ita (PDF-2)');
+}
 
 console.log('PASS hanked-docs: ' + ok + ' kontrolli');

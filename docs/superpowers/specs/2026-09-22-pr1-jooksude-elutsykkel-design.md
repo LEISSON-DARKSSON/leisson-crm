@@ -189,7 +189,9 @@ Rakenduskoodi selles spec-is ei ole — see kirjutatakse `writing-plans` etapis.
 
 PR #3 (`72bad8c`) merge järel leidis sõltumatu audit kolm kitsast järelviga sama
 alamsüsteemi sees. Kõik kolm on parandatud samas voorus, kood ja testid
-uuendatud, **commit/push tegemata** — muudatused ootavad omaniku ülevaatust.
+uuendatud, committitud (68901e7) ja merge'itud (PR #4, d7e0924). See EI tõenda
+tootmisse rakendamist (Windowsi peakoopia/ajastaja/tootmismigratsioon on
+eraldi, kontrollimata sammud).
 
 - **F1 (P1):** `lisaVeerg` lisas `last_good_ts`/`last_good_rows` NULL-ina — vana
   (enne PR1) või PR3-järgne (veerud olemas, aga NULL) edukas rida kaotas oma

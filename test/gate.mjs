@@ -8,8 +8,9 @@ import { tmpdir } from 'node:os';
 import { once } from 'node:events';
 import { open } from '../lib/db.mjs';
 import { migrateAgent } from '../lib/agentdb.mjs';
-import { existsSync, writeFileSync, unlinkSync, mkdtempSync, rmSync } from 'node:fs';
+import { writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { ROOT } from '../lib/env.mjs';
+import { lubatudEnv } from '../lib/hanked-runs.mjs';
 import { vabaPort } from './vaba-port.mjs';
 
 const require = createRequire(join(ROOT, 'package.json'));
@@ -31,25 +32,21 @@ const fails = [];
 const ok = (s) => console.log('  OK    ' + s);
 const bad = (s) => { fails.push(s); console.log('  VIGA  ' + s); };
 
-// .env peab olemas olema; kui pole, teeme ajutise (ühendusi ei tehta)
-const envPath = join(ROOT, '.env');
-let tempEnv = false;
-if (!existsSync(envPath)) {
-  writeFileSync(envPath, [
-    'ACCOUNTS=gate',
-    'DEFAULT_ACCOUNT=gate',
-    'ACC_GATE_USER=gate@example.invalid',
-    'ACC_GATE_PASS=gate',
-    'ACC_GATE_NAME=Gate',
-    `CRM_PORT=${PORT}`,
-    'POLL_MINUTES=999',
-  ].join('\n') + '\n');
-  tempEnv = true;
-}
-
-// Disposable fixtures preserve the original API/layout checks without reading or changing sales data.
+// Fiktiivne (fake) env, mis EI PUUDUTA repo .env-i kunagi — kirjutatakse
+// samasse ajutisse kataloogi, mis kannab ka fixture-andmebaasi, ja koristatakse
+// koos sellega. Server saab tee kätte CRM_ENV_PATH kaudu (vt lib/env.mjs).
 const fixtureDir=mkdtempSync(join(tmpdir(),'leisson-crm-ui-gate-'));
 const fixtureDb=join(fixtureDir,'fixture.sqlite');
+const fakeEnvPath=join(fixtureDir,'fake.env');
+writeFileSync(fakeEnvPath, [
+  'ACCOUNTS=gate',
+  'DEFAULT_ACCOUNT=gate',
+  'ACC_GATE_USER=gate@example.invalid',
+  'ACC_GATE_PASS=gate',
+  'ACC_GATE_NAME=Gate',
+  `CRM_PORT=${PORT}`,
+  'POLL_MINUTES=999',
+].join('\n') + '\n');
 const fixture=open({dbPath:fixtureDb});
 migrateAgent(fixture);
 const stamp=new Date().toISOString();
@@ -71,7 +68,14 @@ fixture.close();
 
 const srv = spawn(process.execPath, [join(ROOT, 'server.mjs')], {
   cwd: ROOT,
-  env: { ...process.env, CRM_PORT:String(PORT), CRM_DB_PATH:fixtureDb, CRM_NO_SEED:'1', CRM_NO_POLL:'1', POLL_MINUTES:'999' },
+  // Windows-baasmuutujad tulevad lubatudEnv()-ist (lib/hanked-runs.mjs WIN_BASE) -
+  // sama loend mis hanked-käskudel ja Codex/Claude runneritel, mitte neljas
+  // eraldi käsitsi hoitav koopia (audit PR2 code review, 22.09.2026).
+  env: {
+    ...lubatudEnv('__ui_gate__'),
+    CRM_ENV_PATH: fakeEnvPath, CRM_PORT: String(PORT), CRM_DB_PATH: fixtureDb,
+    CRM_NO_SEED: '1', CRM_NO_POLL: '1', POLL_MINUTES: '999',
+  },
   windowsHide:true,
   stdio: ['ignore', 'pipe', 'pipe'],
 });
@@ -363,9 +367,6 @@ try {
   // Remove only this run's owned directory directly under the resolved temporary root.
   if(dirname(resolve(fixtureDir))!==resolve(tmpdir()) || !basename(fixtureDir).startsWith('leisson-crm-ui-gate-'))throw new Error('Unsafe fixture cleanup path');
   rmSync(fixtureDir,{recursive:true,force:true});
-  if (tempEnv) {
-    try { unlinkSync(envPath); } catch {}
-  }
 }
 
 console.log(fails.length ? `\n${fails.length} viga.\n` : '\nKõik väravad rohelised.\n');
