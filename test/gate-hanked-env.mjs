@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { migrateHanked } from '../lib/hanked.mjs';
-import { lubatudEnv, startRun } from '../lib/hanked-runs.mjs';
+import { lubatudEnv, startRun, CMD, KASU_ENV } from '../lib/hanked-runs.mjs';
 
 const SALADUSED = ['MAIL_PASS', 'ACC_GERT_PASS', 'IMAP_HOST', 'SMTP_HOST',
   'PARTNER_API_TOKEN', 'ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'CODEX_API_KEY',
@@ -143,3 +143,13 @@ console.log('PASS hanked-env: sync/history/docs/gate ei loe .env-i loadEnv/rawEn
   }
 }
 console.log('PASS hanked-env: startRun ise (mitte ainult lubatudEnv) ei anna lapsele saladusi (ENV-1/ENV-5 integratsioon)');
+
+// Minor (koodikvaliteedi ülevaade, audit PR2, 22.09.2026): kui CMD-le lisatakse
+// tulevikus uus käsk ilma vastava KASU_ENV kirjeta, langeks lubatudEnv() vaikimisi
+// minimaalsele env-ile (turvaline, aga VAIKIV - uus käsk ei saaks kunagi oma
+// HANKED_RUN_ID/lisamuutujaid ilma ühegi punase testita). See värav teeb selle
+// lahknevuse kohe nähtavaks.
+assert.deepEqual(Object.keys(CMD).sort(), Object.keys(KASU_ENV).sort(),
+  'iga CMD käsk peab omama vastavat KASU_ENV kirjet (muidu jääks uus käsk vaikimisi minimaalse env-i peale ilma ühegi hoiatuseta)');
+console.log('PASS hanked-env: CMD ja KASU_ENV käsuloendid on kooskõlas');
+
