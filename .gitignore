@@ -27,3 +27,6 @@ riigihanked/rhr_tools/*
 # Temporary commit message file (sub-agents overwrite it).
 .commitmsg
 .commitmsg-*
+
+# Local git worktrees for subagent-driven implementation
+.worktrees/
