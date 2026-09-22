@@ -627,37 +627,6 @@ const RSS_FIKSTUUR = `<?xml version="1.0" encoding="UTF-8"?>
 </channel>
 </rss>`;
 
-// RSS_FIKSTUUR_3 (audit PR2, DB-2, 22.09.2026): teine fikstuur, TEISE reaarvuga
-// (3, mitte RSS_FIKSTUUR-i 5), et B5 saaks eristada "vana lähtejoon säilis" vs
-// "katkenud katse oma reaarv kattus juhuslikult baasiga".
-const RSS_FIKSTUUR_3 = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">
-<channel>
-<title>Riigihangete register</title>
-<item>
-  <title>910001 - Veebilehe arendus</title>
-  <link>https://riigihanked.riik.ee/rhr-web/#/procurement/19100001/notices</link>
-  <description>Teenused; Lihthange; Veebiarendus; Tähtaeg: 01.12.2026 10:00</description>
-  <pubDate>Mon, 01 Sep 2026 05:00:00 GMT</pubDate>
-  <dc:creator>Esimene Vald</dc:creator>
-</item>
-<item>
-  <title>910002 - Kasutajaliidese arendus</title>
-  <link>https://riigihanked.riik.ee/rhr-web/#/procurement/19100002/notices</link>
-  <description>Teenused; Lihthange; UX arendus; Tähtaeg: 02.12.2026 10:00</description>
-  <pubDate>Tue, 02 Sep 2026 05:00:00 GMT</pubDate>
-  <dc:creator>Teine Vald</dc:creator>
-</item>
-<item>
-  <title>910003 - Mobiilirakenduse arendus</title>
-  <link>https://riigihanked.riik.ee/rhr-web/#/procurement/19100003/notices</link>
-  <description>Teenused; Lihthange; Rakenduse arendus; Tähtaeg: 03.12.2026 10:00</description>
-  <pubDate>Wed, 03 Sep 2026 05:00:00 GMT</pubDate>
-  <dc:creator>Kolmas Vald</dc:creator>
-</item>
-</channel>
-</rss>`;
-
 // F1: filter - liik ja nissifilter votavad oiged kirjed valja, oiged jaavad.
 {
   const read = parseRss(RSS_FIKSTUUR);
@@ -1955,7 +1924,7 @@ function pyya(too) {
   console.log('PASS hanked: olemasolev lähtejoon püsib korduva migratsiooni all (F1/M4)');
 }
 
-// DB-1 (audit PR2, 22.09.2026): legacy rida migreerub, SIIS kaks PÄRIS
+// F1/M5 (audit PR2, DB-1, 22.09.2026): legacy rida migreerub, SIIS kaks PÄRIS
 // syncFromXml tühja fikstuuriga - mõlemad peavad olema tyhjenes=true JA
 // säilitama mõlemad last_good_* väljad muutumatuna (mitte ainult üks kord).
 {
@@ -1977,7 +1946,7 @@ function pyya(too) {
   assert.equal(rida.last_good_ts, '2026-09-18 08:00:00', 'lähtejoon püsib ka teisel tühjal jooksul');
   assert.equal(rida.last_good_rows, 5);
   db.close();
-  console.log('PASS hanked: legacy migratsioon + kaks päris tühja süngi säilitavad lähtejoone (DB-1)');
+  console.log('PASS hanked: legacy migratsioon + kaks päris tühja süngi säilitavad lähtejoone (F1/M5, DB-1)');
 }
 
 // ---------------------------------------------------------------------------
@@ -2061,6 +2030,36 @@ function pyya(too) {
   console.log('PASS hanked: hea → tühi → tühi → uus edukas uuendab lähtejoont (F2/B6)');
 }
 
+// RSS_FIKSTUUR_3 (audit PR2, DB-2, 22.09.2026): teine fikstuur, TEISE reaarvuga
+// (3, mitte RSS_FIKSTUUR-i 5), et B5 saaks eristada "vana lähtejoon säilis" vs
+// "katkenud katse oma reaarv kattus juhuslikult baasiga".
+const RSS_FIKSTUUR_3 = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<channel>
+<title>Riigihangete register</title>
+<item>
+  <title>910001 - Veebilehe arendus</title>
+  <link>https://riigihanked.riik.ee/rhr-web/#/procurement/19100001/notices</link>
+  <description>Teenused; Lihthange; Veebiarendus; Tähtaeg: 01.12.2026 10:00</description>
+  <pubDate>Mon, 01 Sep 2026 05:00:00 GMT</pubDate>
+  <dc:creator>Esimene Vald</dc:creator>
+</item>
+<item>
+  <title>910002 - Kasutajaliidese arendus</title>
+  <link>https://riigihanked.riik.ee/rhr-web/#/procurement/19100002/notices</link>
+  <description>Teenused; Lihthange; UX arendus; Tähtaeg: 02.12.2026 10:00</description>
+  <pubDate>Tue, 02 Sep 2026 05:00:00 GMT</pubDate>
+  <dc:creator>Teine Vald</dc:creator>
+</item>
+<item>
+  <title>910003 - Mobiilirakenduse arendus</title>
+  <link>https://riigihanked.riik.ee/rhr-web/#/procurement/19100003/notices</link>
+  <description>Teenused; Lihthange; Rakenduse arendus; Tähtaeg: 03.12.2026 10:00</description>
+  <pubDate>Wed, 03 Sep 2026 05:00:00 GMT</pubDate>
+  <dc:creator>Kolmas Vald</dc:creator>
+</item>
+</channel>
+</rss>`;
 // F2/B5 (parandatud DB-2, audit PR2): baas ja katkestatud katse PEAVAD olema
 // erineva reaarvuga, muidu ei erista test "säilis vana" vs "kogemata arvutati
 // uuesti sama väärtus".
