@@ -23,6 +23,7 @@ import { open } from '../lib/db.mjs';
 import { migrateHanked } from '../lib/hanked.mjs';
 import { CMD, BOOT_ID, LOG_MAX, RIDA_MAX, cmdView, startRun, finishRun, stopRun,
   cleanupOrphans, runsView } from '../lib/hanked-runs.mjs';
+import { alustaOtseJooks } from '../agent/hanked-sync.mjs';
 
 const JUUR = dirname(dirname(fileURLToPath(import.meta.url)));
 const TMP = mkdtempSync(join(tmpdir(), 'hanked-runs-'));
@@ -350,6 +351,80 @@ process.stdout.write('LOPPRIDA\\n');
   assert.ok(r.id && r3.id);
   db.close(); db2.close(); db3.close(); db4.close();
   console.log('PASS runs: pid usaldatakse ainult koos boot_id-ga');
+}
+
+// ---------------------------------------------------------------------------
+// N (audit P1, 22.09.2026): OTSE_BOOT-prefiksiga rida on SÕLTUMATU jooks (Task
+// Scheduler / käsurida), mitte serveri laps. cleanupOrphans margib täna IGA
+// boot_id !== bootId rea orbuks pid-i kusimata (vt blokk H) - aga otsejooksu
+// boot_id ei saagi KUNAGI serveri BOOT_ID-ga klappida, seega tabas see reegel
+// elavaid otsejookse ALATI. alustaOtseJooks (agent/hanked-sync.mjs) juba
+// eristab OTSE_BOOT-prefiksit ja kontrollib pid-i - cleanupOrphans peab tegema
+// sama.
+// ---------------------------------------------------------------------------
+{
+  const db = testDb();
+  const jooks = alustaOtseJooks(db, { pid: process.pid, elab: () => true });
+  assert.equal(
+    jooks.pohjus,
+    null,
+    'esimene otsejooks peab algama takistuseta: ' + jooks.pohjus,
+  );
+
+  // Serveri taaskaivitus UUE boot_id-ga ei tohi elavat otsejooksu puutuda.
+  const n = cleanupOrphans(db, {
+    bootId: 'server-uus-boot-id',
+    alive: () => true,
+  });
+  assert.equal(n, 0, 'elav otsejooks ei ole orb');
+  assert.equal(
+    db.prepare('SELECT state FROM hanke_runs WHERE id = ?').get(jooks.id).state,
+    'käib',
+    'elav otsejooks peab jääma käib-olekusse üle serveri taaskäivituse',
+  );
+
+  // Kaitse ei tohi olla kadunud: teine sama käsu katse peab endiselt lukku austama.
+  const teine = alustaOtseJooks(db, { pid: process.pid, elab: () => true });
+  assert.equal(
+    teine.id,
+    null,
+    'teine otsejooks sama käsu peale ei tohi alata, kui esimene on elus',
+  );
+  assert.match(
+    teine.pohjus,
+    /käib juba/,
+    'lukk peab olema nähtav: ' + teine.pohjus,
+  );
+  db.close();
+  console.log(
+    'PASS runs: elav otsejooks ei kaota kaitset serveri taaskäivitusel',
+  );
+}
+
+// ---------------------------------------------------------------------------
+// O (audit P1, 22.09.2026): surnud otsejooks EI TOHI jääda igaveseks 'käib'-
+// olekusse kinni - ilma serverita ei koristaks teda kunagi keegi teine.
+// ---------------------------------------------------------------------------
+{
+  const db = testDb();
+  const jooks = alustaOtseJooks(db, { pid: 999999, elab: () => true });
+  assert.equal(jooks.pohjus, null);
+  const n = cleanupOrphans(db, {
+    bootId: 'server-uus-boot-id',
+    alive: () => false,
+  });
+  assert.equal(n, 1, 'surnud otsejooks peab minema orbuks');
+  const rida = db
+    .prepare('SELECT state, error FROM hanke_runs WHERE id = ?')
+    .get(jooks.id);
+  assert.equal(rida.state, 'katkestatud');
+  assert.match(
+    rida.error,
+    /suri|ei ela/i,
+    'põhjus peab olema nähtav: ' + rida.error,
+  );
+  db.close();
+  console.log('PASS runs: surnud otsejooks märgitakse katkestatuks');
 }
 
 // ---------------------------------------------------------------------------

@@ -20,7 +20,11 @@ import { migrateHanked, parseRss, upsertHange, markExpired, score,
 // Otsekaivitus kirjutab SAMASSE tabelisse, mida serveri kaivitaja kasutab (ulesanne 7).
 // finishRun ja LOG_MAX tulevad sealt, mitte teise koopiana - kaks eri lopetajat
 // tahendaks kaht eri 'tehtud'-definitsiooni.
-import { finishRun, LOG_MAX, CMD } from '../lib/hanked-runs.mjs';
+import { finishRun, LOG_MAX, CMD, OTSE_BOOT } from '../lib/hanked-runs.mjs';
+// OTSE_BOOT elab nüüd lib/hanked-runs.mjs-is (cleanupOrphans vajab sama
+// prefiksit) - re-eksport, et olemasolevad importijad (test/gate-hanked.mjs)
+// ei katkeks.
+export { OTSE_BOOT };
 import { laeTekst } from '../lib/hanked-net.mjs';
 
 // URL on ulekirjutatav AINULT selleks, et varav saaks main()-i paris lapsprotsessina
@@ -163,7 +167,8 @@ export function logiSyncKindel(db, valikud = {}, { katseid = 3, paus = 300 } = {
 // boot_id = 'otse:<uuid>'. See EI OLE ukski serveri BOOT_ID, seega runsView annab
 // oma = false ja vaade ei paku "Peata" nuppu - ta ei tohikski, sest see pid ei
 // kuulu serverile ja parast masina taaskaivitust voib ta kuuluda kellelegi teisele.
-export const OTSE_BOOT = 'otse:';
+// (OTSE_BOOT konstant ise elab lib/hanked-runs.mjs-is, imporditud ja
+// re-eksporditud ülalt.)
 const OTSE_CMD = 'sync';
 
 const nr = (v) => {
