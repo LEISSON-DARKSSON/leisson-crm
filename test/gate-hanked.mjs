@@ -627,6 +627,37 @@ const RSS_FIKSTUUR = `<?xml version="1.0" encoding="UTF-8"?>
 </channel>
 </rss>`;
 
+// RSS_FIKSTUUR_3 (audit PR2, DB-2, 22.09.2026): teine fikstuur, TEISE reaarvuga
+// (3, mitte RSS_FIKSTUUR-i 5), et B5 saaks eristada "vana lahtejoon sailis" vs
+// "katkenud katse oma reaarv kattus juhuslikult baasiga".
+const RSS_FIKSTUUR_3 = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<channel>
+<title>Riigihangete register</title>
+<item>
+  <title>910001 - Veebilehe arendus</title>
+  <link>https://riigihanked.riik.ee/rhr-web/#/procurement/19100001/notices</link>
+  <description>Teenused; Lihthange; Veebiarendus; Tähtaeg: 01.12.2026 10:00</description>
+  <pubDate>Mon, 01 Sep 2026 05:00:00 GMT</pubDate>
+  <dc:creator>Esimene Vald</dc:creator>
+</item>
+<item>
+  <title>910002 - Kasutajaliidese arendus</title>
+  <link>https://riigihanked.riik.ee/rhr-web/#/procurement/19100002/notices</link>
+  <description>Teenused; Lihthange; UX arendus; Tähtaeg: 02.12.2026 10:00</description>
+  <pubDate>Tue, 02 Sep 2026 05:00:00 GMT</pubDate>
+  <dc:creator>Teine Vald</dc:creator>
+</item>
+<item>
+  <title>910003 - Mobiilirakenduse arendus</title>
+  <link>https://riigihanked.riik.ee/rhr-web/#/procurement/19100003/notices</link>
+  <description>Teenused; Lihthange; Rakenduse arendus; Tähtaeg: 03.12.2026 10:00</description>
+  <pubDate>Wed, 03 Sep 2026 05:00:00 GMT</pubDate>
+  <dc:creator>Kolmas Vald</dc:creator>
+</item>
+</channel>
+</rss>`;
+
 // F1: filter - liik ja nissifilter votavad oiged kirjed valja, oiged jaavad.
 {
   const read = parseRss(RSS_FIKSTUUR);
@@ -1924,6 +1955,31 @@ function pyya(too) {
   console.log('PASS hanked: olemasolev lähtejoon püsib korduva migratsiooni all (F1/M4)');
 }
 
+// DB-1 (audit PR2, 22.09.2026): legacy rida migreerub, SIIS kaks PÄRIS
+// syncFromXml tühja fikstuuriga - mõlemad peavad olema tyhjenes=true JA
+// säilitama mõlemad last_good_* väljad muutumatuna (mitte ainult üks kord).
+{
+  const tyhi = '<?xml version="1.0"?><rss version="2.0"><channel><title>RHR</title></channel></rss>';
+  const db = testDb();
+  db.prepare(`INSERT INTO hanke_sync (key, ts, rows, ok, note) VALUES
+      ('rss', '2026-09-18 08:00:00', 5, 1, 'legacy')`).run();
+  migrateHanked(db); // backfill täidab last_good_*
+
+  const esimene = syncFromXml(db, tyhi, { today: '2026-09-20' });
+  assert.equal(esimene.tyhjenes, true, 'esimene tühi süng: tyhjenes=true');
+  let rida = db.prepare("SELECT last_good_ts, last_good_rows FROM hanke_sync WHERE key='rss'").get();
+  assert.equal(rida.last_good_ts, '2026-09-18 08:00:00');
+  assert.equal(rida.last_good_rows, 5);
+
+  const teine = syncFromXml(db, tyhi, { today: '2026-09-21' });
+  assert.equal(teine.tyhjenes, true, 'teine tühi süng: tyhjenes=true');
+  rida = db.prepare("SELECT last_good_ts, last_good_rows FROM hanke_sync WHERE key='rss'").get();
+  assert.equal(rida.last_good_ts, '2026-09-18 08:00:00', 'lähtejoon püsib ka teisel tühjal jooksul');
+  assert.equal(rida.last_good_rows, 5);
+  db.close();
+  console.log('PASS hanked: legacy migratsioon + kaks päris tühja süngi säilitavad lähtejoone (DB-1)');
+}
+
 // ---------------------------------------------------------------------------
 // F2 (PR1b audit, 22.09.2026): last_good_* tohib tekkida/uueneda AINULT edukal
 // (ok=1) POSITIIVSE reaarvuga katsel. SYNC_SQL kontrollis varem ainult rows>0,
@@ -2005,32 +2061,35 @@ function pyya(too) {
   console.log('PASS hanked: hea → tühi → tühi → uus edukas uuendab lähtejoont (F2/B6)');
 }
 
-// F2/B5 (PR1b audit): PÄRIS syncFromXml, mis EBAÕNNESTUB pärast andmete kirjutamise
-// algust (kontrollitud trigger). Rollback käib andmete peale, aga logiSyncKindel
-// jätab vealogi (ok=0) EDASI, VÄLJASPOOL tehingut - lähtejoon (5) ei tohi kaduda.
+// F2/B5 (parandatud DB-2, audit PR2): baas ja katkestatud katse PEAVAD olema
+// erineva reaarvuga, muidu ei erista test "säilis vana" vs "kogemata arvutati
+// uuesti sama väärtus".
 {
   const db = testDb();
-  syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' }); // hea lähtejoon = 5
-  assert.equal(
-    db.prepare("SELECT last_good_rows FROM hanke_sync WHERE key='rss'").get().last_good_rows,
-    5,
-  );
+  syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' }); // baas: 5 rida
+  const baasTs = db.prepare("SELECT last_good_ts FROM hanke_sync WHERE key='rss'").get().last_good_ts;
+  const baasRows = db.prepare("SELECT last_good_rows FROM hanke_sync WHERE key='rss'").get().last_good_rows;
+  assert.equal(baasRows, 5);
 
   // Kontrollitud tõrge: trigger, mis viskab hanked.score UPDATE peale (syncFromXml
   // enda skoori-kirjutus) - sunnib syncFromXml oma catch/ROLLBACK harusse PÄRAST
-  // seda, kui read.length (positiivne) on juba teada.
+  // seda, kui read.length (positiivne) on juba teada. RSS_FIKSTUUR_3 annab 3 rida,
+  // mis erineb baasi 5-st - muidu ei tõestaks test midagi (vt kommentaar all).
   db.exec(`CREATE TRIGGER f2_katke BEFORE UPDATE OF score ON hanked BEGIN
       SELECT RAISE(ABORT, 'F2 test: sunnitud katke');
     END`);
-  assert.throws(() => syncFromXml(db, RSS_FIKSTUUR, { today: '2026-09-20' }), /sunnitud katke/);
+  assert.throws(() => syncFromXml(db, RSS_FIKSTUUR_3, { today: '2026-09-21' }), /sunnitud katke/);
   db.exec('DROP TRIGGER f2_katke');
 
-  const rida = db.prepare("SELECT ok, rows, last_good_rows FROM hanke_sync WHERE key='rss'").get();
+  const rida = db.prepare("SELECT ok, rows, last_good_ts, last_good_rows FROM hanke_sync WHERE key='rss'").get();
   assert.equal(rida.ok, 0, 'katkenud katse peab jätma ok=0 jälje');
-  assert.equal(rida.rows, 5, 'katkenud katse enda rows (RSS-ist loetud) peab diagnostikaks säilima');
-  assert.equal(rida.last_good_rows, 5, 'B5: rollback ei tohi kaotada vana head lähtejoont');
+  assert.notEqual(rida.rows, baasRows,
+    'katkenud katse ENDA rows peab erinema baasi omast (muidu ei tõesta test midagi)');
+  assert.equal(rida.rows, 3, 'katkenud katse enda rows (RSS_FIKSTUUR_3-st loetud) peab diagnostikaks säilima');
+  assert.equal(rida.last_good_ts, baasTs, 'B5: last_good_ts peab olema VANA, mitte katkenud katse oma');
+  assert.equal(rida.last_good_rows, baasRows, 'B5: last_good_rows peab olema VANA, mitte katkenud katse oma');
   db.close();
-  console.log('PASS hanked: katkenud tegelik sünk ei riku lähtejoont (F2/B5)');
+  console.log('PASS hanked: katkenud sünk erineva reaarvuga ei riku lähtejoont (DB-2/B5)');
 }
 
 // F2/vorguviga (PR1b audit): hea -> võrguviga (rows=NULL, ok=0) -> tühi -> endiselt
