@@ -2631,3 +2631,57 @@ function rssServer(keha) {
   }
   console.log('PASS hanked: dokumendist loetud kvaliteedikaal liigutab skoori');
 }
+
+// DB-3/DB-4 (audit PR2, 22.09.2026): migrateHanked ei tohi taotleda kirjutuslukku,
+// kui backfill'iks sobivaid ridu pole - PARIS funktsiooniga, PARIS teise uhendusega
+// hoitud BEGIN IMMEDIATE ajal, mitte kasitsi SELECT COUNT. WHERE-tingimus (F1-F3)
+// jaab UPDATE-isse muutumatuna - see EI ole lukuvaba lahendus uldiselt, ainult
+// nulltoo juhtumi jaoks.
+{
+  const dir = mkdtempSync(join(tmpdir(), 'hanked-backfill-lock-'));
+  const teeA = join(dir, 'test.sqlite');
+  const a = new DatabaseSync(teeA);
+  a.exec('PRAGMA journal_mode = WAL');
+  migrateHanked(a); // skeem valmis, last_good_* veerud olemas, backfill juba labi (0 sobivat)
+  a.close();
+
+  const b = new DatabaseSync(teeA);
+  b.exec('PRAGMA journal_mode = WAL');
+  b.exec('BEGIN IMMEDIATE'); // kirjutuslukk teise uhenduse kaes
+
+  const aUuesti = new DatabaseSync(teeA);
+  aUuesti.exec('PRAGMA journal_mode = WAL');
+  aUuesti.exec('PRAGMA busy_timeout = 0'); // deterministlik: ei oota, kukub kohe kui uritab kirjutada
+  assert.doesNotThrow(() => migrateHanked(aUuesti),
+    'nulltoo backfill ei tohi uritada kirjutada, kui B hoiab BEGIN IMMEDIATE - ei tohi anda SQLITE_BUSY');
+  aUuesti.close();
+  b.exec('ROLLBACK');
+  b.close();
+  console.log("PASS hanked: migrateHanked ei taotle kirjutuslukku nulltoo backfill'i korral (DB-3)");
+}
+
+// DB-4: kui sobiv rida PARISELT olemas ja teine uhendus blokeerib, UPDATE peab
+// nahtavalt ebaonnestuma (busy_timeout=0), MITTE vaikselt "eduna" mooda minema.
+{
+  const dir = mkdtempSync(join(tmpdir(), 'hanked-backfill-lock2-'));
+  const teeA = join(dir, 'test.sqlite');
+  const a = new DatabaseSync(teeA);
+  a.exec('PRAGMA journal_mode = WAL');
+  a.exec(`CREATE TABLE hanke_sync (key TEXT PRIMARY KEY, ts TEXT, rows INTEGER, ok INTEGER, note TEXT)`);
+  a.prepare(`INSERT INTO hanke_sync (key, ts, rows, ok, note) VALUES ('rss','2026-09-18 08:00:00',5,1,'legacy')`).run();
+  a.close();
+
+  const b = new DatabaseSync(teeA);
+  b.exec('PRAGMA journal_mode = WAL');
+  b.exec('BEGIN IMMEDIATE');
+
+  const aUuesti = new DatabaseSync(teeA);
+  aUuesti.exec('PRAGMA journal_mode = WAL');
+  aUuesti.exec('PRAGMA busy_timeout = 0');
+  assert.throws(() => migrateHanked(aUuesti), /database is locked/i,
+    'kui sobiv rida pariselt olemas ja kirjutus blokeeritud, viga peab olema NAHTAV, mitte neelatud');
+  aUuesti.close();
+  b.exec('ROLLBACK');
+  b.close();
+  console.log('PASS hanked: vajalik backfill-kirjutus jaab nahtavaks lukukonflikti korral, ei neelata (DB-4)');
+}
