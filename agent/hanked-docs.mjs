@@ -230,7 +230,7 @@ export function lahtiPaki(zip, siht, { uuesti = false, vaba = vabaKetas } = {}) 
 //   2. paljas 'pdftotext' PATH-ist;
 //   3. teadaolevad kohad Windowsis/Linuxis/macOS-is.
 // `pdftotext -v` lõpetab xpdf-is koodiga 99 — see EI OLE viga, vaid versioonitrükk.
-const PDFTOTEXT_KANDIDAADID = [
+export const PDFTOTEXT_KANDIDAADID = [
   'C:\\Program Files\\Git\\mingw64\\bin\\pdftotext.exe',
   'C:\\Program Files (x86)\\Git\\mingw64\\bin\\pdftotext.exe',
   'C:\\Program Files\\poppler\\Library\\bin\\pdftotext.exe',
