@@ -2633,35 +2633,35 @@ function rssServer(keha) {
 }
 
 // DB-3/DB-4 (audit PR2, 22.09.2026): migrateHanked ei tohi taotleda kirjutuslukku,
-// kui backfill'iks sobivaid ridu pole - PARIS funktsiooniga, PARIS teise uhendusega
-// hoitud BEGIN IMMEDIATE ajal, mitte kasitsi SELECT COUNT. WHERE-tingimus (F1-F3)
-// jaab UPDATE-isse muutumatuna - see EI ole lukuvaba lahendus uldiselt, ainult
-// nulltoo juhtumi jaoks.
+// kui backfill'iks sobivaid ridu pole - PÄRIS funktsiooniga, PÄRIS teise ühendusega
+// hoitud BEGIN IMMEDIATE ajal, mitte käsitsi SELECT COUNT. WHERE-tingimus (F1-F3)
+// jääb UPDATE-isse muutumatuna - see EI ole lukuvaba lahendus üldiselt, ainult
+// nulltöö juhtumi jaoks.
 {
   const dir = mkdtempSync(join(tmpdir(), 'hanked-backfill-lock-'));
   const teeA = join(dir, 'test.sqlite');
   const a = new DatabaseSync(teeA);
   a.exec('PRAGMA journal_mode = WAL');
-  migrateHanked(a); // skeem valmis, last_good_* veerud olemas, backfill juba labi (0 sobivat)
+  migrateHanked(a); // skeem valmis, last_good_* veerud olemas, backfill juba läbi (0 sobivat)
   a.close();
 
   const b = new DatabaseSync(teeA);
   b.exec('PRAGMA journal_mode = WAL');
-  b.exec('BEGIN IMMEDIATE'); // kirjutuslukk teise uhenduse kaes
+  b.exec('BEGIN IMMEDIATE'); // kirjutuslukk teise ühenduse käes
 
   const aUuesti = new DatabaseSync(teeA);
   aUuesti.exec('PRAGMA journal_mode = WAL');
-  aUuesti.exec('PRAGMA busy_timeout = 0'); // deterministlik: ei oota, kukub kohe kui uritab kirjutada
+  aUuesti.exec('PRAGMA busy_timeout = 0'); // deterministlik: ei oota, kukub kohe kui üritab kirjutada
   assert.doesNotThrow(() => migrateHanked(aUuesti),
-    'nulltoo backfill ei tohi uritada kirjutada, kui B hoiab BEGIN IMMEDIATE - ei tohi anda SQLITE_BUSY');
+    'nulltöö backfill ei tohi üritada kirjutada, kui B hoiab BEGIN IMMEDIATE - ei tohi anda SQLITE_BUSY');
   aUuesti.close();
   b.exec('ROLLBACK');
   b.close();
-  console.log("PASS hanked: migrateHanked ei taotle kirjutuslukku nulltoo backfill'i korral (DB-3)");
+  console.log("PASS hanked: migrateHanked ei taotle kirjutuslukku nulltöö backfill'i korral (DB-3)");
 }
 
-// DB-4: kui sobiv rida PARISELT olemas ja teine uhendus blokeerib, UPDATE peab
-// nahtavalt ebaonnestuma (busy_timeout=0), MITTE vaikselt "eduna" mooda minema.
+// DB-4: kui sobiv rida PÄRISELT olemas ja teine ühendus blokeerib, UPDATE peab
+// nähtavalt ebaõnnestuma (busy_timeout=0), MITTE vaikselt "eduna" mööda minema.
 {
   const dir = mkdtempSync(join(tmpdir(), 'hanked-backfill-lock2-'));
   const teeA = join(dir, 'test.sqlite');
@@ -2679,9 +2679,9 @@ function rssServer(keha) {
   aUuesti.exec('PRAGMA journal_mode = WAL');
   aUuesti.exec('PRAGMA busy_timeout = 0');
   assert.throws(() => migrateHanked(aUuesti), /database is locked/i,
-    'kui sobiv rida pariselt olemas ja kirjutus blokeeritud, viga peab olema NAHTAV, mitte neelatud');
+    'kui sobiv rida päriselt olemas ja kirjutus blokeeritud, viga peab olema NÄHTAV, mitte neelatud');
   aUuesti.close();
   b.exec('ROLLBACK');
   b.close();
-  console.log('PASS hanked: vajalik backfill-kirjutus jaab nahtavaks lukukonflikti korral, ei neelata (DB-4)');
+  console.log('PASS hanked: vajalik backfill-kirjutus jääb nähtavaks lukukonflikti korral, ei neelata (DB-4)');
 }
