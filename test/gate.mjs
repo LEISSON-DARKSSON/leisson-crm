@@ -10,6 +10,7 @@ import { open } from '../lib/db.mjs';
 import { migrateAgent } from '../lib/agentdb.mjs';
 import { writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { ROOT } from '../lib/env.mjs';
+import { lubatudEnv } from '../lib/hanked-runs.mjs';
 import { vabaPort } from './vaba-port.mjs';
 
 const require = createRequire(join(ROOT, 'package.json'));
@@ -67,12 +68,13 @@ fixture.close();
 
 const srv = spawn(process.execPath, [join(ROOT, 'server.mjs')], {
   cwd: ROOT,
+  // Windows-baasmuutujad tulevad lubatudEnv()-ist (lib/hanked-runs.mjs WIN_BASE) -
+  // sama loend mis hanked-käskudel ja Codex/Claude runneritel, mitte neljas
+  // eraldi käsitsi hoitav koopia (audit PR2 code review, 22.09.2026).
   env: {
+    ...lubatudEnv('__ui_gate__'),
     CRM_ENV_PATH: fakeEnvPath, CRM_PORT: String(PORT), CRM_DB_PATH: fixtureDb,
     CRM_NO_SEED: '1', CRM_NO_POLL: '1', POLL_MINUTES: '999',
-    SystemRoot: process.env.SystemRoot, WINDIR: process.env.WINDIR,
-    PATH: process.env.PATH, PATHEXT: process.env.PATHEXT,
-    TEMP: process.env.TEMP, TMP: process.env.TMP,
   },
   windowsHide:true,
   stdio: ['ignore', 'pipe', 'pipe'],
