@@ -22,7 +22,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { open } from '../lib/db.mjs';
 import { migrateHanked } from '../lib/hanked.mjs';
 import { CMD, BOOT_ID, LOG_MAX, RIDA_MAX, cmdView, startRun, finishRun, stopRun,
-  cleanupOrphans, runsView, elab } from '../lib/hanked-runs.mjs';
+  cleanupOrphans, runsView, elab, OTSE_BOOT } from '../lib/hanked-runs.mjs';
 import { alustaOtseJooks } from '../agent/hanked-sync.mjs';
 
 const JUUR = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -474,6 +474,43 @@ process.stdout.write('LOPPRIDA\\n');
   }
   db2.close();
   console.log('PASS runs: elab() eristab ESRCH-i (surnud) EPERM-ist ja tundmatust veast (Q/F3)');
+}
+
+// ---------------------------------------------------------------------------
+// PID-1 (audit PR2, 22.09.2026): cleanupOrphans ILMA süstitud `alive`-argumendita
+// (vaikimisi `elab`) peab käituma õigesti EPERM/tundmatu vea/ESRCH korral, kui
+// process.kill on OS-KUTSE PIIRIL mockitud - mitte ainult siis, kui test ise
+// annab valmis `alive`-vastuse (nagu kõik muud cleanupOrphans testid failis).
+{
+  const stsenaariumid = [
+    { kood: 'EPERM', ootus: 'käib' },
+    { kood: 'UNKNOWN', ootus: 'käib' },
+    { kood: 'ESRCH', ootus: 'katkestatud' },
+  ];
+  for (const { kood, ootus } of stsenaariumid) {
+    const db = testDb();
+    db.prepare(`INSERT INTO hanke_runs (cmd, args, state, started, boot_id, pid)
+        VALUES ('history', '{}', 'käib', datetime('now'), ?, 4242)`).run(OTSE_BOOT + 'fixture');
+    const algne = process.kill;
+    try {
+      process.kill = () => {
+        if (kood === 'UNKNOWN') throw new Error('tundmatu viga ilma koodita');
+        const e = new Error('mock ' + kood); e.code = kood; throw e;
+      };
+      cleanupOrphans(db); // VAIKIMISI alive = elab, EI anta üle
+    } finally {
+      process.kill = algne;
+    }
+    const rida = db.prepare("SELECT state FROM hanke_runs WHERE cmd='history'").get();
+    assert.equal(rida.state, ootus, kood + ': rida peaks jääma ' + ootus);
+    if (ootus === 'käib') {
+      assert.throws(() => startRun(db, 'history', {}, {
+        spawnFn: () => { throw new Error('ei tohiks siia jõuda'); },
+      }), /käib juba/);
+    }
+    db.close();
+  }
+  console.log('PASS runs: cleanupOrphans vaikeabifunktsioon EPERM/tundmatu/ESRCH OS-kutse piiril (PID-1)');
 }
 
 // ---------------------------------------------------------------------------
