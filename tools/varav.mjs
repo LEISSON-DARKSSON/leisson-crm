@@ -23,8 +23,9 @@ import { spawnSync } from 'node:child_process';
 export const JUUR = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 // Väravad avastatakse mustriga test/gate-*.mjs. NB: test/gate.mjs EI vasta sellele
-// mustrile ja jääb teadlikult välja — see on elav suitsutest, mis avab päris CRM-i
-// SQLite-i ja postkasti seadistuse (npm test jooksutab ta eraldi).
+// mustrile ja jääb teadlikult välja — see kasutab fixture-SQLite-t ja täiesti
+// väljamõeldud env-i (npm test jooksutab ta eraldi); ainus tegelik väljajätu
+// põhjus on Playwright/Chromium sõltuvus, mida offline-ahel ei paku.
 const MUSTER = /^gate-.+\.mjs$/;
 
 // Väravad, mis on kettal, aga EI kuulu offline-ahelasse. Iga kirje kannab põhjust —
