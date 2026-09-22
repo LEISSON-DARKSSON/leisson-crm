@@ -16,16 +16,19 @@
 // PARIS TAI hanke 314159 alusdokumentidest (riigihanked/TAI_314159/alusdokumendid/).
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
+import { spawnSync } from 'node:child_process';
 import { deflateRawSync } from 'node:zlib';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { crc32, loeKeskkataloog, paki, docxTekst, ZIP_PIIRID } from '../lib/zip.mjs';
 import { turvalineSihtkoht, lahtiPaki, PAKI_PIIRID } from '../agent/hanked-docs.mjs';
 import { leiaRollid, leiaKaive, leiaKvaliteet, koguLeiud, laused } from '../lib/hanked-leiud.mjs';
 import { laeBaidid, VorguViga } from '../lib/hanked-net.mjs';
 import { score } from '../lib/hanked.mjs';
+import { ROOT } from '../lib/env.mjs';
 
 let ok = 0;
 const check = (nimi, f) => { f(); ok++; console.log('  ok ' + nimi); };
@@ -551,5 +554,64 @@ check('piirid on eksporditud ja mõistlikud', () => {
   assert.ok(ZIP_PIIRID.maxKokku >= 64 * 1024 * 1024);
   assert.ok(PAKI_PIIRID.vajaBaite > 0);
 });
+
+// ---------------------------------------------------------------------------
+// 13. PDF-1 (audit PR2, 22.09.2026): leiaPdftotext({env}) parameeter ei jõua
+// spawnSync-ile (see kutsub leiaPdftotext-i sees kasutatavat process.env-i
+// otse, mitte parameetrit) - seega OS-tasandi PATH-otsingu tõestamiseks peab
+// test käivitama PÄRIS lapse KONTROLLITUD env-iga ja kutsuma leiaPdftotext()
+// SISEMISELT, mitte andma sellele fiktiivset env-parameetrit väljastpoolt.
+//
+// AVASTUS SELLE VÄRAVA KIRJUTAMISEL: Windowsil ei kustuta `spawnSync`
+// `env`-valik käivitatava faili PATH-otsingut - laps saab paljast käsku
+// (`pdftotext`) lahendades ikkagi TÄIELIKU päris PATH-i, olenemata sellest,
+// mis `env`-objektis on (kontrollitud käesoleva testi kirjutamisel:
+// `process.env` dump lapse sees näitas täit reaalset PATH-i, kuigi `env`-is
+// oli ainult neli muutujat). Seega ei saa "minimaalne env ilma PATH-ita"
+// tõestada, et PDFTOTEXT ülekirjutus VÕITIS - paljas nimi leiaks õige
+// binaari niikuinii PATH-i kaudu. Ja kuna `PDFTOTEXT_KANDIDAADID` sisaldab
+// täpselt neid teid, kust pdftotext tavaliselt leitakse (mingw64, poppler,
+// /usr/bin, /usr/local/bin, /opt/homebrew/bin - k.a. täpselt see koht, kuhu
+// CI apt poppler-utils paigaldab), leiaks ka kõvakodeeritud varukohtade
+// nimekiri sama tee ülekirjutusest sõltumata. Seepärast EI SAA katsehobuseks
+// võtta päris pdftotext'i teed - iga selline väärtus on saavutatav KOLME
+// sõltumatu tee kaudu (PDFTOTEXT, paljas PATH, kõvakodeeritud nimekiri) ja
+// assert.equal(tee, tee) ei tõesta MIDAGI ülekirjutuse enda kohta.
+//
+// LAHENDUS: ülekirjutuse sihtmärgiks on `process.execPath` (node.exe enda
+// täistee). See vastab kõikidele leiaPdftotext-i nõuetele (fail on olemas,
+// `node -v` väljub koodiga 0), AGA teda EI SAA leida paljast 'pdftotext'
+// käsku otsides ega `PDFTOTEXT_KANDIDAADID` nimekirjast - ainuke tee, kuidas
+// laps saab selle tagasi anda, on PDFTOTEXT env-muutuja lugemine. Seega on
+// see katse päriselt sabotaaži suhtes tundlik (kontrollitud käsitsi: kui
+// `env.PDFTOTEXT` lugemine leiaPdftotext-is katki teha, läheb see test
+// PUNASEKS, sest laps leiab siis paljast PATH-i kaudu tavalise pdftotext'i,
+// mitte node.exe teed).
+// ---------------------------------------------------------------------------
+{
+  const skript = `
+    import { leiaPdftotext } from ${JSON.stringify(pathToFileURL(join(ROOT, 'agent/hanked-docs.mjs')).href)};
+    const tee = leiaPdftotext();
+    console.log(JSON.stringify({ tee }));
+  `;
+  const dir = mkdtempSync(join(tmpdir(), 'pdf-env-'));
+  const skriptifail = join(dir, 'test.mjs');
+  writeFileSync(skriptifail, skript);
+
+  // Minimaalne, KONTROLLITUD env + PDFTOTEXT osutab node.exe enda teele.
+  // Kuna node.exe teed ei saa leida ei paljast 'pdftotext' PATH-ist ega
+  // kõvakodeeritud varukohtade nimekirjast, tõestab võrdsus tõesti, et
+  // env.PDFTOTEXT jõudis SISEMISELT käivitunud spawnSync'ini.
+  const ulekirjutusega = spawnSync(process.execPath, [skriptifail], {
+    env: { SystemRoot: process.env.SystemRoot, WINDIR: process.env.WINDIR,
+      TEMP: process.env.TEMP, TMP: process.env.TMP, PDFTOTEXT: process.execPath },
+    encoding: 'utf8', windowsHide: true,
+  });
+  const j = JSON.parse(ulekirjutusega.stdout);
+  assert.equal(j.tee, process.execPath,
+    'PDFTOTEXT ülekirjutus (node.exe tee) peab jõudma leiaPdftotext-i tagastuseni, '
+    + 'mitte kaduma bare PATH-otsingu või kõvakodeeritud varukohtade taha');
+  console.log('PASS hanked-docs: PDFTOTEXT env-ülekirjutus jõuab sisemiselt spawnSync-ini (PDF-1)');
+}
 
 console.log('PASS hanked-docs: ' + ok + ' kontrolli');
