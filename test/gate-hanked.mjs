@@ -628,7 +628,7 @@ const RSS_FIKSTUUR = `<?xml version="1.0" encoding="UTF-8"?>
 </rss>`;
 
 // RSS_FIKSTUUR_3 (audit PR2, DB-2, 22.09.2026): teine fikstuur, TEISE reaarvuga
-// (3, mitte RSS_FIKSTUUR-i 5), et B5 saaks eristada "vana lahtejoon sailis" vs
+// (3, mitte RSS_FIKSTUUR-i 5), et B5 saaks eristada "vana lähtejoon säilis" vs
 // "katkenud katse oma reaarv kattus juhuslikult baasiga".
 const RSS_FIKSTUUR_3 = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">
