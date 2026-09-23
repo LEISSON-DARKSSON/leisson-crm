@@ -93,7 +93,7 @@ body {
 .view-tab:hover { color: var(--orbit-color-ink); }
 .view-tab[aria-selected="true"] {
   color: var(--orbit-color-ink);
-  border-color: var(--orbit-color-hairline-strong);
+  border-color: var(--orbit-color-control-border);
   background: var(--orbit-color-paper);
 }
 .badge {
@@ -169,7 +169,7 @@ select.input { appearance: none; padding-right: var(--orbit-space-5); }
 .btn.ghost {
   background: transparent;
   color: var(--orbit-color-ink);
-  border-color: var(--orbit-color-hairline-strong);
+  border-color: var(--orbit-color-control-border);
 }
 .btn.ghost:hover { background: var(--orbit-color-raised); }
 .btn.icon { width: var(--orbit-size-button-md); padding: 0; justify-content: center; background: transparent; color: var(--orbit-color-ink-2); border-color: var(--orbit-color-hairline); font-size: 15px; }
@@ -181,7 +181,7 @@ select.input { appearance: none; padding-right: var(--orbit-space-5); }
   font-size: var(--orbit-type-body-sm-size);
   color: var(--orbit-color-ink);
   background: var(--orbit-color-paper);
-  border: 1px solid var(--orbit-color-hairline-strong);
+  border: 1px solid var(--orbit-color-control-border);
   border-radius: var(--orbit-radius-1);
   padding: 0 var(--orbit-space-3);
   height: var(--orbit-size-input);
@@ -235,7 +235,7 @@ textarea {
   height: var(--orbit-size-button-sm);
   padding: 0 10px;
   border-radius: var(--orbit-radius-1);
-  border: 1px solid var(--orbit-color-hairline-strong);
+  border: 1px solid var(--orbit-color-control-border);
   background: transparent;
   color: var(--orbit-color-ink-2);
   cursor: pointer;
@@ -497,4 +497,4 @@ textarea {
   * { transition: none !important; animation: none !important; }
 }
 
-.send-confirm{width:min(760px,94vw);max-height:90vh;background:#111;color:#fff;border:1px solid #777;padding:24px}.send-confirm::backdrop{background:#000b}.send-confirm .mailbody{max-height:55vh;overflow:auto;white-space:pre-wrap}.send-confirm .send-row{margin-top:20px}
+.send-confirm{width:min(760px,94vw);max-height:90vh;background:var(--orbit-color-raised);color:var(--orbit-color-ink);border:1px solid var(--orbit-color-hairline-strong);padding:24px}.send-confirm::backdrop{background:var(--orbit-color-scrim)}.send-confirm .mailbody{max-height:55vh;overflow:auto;white-space:pre-wrap}.send-confirm .send-row{margin-top:20px}

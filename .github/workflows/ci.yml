@@ -21,6 +21,12 @@ jobs:
           git config --global url."$GIT_AUTH".insteadOf "https://github.com/"
           git config --global --add url."$GIT_AUTH".insteadOf "ssh://git@github.com/"
       - run: npm ci --no-audit --no-fund
+      # Orbit: tokenite kontrast + CRM-i toorväärtuste ratchet. Range --scan public jääb välja, kuni
+      # campaigns.html (30 hex) on tokenitele viidud — seni hoiab drift-baseline arvu, et see ei kasvaks.
+      - name: Orbit tokens (contrast, monochrome, dist drift)
+        run: node node_modules/@leisson/shared/orbit-tokens/verify.mjs
+      - name: orbit-drift (raw-value ratchet vs orbit-drift.baseline.json)
+        run: node node_modules/@leisson/shared/tools/orbit-drift.mjs --scan public --baseline orbit-drift.baseline.json
       # pdftotext is a REQUIRED dependency of the document-reader gate, not a convenience:
       # its absence once produced silent NULL requirements and a wrong verdict (hank 315437, 21.09.2026).
       - name: Install pdftotext (poppler)
