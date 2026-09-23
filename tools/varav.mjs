@@ -38,7 +38,7 @@ export const VALJAJATED = new Map([
   ['gate-hanked-vaade.mjs',
     'Brauserivärav: nõuab playwrighti + Chromiumi, mida offline-ahelas ei ole. Puhas loogika on kaetud test/gate-hanked-ui.mjs-is, mis jookseb ahelas. Jookseb CI töös browser (.github/workflows/ci.yml).'],
   ['gate-css-ab.mjs',
-    'Brauserivärav: tools/css-ab.mjs mõõdab Chromiumis computed style’i ja vajab git-ajalugu (#15 fikstuur, CI fetch-depth 0). Jookseb CI töös browser (.github/workflows/ci.yml).'],
+    'Brauserivärav: @leisson/shared/tools/css-ab.mjs mõõdab Chromiumis computed style’i ja vajab git-ajalugu (#15 fikstuur, CI fetch-depth 0). Jookseb CI töös browser (.github/workflows/ci.yml).'],
 ]);
 
 // Jooksud, mis kuuluvad ahelasse, aga ei vasta mustrile gate-*.

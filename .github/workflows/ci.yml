@@ -59,4 +59,4 @@ jobs:
       # css-ab.plan.json-is kirjas (siht → delta px); plaanita PR = puhas refaktor = 0 erinevust.
       - name: css-ab (computed style, PR vs baas)
         if: github.event_name == 'pull_request'
-        run: node tools/css-ab.mjs --base origin/${{ github.base_ref }} --head HEAD
+        run: node node_modules/@leisson/shared/tools/css-ab.mjs --base origin/${{ github.base_ref }} --head HEAD

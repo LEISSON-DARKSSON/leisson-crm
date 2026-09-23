@@ -1,0 +1,5 @@
+{
+  "css": ["public/app.css", "public/agent.css", "public/crm2.css"],
+  "orbit": "node_modules/@leisson/shared/orbit-tokens/dist/orbit.css",
+  "widths": [1280, 390]
+}

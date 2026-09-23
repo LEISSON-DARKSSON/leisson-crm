@@ -73,11 +73,11 @@
     "registry:update": "npm run registry:sync && npm run registry:enrich && npm run registry:financials && npm run registry:backfill -- --kirjuta",
     "registry:kandidaadid": "node agent/registry-candidates.mjs",
     "varav:brauser": "node tools/varav.mjs --brauserid",
-    "css-ab": "node tools/css-ab.mjs",
+    "css-ab": "node node_modules/@leisson/shared/tools/css-ab.mjs",
     "dev:link": "node tools/dev-link.mjs"
   },
   "dependencies": {
-    "@leisson/shared": "git+https://github.com/LEISSON-DARKSSON/leisson-shared.git#v1.3.1",
+    "@leisson/shared": "git+https://github.com/LEISSON-DARKSSON/leisson-shared.git#v1.4.1",
     "imapflow": "^1.0.171",
     "mailparser": "^3.7.2",
     "nodemailer": "^6.9.16"
