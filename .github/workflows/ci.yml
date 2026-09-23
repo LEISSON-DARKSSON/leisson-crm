@@ -40,8 +40,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      # fetch-depth 0: css-ab võrdleb PR-i baasiga ja gate-css-ab kasutab #15 ajalugu fikstuurina.
       - uses: actions/checkout@v4
-        with: { persist-credentials: false }
+        with: { persist-credentials: false, fetch-depth: 0 }
       - uses: actions/setup-node@v4
         with: { node-version: 24 }
       - name: Let npm fetch the private shared package
@@ -54,3 +55,8 @@ jobs:
         run: npm run varav:brauser
       - name: UI-värav (test/gate.mjs)
         run: node test/gate.mjs
+      # Iga font-size/font-family muutus public/{app,agent,crm2}.css-is peab olema PR-i
+      # css-ab.plan.json-is kirjas (siht → delta px); plaanita PR = puhas refaktor = 0 erinevust.
+      - name: css-ab (computed style, PR vs baas)
+        if: github.event_name == 'pull_request'
+        run: node tools/css-ab.mjs --base origin/${{ github.base_ref }} --head HEAD
