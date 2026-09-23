@@ -30,3 +30,6 @@ riigihanked/rhr_tools/*
 
 # Local git worktrees for subagent-driven implementation
 .worktrees/
+
+# Kliendikirjade mustandid (isikuandmed) - ainult lokaalselt
+mustandid/

@@ -52,6 +52,8 @@
     "agent:policy": "node agent/probe-codex-policy.mjs",
     "agent:runtime-test": "node --test agent/runtime.test.mjs agent/auth-cache.test.mjs agent/scheduled-run.test.mjs agent/public-scope.test.mjs agent/claude-runner.test.mjs",
     "test:offline": "node tools/varav.mjs",
+    "mustand": "node win/mustand.mjs",
+    "mustand:gate": "node test/gate-mustand.mjs",
     "varav": "node tools/varav.mjs",
     "varav:range": "node tools/varav.mjs --range",
     "seed:add": "node agent/add-prospects.mjs",
