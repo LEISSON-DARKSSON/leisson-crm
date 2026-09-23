@@ -45,7 +45,7 @@ li.mailrow > .row { min-width: 0; }
 .task .t { min-width: 0; }
 .task .t b { display: block; font-size: 15px; font-weight: 600; }
 .task .t span { display: block; margin-top: 2px; font-size: 13.5px; color: var(--orbit-color-ink-3); }
-.task .c { font-family: var(--orbit-font-data); font-size: 12px; color: var(--orbit-color-ink-2);
+.task .c { font-family: var(--orbit-font-data); font-size: var(--orbit-type-micro-size); color: var(--orbit-color-ink-2);
   text-align: right; white-space: nowrap; }
 
 .gatebox { display: grid; gap: 12px; }
@@ -107,7 +107,7 @@ table.tbl td b { color: var(--orbit-color-ink); }
 .step h4 { margin: 0 0 3px; font-family: var(--orbit-font-display); font-weight: 600; font-size: 18px; }
 .step p { margin: 0; font-size: 14.5px; color: var(--orbit-color-ink-2); }
 .step .gate { display: grid; gap: 4px; align-content: start;
-  font-family: var(--orbit-font-data); font-size: 12px; color: var(--orbit-color-ink-3); }
+  font-family: var(--orbit-font-data); font-size: var(--orbit-type-micro-size); color: var(--orbit-color-ink-3); }
 @media (max-width: 760px) { .step { grid-template-columns: 34px 1fr; } .step .gate { grid-column: 2; } }
 
 /* --- ahel --- */
@@ -115,7 +115,7 @@ table.tbl td b { color: var(--orbit-color-ink); }
 .chain .link { background: var(--orbit-color-canvas); display: grid; grid-template-columns: 26px minmax(0, 1fr) auto;
   gap: 14px; align-items: center; padding: 12px 15px; }
 .chain .link.stop { background: var(--orbit-color-paper); }
-.chain .n { font-family: var(--orbit-font-data); font-size: 12px; color: var(--orbit-color-ink-3); }
+.chain .n { font-family: var(--orbit-font-data); font-size: var(--orbit-type-micro-size); color: var(--orbit-color-ink-3); }
 .chain .t { font-size: 14.5px; overflow-wrap: anywhere; }
 
 /* --- võlgnevuse redel --- */
@@ -130,7 +130,7 @@ table.tbl td b { color: var(--orbit-color-ink); }
 .genrow .field.grow { flex: 1 1 320px; }
 ul.doclist { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; }
 ul.doclist li { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap;
-  font-family: var(--orbit-font-data); font-size: 13px; }
+  font-family: var(--orbit-font-data); font-size: var(--orbit-type-data-size); }
 
 /* --- klassifikatsiooniriba --- */
 .clsbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
@@ -367,7 +367,7 @@ table.tbl.hanked tr.tyhi td { color: var(--orbit-color-ink-3); }
 
 /* Viitenumber on nupp, et detail oleks Tab + Enteriga kättesaadav. */
 .linkbtn { background: none; border: 0; padding: 0; cursor: pointer; text-align: left;
-  font-family: var(--orbit-font-data); font-size: 13px; color: var(--orbit-color-signal);
+  font-family: var(--orbit-font-data); font-size: var(--orbit-type-data-size); color: var(--orbit-color-signal);
   text-decoration: underline; text-underline-offset: 2px; }
 .linkbtn:hover { color: var(--orbit-color-ink); }
 
@@ -381,7 +381,7 @@ table.tbl.hanked tr.tyhi td { color: var(--orbit-color-ink-3); }
 .hanked-detail .detail-plokk h3 { margin: 0 0 .35rem; font-size: 13px; text-transform: uppercase;
   letter-spacing: .04em; color: var(--orbit-color-ink-3); }
 .hanked-detail .why-list { margin: 0; padding-left: 1.1rem; }
-.hanked-detail .why-list li { font-family: var(--orbit-font-data); font-size: 13px; overflow-wrap: anywhere; }
+.hanked-detail .why-list li { font-family: var(--orbit-font-data); font-size: var(--orbit-type-data-size); overflow-wrap: anywhere; }
 .hanked-detail textarea.input { width: 100%; resize: vertical; }
 /* ÜLESANNE 14: alusdokumentide leiud. Iga leid kannab TÕENDIT (lause + fail),
    sest `rollid >= 3` annab verdikti ALLTÖÖVÕTT — paljas arv ei ole silmaga
@@ -389,11 +389,11 @@ table.tbl.hanked tr.tyhi td { color: var(--orbit-color-ink-3); }
 .hanked-detail .detail-plokk h4 { margin: .6rem 0 .25rem; font-size: 12px;
   text-transform: uppercase; letter-spacing: .04em; color: var(--orbit-color-ink-3); }
 .hanked-detail ul.leiud, .hanked-detail ul.failid { margin: 0; padding-left: 1.1rem; }
-.hanked-detail ul.leiud li { margin-bottom: .45rem; font-size: 13px; overflow-wrap: anywhere; }
+.hanked-detail ul.leiud li { margin-bottom: .45rem; font-size: var(--orbit-type-caption-size); overflow-wrap: anywhere; }
 .hanked-detail ul.leiud li.warn { color: var(--orbit-color-status-warn); }
 .hanked-detail ul.leiud blockquote { margin: .2rem 0 .1rem; padding-left: .6rem;
   border-left: 2px solid var(--orbit-color-hairline); font-style: italic; }
-.hanked-detail ul.leiud cite { font-family: var(--orbit-font-data); font-size: 12px;
+.hanked-detail ul.leiud cite { font-family: var(--orbit-font-data); font-size: var(--orbit-type-micro-size);
   color: var(--orbit-color-ink-3); font-style: normal; }
 .hanked-detail ul.failid li { font-family: var(--orbit-font-data); font-size: 12.5px;
   overflow-wrap: anywhere; }
