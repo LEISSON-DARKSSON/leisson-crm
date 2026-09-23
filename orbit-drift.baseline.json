@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "scan": [
+    "public"
+  ],
+  "exclude": [],
+  "files": {
+    "public/agent.css": {
+      "fontSize": 2,
+      "letterSpacing": 2
+    },
+    "public/app.css": {
+      "fontSize": 13,
+      "letterSpacing": 7,
+      "radius": 3
+    },
+    "public/campaigns.html": {
+      "hex": 30,
+      "fontSize": 3,
+      "radius": 6
+    },
+    "public/crm2.css": {
+      "fontSize": 31,
+      "letterSpacing": 5
+    }
+  }
+}

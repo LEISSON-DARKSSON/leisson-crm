@@ -390,9 +390,9 @@ table.tbl.hanked tr.tyhi td { color: var(--orbit-color-ink-3); }
   text-transform: uppercase; letter-spacing: .04em; color: var(--orbit-color-ink-3); }
 .hanked-detail ul.leiud, .hanked-detail ul.failid { margin: 0; padding-left: 1.1rem; }
 .hanked-detail ul.leiud li { margin-bottom: .45rem; font-size: 13px; overflow-wrap: anywhere; }
-.hanked-detail ul.leiud li.warn { color: var(--orbit-color-warn, #a4661a); }
+.hanked-detail ul.leiud li.warn { color: var(--orbit-color-status-warn); }
 .hanked-detail ul.leiud blockquote { margin: .2rem 0 .1rem; padding-left: .6rem;
-  border-left: 2px solid var(--orbit-color-line, #d8d8d8); font-style: italic; }
+  border-left: 2px solid var(--orbit-color-hairline); font-style: italic; }
 .hanked-detail ul.leiud cite { font-family: var(--orbit-font-data); font-size: 12px;
   color: var(--orbit-color-ink-3); font-style: normal; }
 .hanked-detail ul.failid li { font-family: var(--orbit-font-data); font-size: 12.5px;
