@@ -73,6 +73,7 @@
     "registry:update": "npm run registry:sync && npm run registry:enrich && npm run registry:financials && npm run registry:backfill -- --kirjuta",
     "registry:kandidaadid": "node agent/registry-candidates.mjs",
     "varav:brauser": "node tools/varav.mjs --brauserid",
+    "css-ab": "node tools/css-ab.mjs",
     "dev:link": "node tools/dev-link.mjs"
   },
   "dependencies": {
