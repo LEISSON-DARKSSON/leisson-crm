@@ -1,31 +1,39 @@
 <!doctype html>
 <html lang="et"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kampaaniad · Leisson CRM</title><link rel="stylesheet" href="/app.css">
+<title>Kampaaniad · Leisson CRM</title>
+<link rel="icon" href="/leisson.svg">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/orbit.css">
+<link rel="stylesheet" href="/app.css">
 <style>
-body{max-width:1050px;margin:auto;padding:24px;color:#eee;background:#080808;font:16px/1.5 system-ui}
-a{color:#9bc6ff}
-button{padding:10px 14px;margin:6px 6px 6px 0;cursor:pointer}
+/* Kõik väärtused tulevad /orbit.css tokenitest. Kuni 23.09.2026 ei laadinud see leht orbit.css-i üldse,
+   mistõttu app.css var(--orbit-*) olid tühjad ja lehel oli 30 oma hex-väärtust. Nupud ja kiibid = app.css. */
+body{display:block;height:auto;max-width:1050px;margin:auto;padding:var(--orbit-space-5)}
+a{color:var(--orbit-color-signal)}
+button:not(.chip){min-height:var(--orbit-size-button-md);padding:0 var(--orbit-space-4);margin:var(--orbit-space-1) var(--orbit-space-2) var(--orbit-space-1) 0;cursor:pointer;font:inherit;color:var(--orbit-color-ink);background:transparent;border:1px solid var(--orbit-color-control-border);border-radius:var(--orbit-radius-1)}
+button:not(.chip):hover:not(:disabled){background:var(--orbit-color-raised)}
 button:disabled{opacity:.45;cursor:not-allowed}
-section,article{border:1px solid #555;border-radius:8px;padding:16px;margin:16px 0}
-pre{white-space:pre-wrap;overflow-wrap:anywhere;padding:16px;background:#181818;border:1px solid #555}
-.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.toolbar{margin:10px 0}
-.muted{color:#aaa}
-.error{color:#ffba77}
-#search{padding:8px 10px;background:#181818;color:#eee;border:1px solid #555;border-radius:6px;min-width:240px}
-.chip{padding:5px 11px;margin:3px 6px 3px 0;border:1px solid #555;border-radius:999px;background:#181818;color:#eee;font-size:14px;cursor:pointer}
-.chip[aria-pressed=true]{background:#2a4d7a;border-color:#9bc6ff}
-#candidates{max-height:420px;overflow:auto;border:1px solid #333;border-radius:6px;padding:6px}
-.cand{display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:6px}
-.cand.checked{background:#152a15}
-.badge{font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid #666;color:#ccc}
-.badge-A{border-color:#ffba77;color:#ffba77}
-.badge-B{border-color:#9bc6ff;color:#9bc6ff}
-.badge-C{border-color:#a9e39a;color:#a9e39a}
-.badge-plaan{border-color:#e39ae3;color:#e39ae3}
+button:focus-visible,#search:focus-visible,input[type=checkbox]:focus-visible{outline:2px solid var(--orbit-color-signal);outline-offset:2px}
+section,article{border:1px solid var(--orbit-color-hairline-strong);border-radius:var(--orbit-radius-2);padding:var(--orbit-space-4);margin:var(--orbit-space-4) 0}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;padding:var(--orbit-space-4);background:var(--orbit-color-paper);border:1px solid var(--orbit-color-hairline);font-family:var(--orbit-type-data-family);font-size:var(--orbit-type-data-size)}
+.cmp-row{display:flex;gap:var(--orbit-space-3);align-items:center;flex-wrap:wrap}
+.toolbar{margin:var(--orbit-space-2) 0}
+.muted{color:var(--orbit-color-ink-2)}
+.error{color:var(--orbit-color-status-crit)}
+#search{width:auto;min-width:240px}
+#groupChips .chip{margin:var(--orbit-space-1) var(--orbit-space-2) var(--orbit-space-1) 0}
+#candidates{max-height:420px;overflow:auto;border:1px solid var(--orbit-color-hairline);border-radius:var(--orbit-radius-1);padding:var(--orbit-space-1)}
+.cand{display:flex;gap:var(--orbit-space-2);align-items:center;padding:var(--orbit-space-1) var(--orbit-space-2);border-radius:var(--orbit-radius-1)}
+.cand.checked{background:var(--orbit-color-signal-soft)}
+/* Rühmamärk kannab teksti (A/B/C/plaan) — värv on lisa, mitte ainus kandja. Monokroom: toon ainult signal/status. */
+.cand .badge{background:transparent;color:var(--orbit-color-ink-2);border:1px solid var(--orbit-color-hairline-strong);padding:0 var(--orbit-space-2)}
+.cand .badge-A{border-color:var(--orbit-color-status-warn);color:var(--orbit-color-status-warn)}
+.cand .badge-B{border-color:var(--orbit-color-signal);color:var(--orbit-color-signal)}
+.cand .badge-C{border-color:var(--orbit-color-status-ok);color:var(--orbit-color-status-ok)}
+.cand .badge-plaan{border-style:dashed}
 #selCount{font-weight:600}
-#selCount.over{color:#ff8080}
-#selCount.ok{color:#a9e39a}
+#selCount.over{color:var(--orbit-color-status-crit)}
+#selCount.ok{color:var(--orbit-color-status-ok)}
 </style></head><body>
 <a href="/">← CRM</a><h1>Kinnitatud müügikampaaniad</h1>
 <p>Saadab ainult gert@leisson.eu kontolt. Kinnitad korraga iga saaja, teema ja kogu kirja koos allkirjaga.
@@ -34,18 +42,18 @@ Kinnitamine ei saada kirju. Kampaania töötaja ja ajastaja on eraldi välja lü
 <section><h2>Vali ettevõtted</h2>
 <p class="muted">Maksimaalselt 20 kirja kampaanias. Isiklikud tuttavad jäta välja; server kontrollib müügipausi ja kontakti alust.
  <span id="eligibleCount"></span></p>
-<div class="row toolbar">
- <input id="search" type="search" placeholder="Otsi nime või e-posti järgi…" aria-label="Otsi ettevõtete seast">
- <span id="groupChips" class="row" style="gap:0"></span>
+<div class="cmp-row toolbar">
+ <input id="search" class="input" type="search" placeholder="Otsi nime või e-posti järgi…" aria-label="Otsi ettevõtete seast">
+ <span id="groupChips" class="cmp-row" style="gap:0"></span>
 </div>
-<div class="row toolbar">
+<div class="cmp-row toolbar">
  <button id="selectAll" type="button">Vali kõik nähtavad</button>
  <button id="selectNext20" type="button">Vali järgmised 20</button>
  <button id="selectNone" type="button">Tühista valik</button>
  <span id="selCount" class="muted" aria-live="polite">0 valitud</span>
 </div>
 <div id="candidates"></div>
-<div class="row toolbar">
+<div class="cmp-row toolbar">
  <button id="prepare" type="button" disabled>Koosta täpne eelvaade (valitud)</button>
  <button id="prepareAll" type="button">Koosta kõik nähtavad automaatselt (20 kaupa)</button>
 </div>
@@ -55,8 +63,8 @@ Kinnitamine ei saada kirju. Kampaania töötaja ja ajastaja on eraldi välja lü
 <section id="review" hidden><h2>Kontrolli kogu saadetist</h2>
 <p id="queueNav" class="muted" hidden></p>
 <p id="summary"></p><div id="letters"></div>
-<label class="row"><input type="checkbox" id="checked"> Kinnitan kõik kuvatud saajad, teemad ja allkirjaga kirjad täpselt sellisel kujul.</label>
-<div class="row">
+<label class="cmp-row"><input type="checkbox" id="checked"> Kinnitan kõik kuvatud saajad, teemad ja allkirjaga kirjad täpselt sellisel kujul.</label>
+<div class="cmp-row">
  <button id="approve" type="button" disabled>Kinnita muutumatu kampaania</button>
  <button id="stop" type="button">Peata</button>
  <button id="nextQueue" type="button" hidden>Järgmine ettevalmistatud kampaania →</button>
