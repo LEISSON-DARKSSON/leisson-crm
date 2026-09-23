@@ -76,7 +76,7 @@
     "dev:link": "node tools/dev-link.mjs"
   },
   "dependencies": {
-    "@leisson/shared": "git+https://github.com/LEISSON-DARKSSON/leisson-shared.git#v1.2.0",
+    "@leisson/shared": "git+https://github.com/LEISSON-DARKSSON/leisson-shared.git#v1.3.1",
     "imapflow": "^1.0.171",
     "mailparser": "^3.7.2",
     "nodemailer": "^6.9.16"
