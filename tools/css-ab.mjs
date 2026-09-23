@@ -154,7 +154,14 @@ for (const w of LAIUSED) {
       mkdirSync(shots, { recursive: true });
       for (const [ti, t] of TARGETS.entries()) {
         const f = join(shots, `${ti}-${k}.png`);
-        try { await p.locator(`#fx ${t}`).first().screenshot({ path: f, timeout: 3000 }); if (k === 'B') pildid.push([t, ti]); } catch { /* peidetud element — mõõdud katavad */ }
+        // Plokkelement on 1280 px lai → lõika vasak 480 px, muidu jääb tekst lehel nööpnõelapeaks.
+        try {
+          const bb = await p.locator(`#fx ${t}`).first().boundingBox({ timeout: 3000 });
+          if (bb && bb.height > 0) {
+            await p.screenshot({ path: f, fullPage: true, clip: { x: bb.x, y: bb.y, width: Math.min(480, Math.max(1, bb.width)), height: bb.height } });
+            if (k === 'B') pildid.push([t, ti]);
+          }
+        } catch (e) { console.log(`   (pilt jäi vahele: ${t} — ${e.message.split('\n')[0]})`); }
       }
     }
     await p.close();
@@ -189,7 +196,7 @@ serverid.A.close(); serverid.B.close();
 if (shots && pildid.length) {
   const img = (f) => existsSync(f) ? 'data:image/png;base64,' + readFileSync(f).toString('base64') : '';
   const read = pildid.map(([t, i]) => `<tr><td><code>${t}</code><br><small>${PLAN.targets[t] > 0 ? '+' : ''}${PLAN.targets[t]}px</small></td><td><img src="${img(join(shots, `${i}-A.png`))}"></td><td><img src="${img(join(shots, `${i}-B.png`))}"></td></tr>`).join('');
-  writeFileSync(join(shots, 'leht.html'), `<!doctype html><meta charset="utf-8"><style>body{font:13px system-ui;margin:16px}td{border-bottom:1px solid #ddd;padding:6px;vertical-align:top}img{max-width:560px;display:block;background:#000}</style><h1>css-ab ${base} → ${head || 'töökataloog'}</h1><table><tr><th>siht</th><th>enne</th><th>pärast</th></tr>${read}</table>`);
+  writeFileSync(join(shots, 'leht.html'), `<!doctype html><meta charset="utf-8"><style>body{font:13px system-ui;margin:16px}td{border-bottom:1px solid #ddd;padding:6px;vertical-align:top}img{display:block;background:#000;image-rendering:pixelated;zoom:2}</style><h1>css-ab ${base} → ${head || 'töökataloog'}</h1><table><tr><th>siht</th><th>enne</th><th>pärast</th></tr>${read}</table>`);
   console.log(`\nenne/pärast: ${join(shots, 'leht.html')}`);
 }
 console.log(ok ? `\ncss-ab: OK${PLAN ? ` (plaan ${planPath})` : ' (plaanita: 0 lubatud muutust)'}` : '\ncss-ab: FAIL — muuda CSS-i või kirjelda muutus css-ab.plan.json-is');

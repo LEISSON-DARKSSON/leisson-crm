@@ -10,7 +10,7 @@
       "letterSpacing": 2
     },
     "public/app.css": {
-      "fontSize": 13,
+      "fontSize": 12,
       "letterSpacing": 7,
       "radius": 3
     },
