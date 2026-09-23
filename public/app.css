@@ -110,7 +110,7 @@ body {
 
 /* ---------- postkast ---------- */
 .row.mail { gap: 3px; }
-.row.mail .row-name { font-family: var(--orbit-type-body-family); font-weight: var(--orbit-font-weight-semibold); font-size: 15px; }
+.row.mail .row-name { font-family: var(--orbit-type-body-family); font-weight: var(--orbit-font-weight-semibold); font-size: var(--orbit-type-body-size); }
 .row.mail.is-unread .row-name { color: var(--orbit-color-ink); }
 .row.mail.is-unread { border-left-color: var(--orbit-color-signal); }
 .row-subj {
