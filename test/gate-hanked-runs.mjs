@@ -878,6 +878,11 @@ process.stdout.write('LOPPRIDA\\n');
 
   const dbTee = join(TMP, 'history-paris-laps.sqlite');
   const db = new DatabaseSync(dbTee);
+  // CI-l (Linux) tabatud pärislukk (audit, 23.09.2026): ilma busy_timeout/WAL-ita
+  // loeb vanema ootaLopp() lapse BEGIN IMMEDIATE tehingu keskele ja saab kohe
+  // "database is locked" - vt sama mustrit allpool 'kaks kirjutajat' testis.
+  db.exec('PRAGMA busy_timeout = 5000');
+  db.exec('PRAGMA journal_mode = WAL');
   migrateHanked(db);
 
   const VANA_CRM_DB_PATH = process.env.CRM_DB_PATH;
@@ -968,6 +973,9 @@ process.stdout.write('LOPPRIDA\\n');
 
   const dbTee = join(TMP, 'docs-paris-laps.sqlite');
   const db = new DatabaseSync(dbTee);
+  // Vt sama kommentaari history plokis - sama lukurisk kehtib docs-lapsele.
+  db.exec('PRAGMA busy_timeout = 5000');
+  db.exec('PRAGMA journal_mode = WAL');
   migrateHanked(db);
   upsertHange(db, { ref: REF, rhr_id: RHR_ID, buyer: 'Testostja', buyer_reg: '10000000',
     title: 'ENV-4 päris lapse testhange', menetlus: 'Avatud hankemenetlus', est: 50000,
