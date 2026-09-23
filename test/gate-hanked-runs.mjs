@@ -24,7 +24,7 @@ import { open } from '../lib/db.mjs';
 import { migrateHanked, upsertHange } from '../lib/hanked.mjs';
 import { crc32 } from '../lib/zip.mjs';
 import { CMD, BOOT_ID, LOG_MAX, RIDA_MAX, cmdView, startRun, finishRun, stopRun,
-  cleanupOrphans, runsView, elab, OTSE_BOOT } from '../lib/hanked-runs.mjs';
+  cleanupOrphans, runsView, elab, OTSE_BOOT, lubatudEnv } from '../lib/hanked-runs.mjs';
 import { alustaOtseJooks } from '../agent/hanked-sync.mjs';
 
 // Minimaalne ZIP-looja (stored/meetod 0, ilma deflate'ita) - PÄRIS docs-lapse
@@ -874,20 +874,44 @@ process.stdout.write('LOPPRIDA\\n');
   });
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
   const port = server.address().port;
+  const awardBase = 'http://127.0.0.1:' + port;
 
   const dbTee = join(TMP, 'history-paris-laps.sqlite');
   const db = new DatabaseSync(dbTee);
+  // CI-l (Linux) tabatud pärislukk (audit, 23.09.2026): ilma busy_timeout/WAL-ita
+  // loeb vanema ootaLopp() lapse BEGIN IMMEDIATE tehingu keskele ja saab kohe
+  // "database is locked" - vt sama mustrit allpool 'kaks kirjutajat' testis.
+  db.exec('PRAGMA busy_timeout = 5000');
+  db.exec('PRAGMA journal_mode = WAL');
   migrateHanked(db);
 
   const VANA_CRM_DB_PATH = process.env.CRM_DB_PATH;
   const VANA_AWARD_BASE = process.env.HANKED_AWARD_BASE;
   process.env.CRM_DB_PATH = dbTee;
-  process.env.HANKED_AWARD_BASE = 'http://127.0.0.1:' + port;
+  process.env.HANKED_AWARD_BASE = awardBase;
+  let laps = null;
   try {
-    // spawnFn EI OLE antud - startRun kasutab OMA vaikimisi 'spawn'-i (node:child_process),
-    // seega see on TÕESTI agent/hanked-history.mjs, käivitatud lubatudEnv('history')
-    // päris väljundiga, mitte mock ega simuleeritud agent.
-    const r = startRun(db, 'history', { kuud: 1, tana: '2026-09-21' });
+    // EELKONTROLL ENNE PÄRIS SPAWN'I (harjendus, 23.09.2026): lubatudEnv('history')
+    // PEAB suunama TÄPSELT selle testi fikstuuribaasi ja fikstuuriserverisse - vale
+    // või puuduv suunamine PEAB katkestama käivituse SIIN, ENNE kui päris laps üldse
+    // tekib. EI PARANDATA testi sees (nt kirjutades eelvaatesse käsitsi õige
+    // väärtuse): kui see väide kukub, on viga TESTITAVAS KOODIS (lib/hanked-runs.mjs
+    // KASU_ENV/lubatudEnv), mitte selles testis - vt sabotaažikontrolli, mis
+    // tõestab, et CRM_DB_PATH-i eemaldamine annab punase TULEMUSE TÄPSELT SIIN,
+    // enne 'startRun'-i, mitte kunagi lubadeta lapse kaudu.
+    const eelvaade = lubatudEnv('history', process.env);
+    assert.equal(eelvaade.CRM_DB_PATH, dbTee,
+      'lubatudEnv(history) ei suuna CRM_DB_PATH-i selle testi fikstuuribaasi peale - laps kirjutaks '
+      + 'vale (või olematu) baasi. Käivitust EI TEHTA.');
+    assert.equal(eelvaade.HANKED_AWARD_BASE, awardBase,
+      'lubatudEnv(history) ei suuna HANKED_AWARD_BASE-i selle testi fikstuuriserverisse - laps küsiks '
+      + 'andmeid valest (või olematust) allikast. Käivitust EI TEHTA.');
+
+    // PÄRIS SPAWN, argv/options MUUTMATA: spawnFn siin ainult "vaatab pealt" (loeb
+    // lapse käepideme kõrvale veatee koristuseks) - kutsub 'spawn'-i TÄPSELT samade
+    // argumentidega, mida startRun ise oleks andnud oma vaikimisi spawnFn-ile.
+    const r = startRun(db, 'history', { kuud: 1, tana: '2026-09-21' },
+      { spawnFn: (exe, argv, opts) => { laps = spawn(exe, argv, opts); return laps; } });
     const lopp = await ootaLopp(db, r.id, 20000);
     assert.equal(lopp.state, 'tehtud', 'päris history-laps peab lõppema: ' + lopp.error);
     const read = db.prepare("SELECT * FROM hanke_runs WHERE cmd = 'history'").all();
@@ -905,9 +929,18 @@ process.stdout.write('LOPPRIDA\\n');
     assert.ok(lepinguid > 0,
       'laps pidi kirjutama hanke_lepingud SAMASSE faili, mida CRM_DB_PATH osutas (õige baas), sai '
       + lepinguid + ' rida');
-    db.close();
     console.log('  ok päris history-laps (startRun kaudu) ei kuku vanema luku peale ja kirjutab õigesse baasi (ENV-3 päris laps)');
   } finally {
+    // Veatee koristus: kui laps veel jookseb (nt hilisem väide kukub enne, kui
+    // laps loomulikult lõpetas), lõpetatakse AINULT see üks laps ja oodatakse
+    // 'close' - mitte ei jäeta protsessi taustale rippuma. Baas suletakse ALATI
+    // (õnnestumisel VÕI veal), üks kord, siin, mitte kahes eri kohas try/finally
+    // vahel.
+    if (laps && laps.exitCode === null && laps.signalCode === null) {
+      laps.kill();
+      await new Promise((res) => laps.once('close', res));
+    }
+    db.close();
     server.close();
     if (VANA_CRM_DB_PATH === undefined) delete process.env.CRM_DB_PATH;
     else process.env.CRM_DB_PATH = VANA_CRM_DB_PATH;
@@ -936,9 +969,13 @@ process.stdout.write('LOPPRIDA\\n');
   });
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
   const port = server.address().port;
+  const rhrBase = 'http://127.0.0.1:' + port;
 
   const dbTee = join(TMP, 'docs-paris-laps.sqlite');
   const db = new DatabaseSync(dbTee);
+  // Vt sama kommentaari history plokis - sama lukurisk kehtib docs-lapsele.
+  db.exec('PRAGMA busy_timeout = 5000');
+  db.exec('PRAGMA journal_mode = WAL');
   migrateHanked(db);
   upsertHange(db, { ref: REF, rhr_id: RHR_ID, buyer: 'Testostja', buyer_reg: '10000000',
     title: 'ENV-4 päris lapse testhange', menetlus: 'Avatud hankemenetlus', est: 50000,
@@ -949,12 +986,27 @@ process.stdout.write('LOPPRIDA\\n');
   const VANA_RHR_BASE = process.env.HANKED_RHR_BASE;
   const VANA_DOCS_DIR = process.env.HANKED_DOCS_DIR;
   process.env.CRM_DB_PATH = dbTee;
-  process.env.HANKED_RHR_BASE = 'http://127.0.0.1:' + port;
+  process.env.HANKED_RHR_BASE = rhrBase;
   process.env.HANKED_DOCS_DIR = docsDir;
+  let laps = null;
   try {
-    // Sama loogika mis eelmises plokis: PÄRIS agent/hanked-docs.mjs, päris
-    // lubatudEnv('docs') väljund, startRun'i vaikimisi 'spawn'.
-    const r = startRun(db, 'docs', { ref: REF });
+    // EELKONTROLL ENNE PÄRIS SPAWN'I: sama loogika mis history plokis - kolm
+    // suunamist (baas, allikas, dokumendikataloog) peavad kõik klappima ENNE
+    // päris lapse käivitamist. Vale/puuduv suunamine katkestab siin.
+    const eelvaade = lubatudEnv('docs', process.env);
+    assert.equal(eelvaade.CRM_DB_PATH, dbTee,
+      'lubatudEnv(docs) ei suuna CRM_DB_PATH-i selle testi fikstuuribaasi peale - laps kirjutaks '
+      + 'vale (või olematu) baasi. Käivitust EI TEHTA.');
+    assert.equal(eelvaade.HANKED_RHR_BASE, rhrBase,
+      'lubatudEnv(docs) ei suuna HANKED_RHR_BASE-i selle testi fikstuuriserverisse - laps küsiks '
+      + 'dokumente valest (või olematust) allikast. Käivitust EI TEHTA.');
+    assert.equal(eelvaade.HANKED_DOCS_DIR, docsDir,
+      'lubatudEnv(docs) ei suuna HANKED_DOCS_DIR-i selle testi ajutisse kausta - laps kirjutaks '
+      + 'dokumendid vale (või olematu) kausta. Käivitust EI TEHTA.');
+
+    // PÄRIS SPAWN, argv/options MUUTMATA - vt history ploki kommentaari.
+    const r = startRun(db, 'docs', { ref: REF },
+      { spawnFn: (exe, argv, opts) => { laps = spawn(exe, argv, opts); return laps; } });
     const lopp = await ootaLopp(db, r.id, 20000);
     assert.equal(lopp.state, 'tehtud', 'päris docs-laps peab lõppema: ' + lopp.error);
     const read = db.prepare("SELECT * FROM hanke_runs WHERE cmd = 'docs'").all();
@@ -969,9 +1021,13 @@ process.stdout.write('LOPPRIDA\\n');
       + JSON.stringify(rida.docs_count));
     assert.ok(rida.docs_dir && rida.docs_dir.startsWith(docsDir),
       'dokumendid pidid laskuma HANKED_DOCS_DIR alla, mille lubatudEnv(docs) edastas: ' + rida.docs_dir);
-    db.close();
     console.log('  ok päris docs-laps (startRun kaudu) ei kuku vanema luku peale ja kirjutab õigesse baasi (ENV-4 päris laps)');
   } finally {
+    if (laps && laps.exitCode === null && laps.signalCode === null) {
+      laps.kill();
+      await new Promise((res) => laps.once('close', res));
+    }
+    db.close();
     server.close();
     if (VANA_CRM_DB_PATH === undefined) delete process.env.CRM_DB_PATH;
     else process.env.CRM_DB_PATH = VANA_CRM_DB_PATH;
