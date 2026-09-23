@@ -26,4 +26,4 @@
   font-size: 12px;
   letter-spacing: .1em;
 }
-.draftbar .why { margin: 0; font-size: 13.5px; }
+.draftbar .why { margin: 0; font-size: var(--orbit-type-caption-size); }

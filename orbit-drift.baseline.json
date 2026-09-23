@@ -6,7 +6,7 @@
   "exclude": [],
   "files": {
     "public/agent.css": {
-      "fontSize": 2,
+      "fontSize": 1,
       "letterSpacing": 2
     },
     "public/app.css": {
@@ -15,7 +15,7 @@
       "radius": 3
     },
     "public/crm2.css": {
-      "fontSize": 23,
+      "fontSize": 12,
       "letterSpacing": 5
     }
   }
