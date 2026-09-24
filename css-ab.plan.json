@@ -1,6 +1,0 @@
-{
-  "pr": "mail list title 15px -> body 16, same rule as .task .t b (#15)",
-  "targets": {
-    ".row.mail .row-name": 1
-  }
-}
